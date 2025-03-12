@@ -20,6 +20,8 @@ resource_files:
 - data/final/national_data.Rds
 - data/final/tracts_data.Rds
 - www/Status_for_Disabled_image.png
+- www/adaparclogo.png
+- www/ScorecardReport.pdf
 editor_options: 
   markdown: 
     wrap: 72
@@ -220,7 +222,7 @@ ui <- fluidPage(
       div(class = "welcome-text", "Welcome to ADA-PARC!"),
       
       # Add the ADA-PARC logo image here
-      img(src = "adaparclogo.png", alt = "ADA-PARC logo"),
+      img(src = "https://i.imgur.com/q6kwni7.png", alt = "ADA-PARC Logo"),
       
       # How to Navigate Section
       div(class = "section-title", "How to Navigate this Website"),
@@ -640,43 +642,48 @@ server <- function(input, output, session) {
       city_place()$pop_total, "</b> residents (<b>", city_place()$pwd_pct, "%</b>) are people with disabilities.<br><br>"
     )
     
-    # Create summary items for Demographics
-    demographics <- city_place() %>% transmute(
+    # Create summary items for Race/Ethnicity
+    race_ethnicity <- city_place() %>% transmute(
       White = create_number_percent_string(pwd_white_nonhisp, pwd_white_nonhisp_dis_pct),
       Black = create_number_percent_string(pwd_black, pwd_black_dis_pct),
       Hispanic = create_number_percent_string(pwd_hisp, pwd_hisp_dis_pct),
       Asian = create_number_percent_string(pwd_asian, pwd_asian_dis_pct),
-      Other = create_number_percent_string(pwd_other_multiple, pwd_other_multiple_dis_pct),
-      Male = create_number_percent_string(pwd_male, pwd_male_pct),
-      Female = create_number_percent_string(pwd_female, pwd_female_pct)
+      Other = create_number_percent_string(pwd_other_multiple, pwd_other_multiple_dis_pct)
     ) %>% 
       pivot_longer(everything(), names_to = "Race/Ethnicity", values_to = "Value (%)") %>%
       mutate("Bullets" = paste0('<li>', `Race/Ethnicity`, " &mdash; ", `Value (%)`, '</li>')) %>%
       pull(Bullets) %>% 
       str_c(collapse = "")
     
-  # Create summary items for Disability Types
-  disability_types <- city_place() %>% transmute(
-    Hearing = create_number_percent_string(pwd_hearing, pwd_hearing_pct),
-    Vision = create_number_percent_string(pwd_vision, pwd_vision_pct),
-    Cognitive = create_number_percent_string(pwd_cognitive, pwd_cognitive_pct),
-    Ambulatory = create_number_percent_string(pwd_ambulatory, pwd_ambulatory_pct),
-    SelfCare = create_number_percent_string(pwd_selfcare, pwd_selfcare_pct),
-    IndependentLiving = create_number_percent_string(pwd_indliving, pwd_indliving_pct)
-  ) %>%
-    pivot_longer(everything(), names_to = "Type of Disability", values_to = "Value (%)") %>%
-    mutate("Bullets" = paste0('<li>', `Type of Disability`, " &mdash; ", `Value (%)`, '</li>')) %>%
-    pull(Bullets) %>%
-    str_c(collapse = "")
-
+    # Create summary items for Sex
+    sex <- city_place() %>% transmute(
+      Male = create_number_percent_string(pwd_male, pwd_male_pct),
+      Female = create_number_percent_string(pwd_female, pwd_female_pct)
+    ) %>% 
+      pivot_longer(everything(), names_to = "Sex", values_to = "Value (%)") %>%
+      mutate("Bullets" = paste0('<li>', `Sex`, " &mdash; ", `Value (%)`, '</li>')) %>%
+      pull(Bullets) %>% 
+      str_c(collapse = "")
     
-    # Create summary items for Key Indicators
-    key_indicators <- city_place() %>% transmute(
+    # Create summary items for Disability Types
+    disability_types <- city_place() %>% transmute(
+      Hearing = create_number_percent_string(pwd_hearing, pwd_hearing_pct),
+      Vision = create_number_percent_string(pwd_vision, pwd_vision_pct),
+      Cognitive = create_number_percent_string(pwd_cognitive, pwd_cognitive_pct),
+      Ambulatory = create_number_percent_string(pwd_ambulatory, pwd_ambulatory_pct),
+      SelfCare = create_number_percent_string(pwd_selfcare, pwd_selfcare_pct),
+      IndependentLiving = create_number_percent_string(pwd_indliving, pwd_indliving_pct)
+    ) %>%
+      pivot_longer(everything(), names_to = "Type of Disability", values_to = "Value (%)") %>%
+      mutate("Bullets" = paste0('<li>', `Type of Disability`, " &mdash; ", `Value (%)`, '</li>')) %>%
+      pull(Bullets) %>%
+      str_c(collapse = "")
+    
+    # Create summary items for Transportation (formerly Community Participation)
+    transportation <- city_place() %>% transmute(
       CarCommute = create_number_percent_string(pwd_car_commute, pwd_car_commute_pct),
       PublicTransit = create_number_percent_string(pwd_pub_transit, pwd_pub_transit_dis_pct),
-      WalkOrBike = create_number_percent_string(pwd_walk_bike, pwd_walk_bike_pct),
-      Employed = create_number_percent_string(pop_total_employed_16_plus, pwd_employed_subj),
-      NotInLaborForce = create_number_percent_string(pwd_not_in_labor_force, pwd_not_employed_subj)
+      WalkOrBike = create_number_percent_string(pwd_walk_bike, pwd_walk_bike_pct)
     ) %>%
       pivot_longer(everything(), names_to = "Indicator", values_to = "Value (%)") %>%
       mutate(
@@ -684,7 +691,24 @@ server <- function(input, output, session) {
           Indicator == "CarCommute" ~ "Commute to Work by Car",
           Indicator == "PublicTransit" ~ "Commute to Work by Public Transportation",
           Indicator == "WalkOrBike" ~ "Commute by Walking or Biking",
+          TRUE ~ Indicator
+        ),
+        "Bullets" = paste0('<li>', Indicator, " &mdash; ", `Value (%)`, '</li>')
+      ) %>%
+      pull(Bullets) %>%
+      str_c(collapse = "")
+    
+    # Create summary items for Employment (formerly Work Economic)
+    employment <- city_place() %>% transmute(
+      Employed = create_number_percent_string(pop_total_employed_16_plus, pwd_employed_subj),
+      Poverty = create_number_percent_string(pwd_below_poverty, pwd_below_poverty_pct),
+      NotInLaborForce = create_number_percent_string(pwd_not_in_labor_force, pwd_not_employed_subj)
+    ) %>%
+      pivot_longer(everything(), names_to = "Indicator", values_to = "Value (%)") %>%
+      mutate(
+        Indicator = case_when(
           Indicator == "Employed" ~ "Employment Rate",
+          Indicator == "Poverty" ~ "Below Poverty Rate",
           Indicator == "NotInLaborForce" ~ "Not In Labor Force",
           TRUE ~ Indicator
         ),
@@ -692,14 +716,41 @@ server <- function(input, output, session) {
       ) %>%
       pull(Bullets) %>%
       str_c(collapse = "")
-
     
-    # HTML structure with three sections
+    # Create summary items for Education
+    education <- city_place() %>% transmute(
+      HighSchoolEquiv = create_number_percent_string(pwd_highschoolequiv, pwd_highschoolequiv_pct),
+      LessThanHighSchool = create_number_percent_string(pwd_lessthan_highschool, pwd_lessthan_highschool_pct),
+      DegreeAA = create_number_percent_string(pwd_degree_aa, pwd_degree_aa_pct),
+      DegreeBAOrHigher = create_number_percent_string(pwd_degree_grtoeq_ba, pwd_degree_grtoeq_ba_pct)
+    ) %>%
+      pivot_longer(everything(), names_to = "Indicator", values_to = "Value (%)") %>%
+      mutate(
+        Indicator = case_when(
+          Indicator == "HighSchoolEquiv" ~ "High School Equivalent",
+          Indicator == "LessThanHighSchool" ~ "Less Than High School",
+          Indicator == "DegreeAA" ~ "Associate Degree",
+          Indicator == "DegreeBAOrHigher" ~ "Bachelor's Degree or Higher",
+          TRUE ~ Indicator
+        ),
+        "Bullets" = paste0('<li>', Indicator, " &mdash; ", `Value (%)`, '</li>')
+      ) %>%
+      pull(Bullets) %>%
+      str_c(collapse = "")
+    
+    # HTML structure with updated headings and subheadings
     city_summary_tables <- paste0(
       '<div class = "row">',
-      '<div class = "col-md-12"><b>Disability Demographics</b><ul>', demographics, '</ul></div>',
-      '<div class = "col-md-12"><b>Disability Types</b><ul>', disability_types, '</ul></div>',
-      '<div class = "col-md-12"><b>Disability Key Indicators</b><ul>', key_indicators, '</ul></div>',
+      '<div class = "col-md-12"><h4 style="color: maroon; font-weight: bold;">Disability Demographics</h4>',
+      '<div class = "col-md-12"><b>Race / Ethnicity</b><ul>', race_ethnicity, '</ul></div>',
+      '<div class = "col-md-12"><b>Sex</b><ul>', sex, '</ul></div>',
+      '</div>',
+      '<div class = "col-md-12"><h4 style="color: maroon; font-weight: bold;">Disability Types</h4><ul>', disability_types, '</ul></div>',
+      '<div class = "col-md-12"><h4 style="color: maroon; font-weight: bold;">ADA-PARC Key Indicators</h4>',
+      '<div class = "col-md-12"><b>Transportation</b><ul>', transportation, '</ul></div>',
+      '<div class = "col-md-12"><b>Employment</b><ul>', employment, '</ul></div>',
+      '<div class = "col-md-12"><b>Education</b><ul>', education, '</ul></div>',
+      '</div>',
       '</div>'
     )
     
@@ -717,13 +768,25 @@ shinyApp(ui, server)
 # Scorecards
 
 ```{r tableau scorecards}
-
 library(shiny)
 
 # Define UI
 ui <- fluidPage(
   # Application title
   titlePanel("Scorecard Dashboard"),
+  
+  # Custom CSS to ensure Tableau visualizations take full width
+  tags$head(
+    tags$style(HTML("
+      .tableauPlaceholder {
+        width: 100% !important;
+      }
+      .tableauViz {
+        width: 100% !important;
+        height: 800px !important;
+      }
+    "))
+  ),
   
   # Selector and body text
   fluidRow(
@@ -786,16 +849,8 @@ server <- function(input, output, session) {
         <script type='text/javascript'>
           var divElement = document.getElementById('viz1738961749733');
           var vizElement = divElement.getElementsByTagName('object')[0];
-          if (divElement.offsetWidth > 800) {
-            vizElement.style.width = '1000px';
-            vizElement.style.height = '850px';
-          } else if (divElement.offsetWidth > 500) {
-            vizElement.style.width = '1000px';
-            vizElement.style.height = '850px';
-          } else {
-            vizElement.style.width = '100%';
-            vizElement.style.height = '800px';
-          }
+          vizElement.style.width = '100%';
+          vizElement.style.height = '800px';
           var scriptElement = document.createElement('script');
           scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
           vizElement.parentNode.insertBefore(scriptElement, vizElement);
@@ -828,16 +883,8 @@ server <- function(input, output, session) {
         <script type='text/javascript'>
           var divElement = document.getElementById('viz1738961733477');
           var vizElement = divElement.getElementsByTagName('object')[0];
-          if (divElement.offsetWidth > 800) {
-            vizElement.style.width = '1000px';
-            vizElement.style.height = '850px';
-          } else if (divElement.offsetWidth > 500) {
-            vizElement.style.width = '1000px';
-            vizElement.style.height = '850px';
-          } else {
-            vizElement.style.width = '100%';
-            vizElement.style.height = '800px';
-          }
+          vizElement.style.width = '100%';
+          vizElement.style.height = '800px';
           var scriptElement = document.createElement('script');
           scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
           vizElement.parentNode.insertBefore(scriptElement, vizElement);
@@ -870,16 +917,8 @@ server <- function(input, output, session) {
         <script type='text/javascript'>
           var divElement = document.getElementById('viz1738961762691');
           var vizElement = divElement.getElementsByTagName('object')[0];
-          if (divElement.offsetWidth > 800) {
-            vizElement.style.width = '1000px';
-            vizElement.style.height = '850px';
-          } else if (divElement.offsetWidth > 500) {
-            vizElement.style.width = '1000px';
-            vizElement.style.height = '850px';
-          } else {
-            vizElement.style.width = '100%';
-            vizElement.style.height = '800px';
-          }
+          vizElement.style.width = '100%';
+          vizElement.style.height = '800px';
           var scriptElement = document.createElement('script');
           scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
           vizElement.parentNode.insertBefore(scriptElement, vizElement);
@@ -937,22 +976,22 @@ access_map_palette_selected <- reactive({
   access_map_palette_choices[[input$access_map_palette]]
 })
 
-
-# Scorecard Information
+# Scorecard info
 tags$div(
-  style="text-align: left;",
+  style = "text-align: left;",
   
   # Added introductory line
-  tags$p(style="font-weight: bold; font-size: 18px; margin-bottom: 10px;", 
-         "Understanding ADA-PARC Scorecards"),
-  
-  tags$iframe(
-    style="height:750px; width:100%; border:none; overflow-y:scroll;", 
-    src="scorecard/report/ADA-PARC_scorecard_report_pdf.pdf"
+  tags$p(
+    style = "font-weight: bold; font-size: 18px; margin-bottom: 10px;", 
+    "Understanding ADA-PARC Scorecards"
   ),
   
+  # Embed the PDF file from the www folder
+  tags$iframe(
+    style = "height: 750px; width: 100%; border: none; overflow-y: scroll;", 
+    src = "ScorecardReport.pdf"  # File is in the www folder
+  )
 )
-
 ```
 
 
