@@ -17,49 +17,74 @@ altTitle <- function(variable) {
 
 # Create non-overlapping quartile buckets
 create_non_overlapping_buckets <- function(data) {
-  probs <- seq(0, 1, length.out = 5)
-  quantiles <- quantile(data, probs, na.rm = TRUE)
+  # Coerce to numeric and drop NAs for break calculation
+  data_num   <- suppressWarnings(as.numeric(data))
+  data_clean <- data_num[!is.na(data_num)]
   
-  round_dynamic <- function(x, precision) {
-    return(round(x * 10^precision) / 10^precision)
+  # If no usable data, return a harmless default
+  if (length(data_clean) == 0L) {
+    return(seq(0, 1, length.out = 5))
   }
   
-  floor_dynamic <- function(x, precision) {
-    return(floor(x * 10^precision) / 10^precision)
-  }
+  # Basic range
+  rng <- range(data_clean, na.rm = TRUE)
   
-  ceiling_dynamic <- function(x, precision) {
-    return(ceiling(x * 10^precision) / 10^precision)
-  }
-  
-  adjust_precision <- function(quantiles) {
-    precision <- 0
-    for (i in 2:(length(quantiles) - 1)) {
-      while (round_dynamic(quantiles[i-1], precision) >= round_dynamic(quantiles[i], precision)) {
-        precision <- precision + 1
-      }
+  # If no variation, create a tiny spread around the single value
+  if (!is.finite(rng[1]) || !is.finite(rng[2]) || rng[1] == rng[2]) {
+    v   <- rng[1]
+    eps <- max(abs(v), 1) * 0.001
+    breaks <- seq(v - 2 * eps, v + 2 * eps, length.out = 5)
+  } else {
+    # Try quantile-based breaks first
+    probs <- seq(0, 1, length.out = 5)
+    q     <- stats::quantile(data_clean, probs = probs, na.rm = TRUE)
+    breaks <- as.numeric(q)
+    
+    # If any NAs sneak in, interpolate them
+    if (anyNA(breaks)) {
+      good   <- which(!is.na(breaks))
+      breaks <- approx(x = good, y = breaks[good],
+                       xout = seq_along(breaks))$y
     }
-    return(precision)
+    
+    # Sort to be safe
+    breaks <- sort(breaks)
+    
+    # If quantiles still collapse (duplicate breaks), fall back to equal-width
+    if (any(diff(breaks) <= 0)) {
+      breaks <- seq(rng[1], rng[2], length.out = 5)
+    }
   }
   
-  precision <- adjust_precision(quantiles)
-  bounds <- sapply(quantiles, function(x) round_dynamic(x, precision))
-  bounds[1] <- floor_dynamic(quantiles[1], precision)
-  bounds[length(bounds)] <- ceiling_dynamic(quantiles[length(quantiles)], precision)
+  # Final safety: enforce strict monotonicity so cut() never complains
+  eps <- .Machine$double.eps
+  for (i in 2:length(breaks)) {
+    if (breaks[i] <= breaks[i - 1]) {
+      breaks[i] <- breaks[i - 1] + eps
+    }
+  }
   
-  return(bounds)
+  breaks
 }
 
 format_ranges <- function(breaks, col_name) {
   if (grepl("pct", col_name, ignore.case = TRUE)) {
-    # Format as percentages
-    formatted_ranges <- paste0(head(breaks, -1), "%-", tail(breaks, -1), "%")
+    # Breaks are already in percent units (e.g., 1.71, 5.90, etc.)
+    formatted_breaks <- formatC(breaks, format = "f", digits = 2)
+    formatted_ranges <- paste0(
+      head(formatted_breaks, -1), "%-",
+      tail(formatted_breaks,  -1), "%"
+    )
   } else {
-    # Format with commas for large numbers
-    formatted_breaks <- formatC(breaks, format = "f", big.mark = ",", digits = 0)
-    formatted_ranges <- paste(head(formatted_breaks, -1), tail(formatted_breaks, -1), sep = "-")
+    # Non-percent variables: comma separated, no decimals
+    formatted_breaks  <- formatC(breaks, format = "f", big.mark = ",", digits = 0)
+    formatted_ranges  <- paste(
+      head(formatted_breaks, -1),
+      tail(formatted_breaks,  -1),
+      sep = "-"
+    )
   }
-  return(formatted_ranges)
+  formatted_ranges
 }
 
 render_national_map <- function(selected, palette_selected = "YlOrRd") {
@@ -72,28 +97,44 @@ render_national_map <- function(selected, palette_selected = "YlOrRd") {
   palette <- brewer.pal(4, palette_selected)
   
   if (!is_comp) {
-    legend_title <- paste0(dict_vars$var_pretty[which(dict_vars$var_readable == selected)][1])
+    legend_title <- paste0(
+      dict_vars$var_pretty[which(dict_vars$var_readable == selected)][1]
+    )
     
     us_states_with_data <- us_states %>%
       filter(ABBR != "USA") %>%
       select(1:8, estimate = sym(selected)) %>%
-      mutate(estimate = as.numeric(gsub(pattern = "[,]", replacement = "", x = estimate)))
+      mutate(
+        estimate = as.numeric(
+          gsub(pattern = "[,]", replacement = "", x = estimate)
+        )
+      )
     
     buckets <- create_non_overlapping_buckets(us_states_with_data$estimate)
-    labels <- format_ranges(buckets, selected)
+    labels  <- format_ranges(buckets, selected)
     
     us_states_with_data <- us_states_with_data %>%
-      mutate(estimate_cat = cut(estimate, breaks = buckets, include.lowest = TRUE, labels = labels))
+      mutate(
+        estimate_cat = cut(
+          estimate,
+          breaks        = buckets,
+          include.lowest = TRUE,
+          labels        = labels
+        )
+      )
     
     ggplot(data = us_states_with_data) +
       geom_sf(aes(fill = estimate_cat)) +
       scale_fill_manual(values = palette, name = legend_title) +
+      guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +  # 2x2 legend
       theme_void() +
-      theme(legend.position = "bottom",
-            legend.direction = "horizontal",
-            legend.title = element_text(size = 14),
-            legend.box = "horizontal",
-            legend.text = element_text(size = 14))
+      theme(
+        legend.position  = "bottom",
+        legend.direction = "horizontal",
+        legend.title     = element_text(size = 14),
+        legend.box       = "horizontal",
+        legend.text      = element_text(size = 14)
+      )
     
   } else {
     base_var <- dict_vars %>%
@@ -108,54 +149,76 @@ render_national_map <- function(selected, palette_selected = "YlOrRd") {
       filter(ABBR != "USA") %>%
       select(1:8, estimate = sym(selected), estimate_2 = sym(comp_var)) %>%
       mutate(
-        estimate = as.numeric(gsub(pattern = "[,]", replacement = "", x = estimate)),
+        estimate   = as.numeric(gsub(pattern = "[,]", replacement = "", x = estimate)),
         estimate_2 = as.numeric(gsub(pattern = "[,]", replacement = "", x = estimate_2))
       )
     
-    combined_var <- c(us_states_with_data$estimate, us_states_with_data$estimate_2)
+    combined_var <- c(us_states_with_data$estimate,
+                      us_states_with_data$estimate_2)
     breaks <- create_non_overlapping_buckets(combined_var)
     labels <- format_ranges(breaks, selected)
     
     us_states_with_data <- us_states_with_data %>%
       mutate(
-        estimate_cat = cut(estimate, breaks = breaks, include.lowest = TRUE, labels = labels),
-        estimate_2_cat = cut(estimate_2, breaks = breaks, include.lowest = TRUE, labels = labels)
+        estimate_cat   = cut(
+          estimate,
+          breaks         = breaks,
+          include.lowest = TRUE,
+          labels         = labels
+        ),
+        estimate_2_cat = cut(
+          estimate_2,
+          breaks         = breaks,
+          include.lowest = TRUE,
+          labels         = labels
+        )
       )
     
-    shared_scale <- scale_fill_manual(values = palette, drop = FALSE, name = "Legend Title")
+    # Use a meaningful legend title (still hidden visually by element_blank())
+    legend_title <- paste0(
+      dict_vars$var_pretty[which(dict_vars$var_readable == selected)][1]
+    )
+    
+    shared_scale <- scale_fill_manual(
+      values = palette,
+      drop   = FALSE,
+      name   = legend_title
+    )
     
     map1 <- ggplot(data = us_states_with_data) +
       geom_sf(aes(fill = estimate_cat)) +
       shared_scale +
+      guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +  # 2x2 legend
       theme_void() +
       theme(
         legend.position = "bottom",
-        legend.title = element_blank(),
-        legend.text = element_text(size = 13),
-        legend.box = "horizontal"
-        ) +
+        legend.title    = element_blank(),
+        legend.text     = element_text(size = 13),
+        legend.box      = "horizontal"
+      ) +
       ggtitle("People with Disabilities")
     
     map2 <- ggplot(data = us_states_with_data) +
       geom_sf(aes(fill = estimate_2_cat)) +
       shared_scale +
+      guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +  # 2x2 legend
       theme_void() +
       theme(
         legend.position = "bottom",
-        legend.title = element_blank(),
-        legend.text = element_text(size = 13),
-        legend.box = "horizontal"
+        legend.title    = element_blank(),
+        legend.text     = element_text(size = 13),
+        legend.box      = "horizontal"
       ) +
       ggtitle("People without Disabilities")
     
     legend <- cowplot::get_legend(
       map1 +
         theme(
-          legend.position = "bottom",
+          legend.position  = "bottom",
           legend.direction = "horizontal",
-          legend.title = element_blank(),
-          legend.text = element_text(size = 20),
-          legend.box = "horizontal"
+          legend.title     = element_blank(),
+          legend.text      = element_text(size = 20),
+          legend.box       = "horizontal"
         )
     )
     
@@ -186,42 +249,56 @@ between <- function(df, variable, probs) {
 
 altText <- function(data, variable) {
   
-  # Selected data, format min/max for summary
+  # helper: decide whether this variable should be treated as a percent
+  is_pct_var <- function(var) grepl("(^pct_|_pct$)", var)
+  
+  # helper: format a single numeric value with commas + 1 decimal (trim .0),
+  # or as percent (0–100 scale, trim .0)
+  format_value <- function(x, var) {
+    if (is_pct_var(var)) {
+      scales::label_percent(accuracy = 0.1, scale = 1, trim = TRUE)(x)
+    } else {
+      scales::label_number(accuracy = 0.1, big.mark = ",", trim = TRUE)(x)
+    }
+  }
+  
   df <- data %>%
-    select(NAME, ABBR, sym(variable)) %>%
-    filter(ABBR != "USA")
-
-  # Min
-  text_min <- df %>%
-    mutate("State" = paste0(NAME, " (", ABBR, ")")) %>% 
-    select(State, sym(variable)) %>%
-    filter(!is.na(!!sym(variable))) %>% 
-    filter(!!sym(variable) == min(!!sym(variable))) %>% 
-    slice(1) %>% 
-    mutate(across(ends_with("_pct"),
-                  ~scales::percent(.x, 
-                                   accuracy = 0.1,
-                                   scale = 1))) %>% 
-    mutate("summary_text" = paste0(" The lowest state or territory was ",
-                                   State, " at ", 
-                                   !!sym(variable), ".")) %>% 
-    pull(summary_text)
-    
-  # Max
-  text_max <- df %>%
-    mutate("State" = paste0(NAME, " (", ABBR, ")")) %>% 
-    select(State, sym(variable)) %>%
-    filter(!is.na(!!sym(variable))) %>% 
-    filter(!!sym(variable) == max(!!sym(variable))) %>% 
-    slice(1) %>% 
-    mutate(across(ends_with("_pct"),
-                  ~scales::percent(.x, 
-                                   accuracy = 0.1,
-                                   scale = 1))) %>% 
-    mutate("summary_text" = paste0(" The highest state or territory was ",
-                                   State, " at ", 
-                                   !!sym(variable), ".")) %>% 
-    pull(summary_text)
+    dplyr::select(NAME, ABBR, !!rlang::sym(variable)) %>%
+    dplyr::filter(ABBR != "USA") %>%
+    dplyr::mutate(State = paste0(NAME, " (", ABBR, ")")) %>%
+    dplyr::filter(!is.na(!!rlang::sym(variable)))
+  
+  # Min row
+  min_val <- min(df[[variable]], na.rm = TRUE)
+  min_state <- df %>%
+    dplyr::filter(.data[[variable]] == min_val) %>%
+    dplyr::slice(1) %>%
+    dplyr::pull(State)
+  
+  text_min <- paste0(
+    " The lowest state or territory was ",
+    min_state,
+    " at ",
+    format_value(min_val, variable),
+    "."
+  )
+  
+  # Max row
+  max_val <- max(df[[variable]], na.rm = TRUE)
+  max_state <- df %>%
+    dplyr::filter(.data[[variable]] == max_val) %>%
+    dplyr::slice(1) %>%
+    dplyr::pull(State)
+  
+  text_max <- paste0(
+    " The highest state or territory was ",
+    max_state,
+    " at ",
+    format_value(max_val, variable),
+    "."
+  )
+  
+  paste0(text_min, text_max)
   
   # Max static check
   # max_text_static <- demographics %>%

@@ -1,3 +1,7 @@
+/* ================================
+   ADA-PARC Table Styling (Slate)
+   ================================ */
+
 table {
   border-spacing: 1;
   border-collapse: separate !important;
@@ -7,33 +11,162 @@ table {
   margin: 0 auto;
 }
 
+/* Allow horizontal scrolling for wide tables */
 .chart-shim {
-      overflow: auto;
-    }
-
-table td, table th {
-  padding-left: 8px;
+  overflow: auto;
 }
+
+/* Cell padding */
+table td,
+table th {
+  padding: 8px;
+}
+
+/* Zebra striping for rows */
 tr:nth-child(even) {
   background-color: #f2f2f2;
 }
+
+/* ----- TABLE HEADER (THEAD) ----- */
+/* Uses gunmetal slate (#4A5A67) for accessibility */
 table thead tr {
   height: 60px;
-  background: #8799FF;
+  background: #4A5A67;     /* Gunmetal slate */
   font-size: 16px;
-  position: -webkit-sticky;
+  color: white !important; /* Ensures contrast */
   position: sticky;
   top: 0;
+  z-index: 2;               /* Prevent overlap issues */
 }
 
+/* Last row bottom border removed */
 table tbody tr:last-child {
   border: 0;
 }
-table td, table th {
+
+/* Column alignment */
+table td {
+  text-align: center; /* Center data cells */
+}
+
+/* Left-align the first column (State) */
+table td:first-child {
+  text-align: left;
+}
+
+/* Header text alignment */
+table th {
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Improve focus outline visibility for keyboard users */
+table td:focus,
+table th:focus {
+  outline: 2px solid #4A5A67;
+  outline-offset: 2px;
+}
+
+/* Spinner container */
+.shiny-spinner-output-container {
+  height: 100%;
+}
+
+/* --------------------------------
+   National Data table refinements
+   -------------------------------- */
+
+/* Fix overly wide columns by using fixed layout + wrapping */
+.table_national {
+  table-layout: fixed;          /* columns share available width */
+  width: 100%;                  /* keep full-width */
+}
+
+/* Header cells: wrap long names, cap width, center text */
+.table_national th {
+  white-space: normal;          /* allow wrapping */
+  word-wrap: break-word;        /* wrap long words */
+  word-break: break-word;       /* force break if needed */
+  max-width: 160px;             /* cap header width before wrapping */
+  text-align: center;           /* center header text */
+}
+
+/* Center all body cells except first (State) */
+.table_national td {
+  text-align: center;
+}
+
+.table_national td:first-child {
   text-align: left;
 }
 
 
-.shiny-spinner-output-container {
-  height: 100%;
+/* ============================================
+   ADA-PARC Gunmetal Slate Navbar & Primary UI
+   ============================================ */
+
+:root {
+  --slate-primary: #4A5A67;
+  --slate-primary-dark: #3b4853;
+}
+
+/* Navbar background & border */
+.navbar,
+.navbar-default,
+.navbar-inverse {
+  background-color: var(--slate-primary) !important;
+  border-color: var(--slate-primary) !important;
+}
+
+/* Navbar brand + links (default state) */
+.navbar .navbar-brand,
+.navbar .navbar-nav > li > a {
+  color: #ffffff !important;
+}
+
+/* Navbar brand + links on hover/focus */
+.navbar .navbar-brand:hover,
+.navbar .navbar-brand:focus,
+.navbar .navbar-nav > li > a:hover,
+.navbar .navbar-nav > li > a:focus {
+  color: #f5f5f5 !important;
+  background-color: transparent !important;
+}
+
+/* Active nav item */
+.navbar .navbar-nav > .active > a,
+.navbar .navbar-nav > .active > a:hover,
+.navbar .navbar-nav > .active > a:focus {
+  background-color: var(--slate-primary-dark) !important;
+  border-color: var(--slate-primary-dark) !important;
+  color: #ffffff !important;
+}
+
+/* Open dropdown in navbar */
+.navbar .navbar-nav > .open > a,
+.navbar .navbar-nav > .open > a:hover,
+.navbar .navbar-nav > .open > a:focus {
+  background-color: var(--slate-primary-dark) !important;
+  border-color: var(--slate-primary-dark) !important;
+  color: #ffffff !important;
+}
+
+/* Primary buttons (for consistency with navbar) */
+.btn-primary,
+.btn-primary:focus,
+.btn-primary:active,
+.open > .dropdown-toggle.btn-primary {
+  background-color: var(--slate-primary) !important;
+  border-color: var(--slate-primary) !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--slate-primary-dark) !important;
+  border-color: var(--slate-primary-dark) !important;
+}
+
+/* Focus outline on form controls (e.g., selectInput) */
+.form-control:focus {
+  border-color: var(--slate-primary) !important;
+  box-shadow: 0 0 5px rgba(74, 90, 103, 0.5) !important;
 }
