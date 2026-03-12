@@ -546,7 +546,7 @@ server <- function(input, output, session) {
     source_text <- if (national_variable_selected() %in% hud_data) {
       "2022 United States Department of Housing and Urban Development"
     } else {
-      "2019-2023 American Community Survey five-year estimates"
+      "2020-2024 American Community Survey five-year estimates"
     }
     full_text <- paste0(".<br><br>Source: ", source_text)
     HTML(
@@ -960,7 +960,7 @@ server <- function(input, output, session) {
 
     city_summary_text <- paste0(
       "<h3>People with Disabilities - Summary Tables</h3>",
-      "Based on ACS 2023 5-Year Estimates, <b>", fmt_num(city_place()$pop_cni_dis_total_place),
+      "Based on ACS 2024 5-Year Estimates, <b>", fmt_num(city_place()$pop_cni_dis_total_place),
       "</b> of the city's <b>", fmt_num(city_place()$pop_cni_total_all),
       "</b> residents (<b>", fmt_pct_1dp(city_place()$pct_cni_total_dis_place), "</b>) are people with disabilities.<br><br>"
     )
@@ -1004,7 +1004,7 @@ server <- function(input, output, session) {
 
     employment <- city_place() %>%
       transmute(
-        `Living below poverty (as of 2023, yearly income below $14,891 for individual or $29,60 for family of four)` =
+        `Living below poverty (as of 2024, yearly income below $14,891 for individual or $29,60 for family of four)` =
           create_number_percent_string(pop_cni_18to64_poverty_dis, pct_cni_18to64_poverty_dis),
         `Employed (part or full time)` =
           create_number_percent_string(pop_cni_16plus_employed_dis, pct_cni_16plus_employed_dis),
@@ -1053,7 +1053,6 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 ```
 
-
 # Scorecards
 
 ```{r tableau scorecards}
@@ -1093,7 +1092,7 @@ ui <- fluidPage(
       ),
 
       HTML("<p style='margin-top: 20px; font-size: 16px;'>
-        <strong>Scorecards are based on 2023 ACS Census data.</strong>
+        <strong>Scorecards are based on 2024 ACS Census data.</strong>
         Scores are displayed in two ways: Firstly, a 0–100 score where 100 means FAR BETTER than the median state and 0 means FAR WORSE than the median state.
         Secondly, quartiles are displayed to show discrepancies in outcomes for people with disabilities across states.
         <strong>Q1</strong> are the worst scores, representing poor opportunity for people with disabilities,
@@ -1116,38 +1115,37 @@ server <- function(input, output, session) {
 
   output$scorecard_ui <- renderUI({
 
-    # Community Participation (CP)
+    # Community Participation (CP) — NEW EMBED (InsuranceAccessScore)
     if (input$scorecard_choice == "participation") {
 
       HTML("
-        <div class='tableauPlaceholder' id='viz1768413862460' style='position: relative'>
+        <div class='tableauPlaceholder' id='viz1770134404590' style='position: relative'>
           <noscript>
             <a href='#'>
-              <img alt=' ' src='https://public.tableau.com/static/images/Co/CommunityParticipation2023ACS-5ADA-PARC/EducationAccessScore/1_rss.png' style='border: none' />
+              <img alt=' ' src='https://public.tableau.com/static/images/Co/CommunityParticipation2023ACS-5ADA-PARC/InsuranceAccessScore/1_rss.png' style='border: none' />
             </a>
           </noscript>
           <object class='tableauViz' style='display:none;'>
             <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
             <param name='embed_code_version' value='3' />
             <param name='site_root' value='' />
-            <param name='name' value='CommunityParticipation2023ACS-5ADA-PARC/EducationAccessScore' />
+            <param name='name' value='CommunityParticipation2023ACS-5ADA-PARC/InsuranceAccessScore' />
             <param name='tabs' value='yes' />
             <param name='toolbar' value='yes' />
-            <param name='static_image' value='https://public.tableau.com/static/images/Co/CommunityParticipation2023ACS-5ADA-PARC/EducationAccessScore/1.png' />
+            <param name='static_image' value='https://public.tableau.com/static/images/Co/CommunityParticipation2023ACS-5ADA-PARC/InsuranceAccessScore/1.png' />
             <param name='animate_transition' value='yes' />
             <param name='display_static_image' value='yes' />
             <param name='display_spinner' value='yes' />
             <param name='display_overlay' value='yes' />
             <param name='display_count' value='yes' />
             <param name='language' value='en-US' />
-            <param name='filter' value='publish=yes' />
           </object>
         </div>
 
         <script type='text/javascript'>
-          var divElement = document.getElementById('viz1768413862460');
+          var divElement = document.getElementById('viz1770134404590');
           var vizElement = divElement.getElementsByTagName('object')[0];
-          vizElement.style.width = '100%';
+          vizElement.style.width  = '100%';
           vizElement.style.height = '850px';
 
           var scriptElement = document.createElement('script');
@@ -1156,38 +1154,37 @@ server <- function(input, output, session) {
         </script>
       ")
 
-    # Community Living (CL) — UPDATED
+    # Community Living (CL) — NEW EMBED (CommunityLivingIndex)
     } else if (input$scorecard_choice == "living") {
 
       HTML("
-        <div class='tableauPlaceholder' id='viz1768414249440' style='position: relative'>
+        <div class='tableauPlaceholder' id='viz1770134442698' style='position: relative'>
           <noscript>
             <a href='#'>
-              <img alt=' ' src='https://public.tableau.com/static/images/Co/CommunityLiving2023ACS-5ADA-PARC/CommunalLivingIndex/1_rss.png' style='border: none' />
+              <img alt=' ' src='https://public.tableau.com/static/images/Co/CommunityLiving2023ACS-5ADA-PARC/CommunityLivingIndex/1_rss.png' style='border: none' />
             </a>
           </noscript>
           <object class='tableauViz' style='display:none;'>
             <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
             <param name='embed_code_version' value='3' />
             <param name='site_root' value='' />
-            <param name='name' value='CommunityLiving2023ACS-5ADA-PARC/CommunalLivingIndex' />
+            <param name='name' value='CommunityLiving2023ACS-5ADA-PARC/CommunityLivingIndex' />
             <param name='tabs' value='yes' />
             <param name='toolbar' value='yes' />
-            <param name='static_image' value='https://public.tableau.com/static/images/Co/CommunityLiving2023ACS-5ADA-PARC/CommunalLivingIndex/1.png' />
+            <param name='static_image' value='https://public.tableau.com/static/images/Co/CommunityLiving2023ACS-5ADA-PARC/CommunityLivingIndex/1.png' />
             <param name='animate_transition' value='yes' />
             <param name='display_static_image' value='yes' />
             <param name='display_spinner' value='yes' />
             <param name='display_overlay' value='yes' />
             <param name='display_count' value='yes' />
             <param name='language' value='en-US' />
-            <param name='filter' value='publish=yes' />
           </object>
         </div>
 
         <script type='text/javascript'>
-          var divElement = document.getElementById('viz1768414249440');
+          var divElement = document.getElementById('viz1770134442698');
           var vizElement = divElement.getElementsByTagName('object')[0];
-          vizElement.style.width = '100%';
+          vizElement.style.width  = '100%';
           vizElement.style.height = '850px';
 
           var scriptElement = document.createElement('script');
@@ -1196,38 +1193,37 @@ server <- function(input, output, session) {
         </script>
       ")
 
-    # Work Economic (WE)
+    # Work Economic (WE) — NEW EMBED (EmploymentIndex, updated workbook name)
     } else if (input$scorecard_choice == "work_economic") {
 
       HTML("
-        <div class='tableauPlaceholder' id='viz1768413874880' style='position: relative'>
+        <div class='tableauPlaceholder' id='viz1770134425800' style='position: relative'>
           <noscript>
             <a href='#'>
-              <img alt=' ' src='https://public.tableau.com/static/images/Wo/WorkEconomic2023ACS-5ADA-PARC/EmploymentIndex/1_rss.png' style='border: none' />
+              <img alt=' ' src='https://public.tableau.com/static/images/Wo/WorkEconomic2023ACS-5ADA-PARC_17700831880830/EmploymentIndex/1_rss.png' style='border: none' />
             </a>
           </noscript>
           <object class='tableauViz' style='display:none;'>
             <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
             <param name='embed_code_version' value='3' />
             <param name='site_root' value='' />
-            <param name='name' value='WorkEconomic2023ACS-5ADA-PARC/EmploymentIndex' />
+            <param name='name' value='WorkEconomic2023ACS-5ADA-PARC_17700831880830/EmploymentIndex' />
             <param name='tabs' value='yes' />
             <param name='toolbar' value='yes' />
-            <param name='static_image' value='https://public.tableau.com/static/images/Wo/WorkEconomic2023ACS-5ADA-PARC/EmploymentIndex/1.png' />
+            <param name='static_image' value='https://public.tableau.com/static/images/Wo/WorkEconomic2023ACS-5ADA-PARC_17700831880830/EmploymentIndex/1.png' />
             <param name='animate_transition' value='yes' />
             <param name='display_static_image' value='yes' />
             <param name='display_spinner' value='yes' />
             <param name='display_overlay' value='yes' />
             <param name='display_count' value='yes' />
             <param name='language' value='en-US' />
-            <param name='filter' value='publish=yes' />
           </object>
         </div>
 
         <script type='text/javascript'>
-          var divElement = document.getElementById('viz1768413874880');
+          var divElement = document.getElementById('viz1770134425800');
           var vizElement = divElement.getElementsByTagName('object')[0];
-          vizElement.style.width = '100%';
+          vizElement.style.width  = '100%';
           vizElement.style.height = '850px';
 
           var scriptElement = document.createElement('script');
@@ -1242,7 +1238,6 @@ server <- function(input, output, session) {
 # Run the application
 shinyApp(ui = ui, server = server)
 ```
-
 
 # Fact Sheets
 
@@ -1356,9 +1351,6 @@ ui <- tagList(
 shinyApp(ui = ui, server = server)
 ```
 
-
-
-
 # Help
 
 ```{r accessibility-page-body}
@@ -1452,8 +1444,6 @@ tags$div(
   )
 )
 ```
-
-
 
 <!-- Custom Javascript  -->
 
