@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>State Spending on Community Living | ADA-PARC Factsheet</title>
+  <meta name="description" content="ADA-PARC factsheet on state spending on Home and Community-Based Services (HCBS) for people with disabilities, with state-by-state data on Medicaid community living expenditures.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:        #1c2b3a;
+      --navy-dark:   #152233;
+      --gold-banner: #f5c842;
+      --bg-page:     #f5f7fa;
+      --bg-card:     #ffffff;
+      --border:      #e4e8ef;
+      --text-body:   #1c2b3a;
+      /* ADA-PARC canonical tier palette (matches scorecard):
+         Excellent = deep maroon (best performance)
+         Poor      = pale gold   (worst performance) */
+      --tier-excellent-bg:   #630801;
+      --tier-excellent-text: #ffffff;
+      --tier-above-bg:       #c41306;
+      --tier-above-text:     #ffffff;
+      --tier-below-bg:       #fa8e57;
+      --tier-below-text:     #1c2b3a;
+      --tier-poor-bg:        #e8c84a;
+      --tier-poor-text:      #1c2b3a;
+      --tier-na-bg:          #e0e0e0;
+      --tier-na-text:        #444444;
+      /* Backwards-compatible aliases so legacy .best/.good/.fair/.worst
+         class selectors keep working with the new palette. */
+      --tier-best-bg:    var(--tier-excellent-bg);
+      --tier-best-text:  var(--tier-excellent-text);
+      --tier-good-bg:    var(--tier-above-bg);
+      --tier-good-text:  var(--tier-above-text);
+      --tier-fair-bg:    var(--tier-below-bg);
+      --tier-fair-text:  var(--tier-below-text);
+      --tier-worst-bg:   var(--tier-poor-bg);
+      --tier-worst-text: var(--tier-poor-text);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'EB Garamond', Garamond, Georgia, serif; font-size: 18px; line-height: 1.65; color: var(--text-body); background: var(--bg-page); }
+    .skip-link { position: absolute; top: -3rem; left: 1rem; background: var(--navy); color: #fff; padding: .5rem 1rem; border-radius: 0 0 4px 4px; font-weight: 600; text-decoration: none; z-index: 100; transition: top .2s; }
+    .skip-link:focus { top: 0; }
+    :focus-visible { outline: 3px solid #0d3b8e; outline-offset: 2px; border-radius: 2px; }
+    .page-wrapper { max-width: 900px; margin: 0 auto; background: var(--bg-card); box-shadow: 0 2px 16px rgba(28,43,58,.10); }
+    /* Header */
+    .factsheet-header { background: var(--gold-banner); padding: 1rem 1.5rem; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; border-bottom: 3px solid #d4a800; }
+    .logo-adaparc { font-family: 'EB Garamond', serif; font-size: 1.3rem; font-weight: 700; line-height: 1.1; color: var(--navy); white-space: nowrap; }
+    .logo-adaparc .ada { color: #1c6ab0; }
+    .logo-adaparc .parc { color: #c2410c; }
+    .header-title { text-align: center; }
+    .header-title h1 { font-size: 1.4rem; font-weight: 700; color: var(--navy); line-height: 1.25; margin-bottom: .2rem; }
+    .header-title .published { font-size: .95rem; color: #4a3800; font-style: italic; }
+    .logo-ada-national { font-family: 'EB Garamond', serif; font-size: 1.1rem; font-weight: 700; color: #1c6ab0; text-align: center; white-space: nowrap; border: 2px solid #1c6ab0; padding: .3rem .5rem; border-radius: 3px; }
+    /* Body */
+    .factsheet-body { padding: 2rem 2.5rem; }
+    .intro-section p { margin-bottom: 1rem; }
+    .intro-section p:last-child { margin-bottom: 0; }
+    .section-heading { font-size: 1.25rem; font-weight: 700; color: var(--navy); margin: 2rem 0 .75rem; padding-bottom: .4rem; border-bottom: 2px solid var(--border); }
+    /* Direction note */
+    .direction-note { background: #e8f0e8; border-left: 4px solid #166534; border-radius: 0 6px 6px 0; padding: .75rem 1.1rem; margin-bottom: 1.25rem; font-size: .95rem; }
+    .direction-note strong { color: #166534; }
+    /* Map */
+    .map-figure { margin: 1rem 0; }
+    .map-title { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: .6rem; line-height: 1.3; }
+    .map-container { background: #f0f4f9; border-radius: 6px; min-height: 260px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .map-container svg { display: block; }
+    .map-loading { color: #4a5a67; font-size: .9rem; font-style: italic; padding: 1rem; }
+    .map-error { color: #b91c1c; font-size: .9rem; padding: 1rem; }
+    .map-noscript { font-size: .9rem; color: #4a5a67; padding: 1rem; }
+    /* Legend */
+    .map-legend { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 .5rem; align-items: center; }
+    .map-caption { font-size: .82rem; color: #4a5a67; line-height: 1.45; margin-top: .5rem; }
+    .map-caption a { color: #0d3b8e; }
+    /* Tier chips */
+    .tier-chip { display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 100px; font-size: .8rem; font-weight: 700; letter-spacing: .03em; }
+    .tier-chip.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
+    .tier-chip.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
+    .tier-chip.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
+    .tier-chip.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
+    /* Tables */
+    .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
+    .tier-table-group { margin-bottom: 1.25rem; }
+    .tier-header { display: block; padding: .4rem .75rem; font-weight: 700; font-size: 1rem; letter-spacing: .04em; text-transform: uppercase; border-radius: 4px 4px 0 0; }
+    .tier-header.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
+    .tier-header.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
+    .tier-header.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
+    .tier-header.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
+    table { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--bg-card); }
+    thead tr { background: var(--navy); color: #fff; }
+    thead th { padding: .5rem .75rem; text-align: left; font-weight: 600; font-size: .85rem; letter-spacing: .03em; }
+    thead th:not(:first-child) { text-align: right; }
+    tbody tr:nth-child(even) { background: #fafbfd; }
+    tbody td { padding: .4rem .75rem; border-bottom: 1px solid var(--border); }
+    tbody td:not(:first-child) { text-align: right; }
+    tbody tr:last-child td { border-bottom: none; }
+    /* Footnotes */
+    .footnotes { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .82rem; color: #4a5a67; line-height: 1.5; }
+    .footnotes ol { padding-left: 1.2rem; }
+    .footnotes li { margin-bottom: .35rem; }
+    /* Footer */
+    .factsheet-footer { background: #f0f4f9; border-top: 2px solid var(--border); padding: 1.25rem 2.5rem; font-size: .9rem; line-height: 1.55; }
+    .factsheet-footer p { margin-bottom: .5rem; }
+    .factsheet-footer p:last-child { margin-bottom: 0; }
+    .factsheet-footer a { color: #0d3b8e; }
+    .factsheet-footer a:hover { text-decoration: underline; }
+    .funding-note { font-style: italic; font-size: .85rem; color: #4a5a67; margin-bottom: .75rem !important; }
+    /* SVG state hover */
+    .state-path { transition: opacity .15s; cursor: default; }
+    .state-path:hover { opacity: .8; }
+    /* Responsive */
+    @media (max-width: 680px) {
+      .tables-grid { grid-template-columns: 1fr; }
+      .factsheet-body { padding: 1.25rem; }
+      .factsheet-header { grid-template-columns: 1fr; text-align: center; }
+    }
+    @media print {
+      body { background: #fff; font-size: 11pt; }
+      .page-wrapper { box-shadow: none; max-width: 100%; }
+      .skip-link { display: none; }
+      .factsheet-body { padding: 1rem; }
+      .tables-grid { grid-template-columns: 1fr 1fr; }
+    }
+  
+    /* ─── ADA-PARC tier classes (new canonical names) ─── */
+    .tier-chip.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .tier-chip.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .tier-chip.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .tier-chip.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    .tier-chip.na        { background: var(--tier-na-bg);        color: var(--tier-na-text); }
+    .tier-header.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .tier-header.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .tier-header.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .tier-header.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    /* ─── Enhanced SVG state interactivity (hover + keyboard focus) ─── */
+    .state-path { transition: filter .15s ease, stroke .15s ease, stroke-width .15s ease; cursor: pointer; outline: none; }
+    .state-path:hover,
+    .state-path:focus-visible { stroke: #1c2b3a; stroke-width: 2.25; filter: brightness(1.06); }
+    .state-path.is-active { stroke: #1c2b3a; stroke-width: 2.5; }
+    /* ─── Floating tooltip for hover / keyboard focus ─── */
+    .map-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: #1c2b3a;
+      color: #ffffff;
+      font-family: 'EB Garamond', Garamond, Georgia, serif;
+      font-size: .9rem;
+      line-height: 1.35;
+      padding: .55rem .8rem;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.18);
+      max-width: 260px;
+      z-index: 20;
+      opacity: 0;
+      transform: translate(-50%, calc(-100% - 10px));
+      transition: opacity .12s ease;
+    }
+    .map-tooltip[data-visible="true"] { opacity: 1; }
+    .map-tooltip .mt-name  { font-weight: 700; font-size: .95rem; display: block; }
+    .map-tooltip .mt-value { font-weight: 600; display: inline-block; margin-right: .35rem; }
+    .map-tooltip .mt-tier  { display: inline-block; padding: .05rem .45rem; border-radius: 3px;
+                              font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
+    .map-tooltip .mt-tier.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .map-tooltip .mt-tier.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .map-tooltip .mt-tier.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .map-tooltip .mt-tier.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    .map-tooltip .mt-tier.na        { background: var(--tier-na-bg);        color: var(--tier-na-text); }
+    .map-container { position: relative; }
+    /* ─── Screen-reader only (a11y live announcements) ─── */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+                overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    /* ─── Respect user's reduced-motion preference ─── */
+    @media (prefers-reduced-motion: reduce) {
+      .state-path { transition: none; }
+      .map-tooltip { transition: none; }
+      .skip-link   { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<div class="page-wrapper">
+
+  <header class="factsheet-header" role="banner">
+    <div class="logo-adaparc" aria-label="ADA-PARC">
+      <span class="ada">ADA</span><br>
+      <span class="parc">PARC</span>
+    </div>
+    <div class="header-title">
+      <h1>State Spending on Community Living<br>for People with Disabilities</h1>
+      <p class="published">Published by ADA-PARC, September 2025</p>
+    </div>
+    <div class="logo-ada-national" aria-label="ADA National Network">
+      <span aria-hidden="true">ada</span>
+    </div>
+  </header>
+
+  <main id="main-content" class="factsheet-body">
+
+    <section class="intro-section" aria-label="Introduction">
+      <p>The Americans with Disabilities Act (ADA) mandates the right to live in the community with supports instead of living in a nursing home or long-term care institution. This right was upheld by the U.S. Supreme Court in the landmark <em>Olmstead</em> decision in 1999.<sup>1</sup></p>
+
+      <p>Despite this right to live in the community, some states are doing worse on overall community spending, and some are doing better to support people with disabilities to live in the community. The map and tables below display <strong>total state spending per Medicaid recipient</strong>, inclusive of all waiver types (Community First Choice, Section 1915(i), Section 1915(c), Section 1515), for people with disabilities (all ages) living in the community.<sup>2</sup></p>
+
+      <p>Lower spending means fewer financial resources for people with disabilities to live in the community, or more spent on institutions like nursing homes. Higher spending means better financial support for community living. Rebalancing money toward community living remains an ADA-related disparity issue for many people with disabilities, putting them at higher risk for institutionalization. Currently, this community living support is highly dependent on the zip code and state in which you live.</p>
+    </section>
+
+    <h2 class="section-heading">State Map</h2>
+
+    <div class="direction-note" role="note">
+      <strong>Note on map color direction:</strong> For this indicator, <em>lighter colors indicate more spending</em> (better performance), and <em>darker colors indicate less spending</em> (worse performance). This is the reverse of typical maps where darker = more.
+    </div>
+
+    <figure class="map-figure">
+      <h3 class="map-title" id="hcbs-map-heading">Total Annual Community Living Spending per Medicaid Recipient, by State</h3>
+      <div id="map-hcbs" class="map-container" aria-labelledby="hcbs-map-heading hcbs-map-desc">
+        <p id="hcbs-map-desc" class="map-loading" aria-live="polite">Loading map…</p>
+        <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+      </div>
+      <div class="map-legend" aria-label="Map color legend: higher spending = better performance">
+        <span class="tier-chip excellent">Excellent (highest spending)</span>
+        <span class="tier-chip above">Above Average</span>
+        <span class="tier-chip below">Below Average</span>
+        <span class="tier-chip poor">Poor (lowest spending)</span>
+      </div>
+      <figcaption class="map-caption">Lighter colors indicate higher total annual community living spending per Medicaid recipient (better). Best-performing states include New York, Pennsylvania, California, and Texas. Worst-performing states include Wyoming, South Dakota, Hawaii, Montana, and North Dakota. Data for Puerto Rico and territories is not shown.</figcaption>
+    </figure>
+
+    <h2 class="section-heading">Total Annual Community Living Spending per Medicaid Recipient, People with Disabilities (All Ages)</h2>
+
+    <div class="tables-grid">
+      <!-- BEST + GOOD -->
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header excellent" aria-hidden="true">Excellent</span>
+          <table aria-label="Community living spending - Excellent performers states (highest total spending)">
+            <thead>
+              <tr>
+                <th scope="col">State</th>
+                <th scope="col">Total Spending</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>New York</td><td>$24,352,337,631</td></tr>
+              <tr><td>Pennsylvania</td><td>$11,501,811,134</td></tr>
+              <tr><td>California</td><td>$8,410,312,977</td></tr>
+              <tr><td>Texas</td><td>$7,618,132,390</td></tr>
+              <tr><td>Minnesota</td><td>$6,173,071,844</td></tr>
+              <tr><td>Ohio</td><td>$5,001,553,920</td></tr>
+              <tr><td>Massachusetts</td><td>$4,556,312,732</td></tr>
+              <tr><td>Washington</td><td>$4,305,820,298</td></tr>
+              <tr><td>New Jersey</td><td>$3,824,623,422</td></tr>
+              <tr><td>Florida</td><td>$3,251,864,825</td></tr>
+              <tr><td>Virginia</td><td>$3,219,386,718</td></tr>
+              <tr><td>Illinois</td><td>$3,058,280,786</td></tr>
+              <tr><td>Michigan</td><td>$3,027,565,788</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tier-table-group">
+          <span class="tier-header above" aria-hidden="true">Above Average</span>
+          <table aria-label="Community living spending - Above Average performers states">
+            <thead>
+              <tr>
+                <th scope="col">State</th>
+                <th scope="col">Total Spending</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Colorado</td><td>$2,754,594,931</td></tr>
+              <tr><td>Maryland</td><td>$2,711,437,156</td></tr>
+              <tr><td>Missouri</td><td>$2,688,024,106</td></tr>
+              <tr><td>North Carolina</td><td>$2,505,258,245</td></tr>
+              <tr><td>Indiana</td><td>$2,208,076,707</td></tr>
+              <tr><td>Georgia</td><td>$2,190,963,186</td></tr>
+              <tr><td>Connecticut</td><td>$2,091,930,016</td></tr>
+              <tr><td>Arizona</td><td>$1,920,769,216</td></tr>
+              <tr><td>Oregon</td><td>$1,775,850,967</td></tr>
+              <tr><td>Tennessee</td><td>$1,562,038,023</td></tr>
+              <tr><td>Wisconsin</td><td>$1,424,775,390</td></tr>
+              <tr><td>Kentucky</td><td>$1,334,581,396</td></tr>
+              <tr><td>Iowa</td><td>$1,197,226,211</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FAIR + WORST -->
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header below" aria-hidden="true">Below Average</span>
+          <table aria-label="Community living spending - Below Average performers states">
+            <thead>
+              <tr>
+                <th scope="col">State</th>
+                <th scope="col">Total Spending</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>New Mexico</td><td>$1,158,087,103</td></tr>
+              <tr><td>Louisiana</td><td>$1,103,252,098</td></tr>
+              <tr><td>South Carolina</td><td>$1,075,741,097</td></tr>
+              <tr><td>Maine</td><td>$857,414,381</td></tr>
+              <tr><td>West Virginia</td><td>$805,667,743</td></tr>
+              <tr><td>Kansas</td><td>$761,048,229</td></tr>
+              <tr><td>District of Columbia</td><td>$740,371,226</td></tr>
+              <tr><td>Nebraska</td><td>$679,752,487</td></tr>
+              <tr><td>Oklahoma</td><td>$670,926,590</td></tr>
+              <tr><td>Alabama</td><td>$650,206,150</td></tr>
+              <tr><td>Arkansas</td><td>$623,457,863</td></tr>
+              <tr><td>Mississippi</td><td>$585,345,772</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tier-table-group">
+          <span class="tier-header poor" aria-hidden="true">Poor</span>
+          <table aria-label="Community living spending - Poor performers states (lowest total spending)">
+            <thead>
+              <tr>
+                <th scope="col">State</th>
+                <th scope="col">Total Spending</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Idaho</td><td>$572,632,165</td></tr>
+              <tr><td>Delaware</td><td>$566,244,540</td></tr>
+              <tr><td>Rhode Island</td><td>$534,479,276</td></tr>
+              <tr><td>New Hampshire</td><td>$484,934,732</td></tr>
+              <tr><td>Nevada</td><td>$463,175,032</td></tr>
+              <tr><td>Utah</td><td>$442,841,164</td></tr>
+              <tr><td>Vermont</td><td>$385,922,326</td></tr>
+              <tr><td>Alaska</td><td>$369,377,284</td></tr>
+              <tr><td>North Dakota</td><td>$286,403,120</td></tr>
+              <tr><td>Montana</td><td>$274,181,608</td></tr>
+              <tr><td>Hawaii</td><td>$260,491,300</td></tr>
+              <tr><td>South Dakota</td><td>$195,292,498</td></tr>
+              <tr><td>Wyoming</td><td>$161,492,271</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="footnotes" role="note" aria-label="Data sources and notes">
+      <ol>
+        <li>Office for Civil Rights. (2018, June 28). <em>Serving people with disabilities in the most integrated setting: Community living and Olmstead.</em> U.S. Department of Health and Human Services.</li>
+        <li>Centers for Medicare &amp; Medicaid Services (CMS) &amp; Mathematica, <em>Medicaid LTSS Users &amp; Expenditures, 2022 Data Tables</em>, A2_LTSSExpDlvrySystm_2022.xlsx ('A.2.3 All-HCBS'); see CMS LTSS Reports &amp; Evaluations. Methodology and definitions from Mathematica (2024) <em>Users &amp; Expenditures by Service Category, 2022</em> and <em>Methodology for Identifying Medicaid LTSS Expenditures and Users, 2022.</em></li>
+      </ol>
+    </div>
+
+  </main>
+
+  <footer class="factsheet-footer" role="contentinfo">
+    <p class="funding-note">The ADA-PARC is funded by the National Institute for Disability, Independent Living, and Rehabilitation Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.</p>
+    <p>The Americans with Disabilities Act Participation Action Research Consortium (ADA-PARC) is a collaborative national project to document participation disparities experienced by people with disabilities at the national, state, and city levels. For more information on your state, visit <a href="https://adaparc.org" target="_blank" rel="noopener noreferrer">ADAPARC.ORG</a>. For more information about your rights, go to the ADA National Network at <a href="https://adata.org" target="_blank" rel="noopener noreferrer">ADATA.ORG</a>. Please contact <a href="mailto:hammel@uic.edu">hammel@uic.edu</a> with any questions.</p>
+  </footer>
+
+</div>
+
+<!-- ═══ D3 MAP SCRIPTS (ADA-PARC shared) ═══ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+// ── ADA-PARC shared map palette & renderer ─────────────────────
+const ADAPARC_TIER_COLOR = {
+  excellent: "#630801",  // deep maroon  (Excellent, best performance)
+  above:     "#c41306",  // dark red     (Above Average)
+  below:     "#fa8e57",  // orange       (Below Average)
+  poor:      "#e8c84a",  // pale gold    (Poor, worst performance)
+  na:        "#e0e0e0"
+};
+
+const ADAPARC_TIER_LABEL = {
+  excellent: "Excellent",
+  above:     "Above Average",
+  below:     "Below Average",
+  poor:      "Poor",
+  na:        "No data available"
+};
+
+// FIPS -> full state name
+const NAMES = {
+  "01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California",
+  "08":"Colorado","09":"Connecticut","10":"Delaware","11":"District of Columbia",
+  "12":"Florida","13":"Georgia","15":"Hawaii","16":"Idaho","17":"Illinois",
+  "18":"Indiana","19":"Iowa","20":"Kansas","21":"Kentucky","22":"Louisiana",
+  "23":"Maine","24":"Maryland","25":"Massachusetts","26":"Michigan","27":"Minnesota",
+  "28":"Mississippi","29":"Missouri","30":"Montana","31":"Nebraska","32":"Nevada",
+  "33":"New Hampshire","34":"New Jersey","35":"New Mexico","36":"New York",
+  "37":"North Carolina","38":"North Dakota","39":"Ohio","40":"Oklahoma",
+  "41":"Oregon","42":"Pennsylvania","44":"Rhode Island","45":"South Carolina",
+  "46":"South Dakota","47":"Tennessee","48":"Texas","49":"Utah","50":"Vermont",
+  "51":"Virginia","53":"Washington","54":"West Virginia","55":"Wisconsin","56":"Wyoming"
+};
+
+let __topoCache = null;
+async function __getTopoJSON() {
+  if (__topoCache) return __topoCache;
+  const r = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json");
+  if (!r.ok) throw new Error("Failed to fetch map data");
+  __topoCache = await r.json();
+  return __topoCache;
+}
+
+// Build or reuse a floating tooltip element attached to the map container.
+function __ensureTooltip(container, liveId) {
+  let tip = container.querySelector(".map-tooltip");
+  if (!tip) {
+    tip = document.createElement("div");
+    tip.className = "map-tooltip";
+    tip.setAttribute("role", "tooltip");
+    tip.setAttribute("aria-hidden", "true");
+    container.appendChild(tip);
+  }
+  let live = document.getElementById(liveId);
+  if (!live) {
+    live = document.createElement("div");
+    live.id = liveId;
+    live.className = "sr-only";
+    live.setAttribute("aria-live", "polite");
+    live.setAttribute("aria-atomic", "true");
+    container.appendChild(live);
+  }
+  return { tip, live };
+}
+
+/**
+ * Render an interactive, hover/keyboard-accessible choropleth.
+ * @param {object} opts
+ * @param {string} opts.containerId   DOM id of the map container
+ * @param {string} opts.descId        DOM id of the 'Loading…' paragraph to remove
+ * @param {object} opts.stateData     { FIPS -> [tier, displayValue] }
+ * @param {string} opts.svgTitle      accessible <title>
+ * @param {string} opts.svgDesc       accessible <desc>
+ * @param {string} opts.valueLabel    short label describing the value (e.g. "Poverty rate")
+ */
+async function adaparcRenderMap(opts) {
+  const { containerId, descId, stateData, svgTitle, svgDesc, valueLabel } = opts;
+  const container = document.getElementById(containerId);
+  const descEl    = descId ? document.getElementById(descId) : null;
+  if (!container) return;
+
+  try {
+    const us = await __getTopoJSON();
+    const W = 880, H = 540;
+    container.innerHTML = "";
+
+    const { tip, live } = __ensureTooltip(container, containerId + "-live");
+
+    const svg = d3.select(container)
+      .append("svg")
+      .attr("viewBox", `0 0 ${W} ${H}`)
+      .attr("width", "100%")
+      .attr("role", "img")
+      .attr("aria-labelledby", `${containerId}-svgtitle ${containerId}-svgdesc`);
+
+    svg.append("title")
+      .attr("id", `${containerId}-svgtitle`)
+      .text(svgTitle);
+    svg.append("desc")
+      .attr("id", `${containerId}-svgdesc`)
+      .text(svgDesc);
+
+    const proj    = d3.geoAlbersUsa().scale(1080).translate([W / 2, H / 2]);
+    const pathGen = d3.geoPath().projection(proj);
+    const states  = topojson.feature(us, us.objects.states);
+
+    function showInfo(fips, el, evt) {
+      const name = NAMES[fips] || "Unknown state";
+      const row  = stateData[fips];
+      const tier = row ? row[0] : "na";
+      const val  = row ? row[1] : "N/A";
+      const tierLabel = ADAPARC_TIER_LABEL[tier] || "No data available";
+      tip.innerHTML =
+          '<span class="mt-name">' + name + '</span>' +
+          '<span class="mt-value">' + (valueLabel || "Value") + ': ' + val + '</span>' +
+          '<span class="mt-tier ' + tier + '">' + tierLabel + '</span>';
+      tip.setAttribute("aria-hidden", "false");
+      tip.dataset.visible = "true";
+
+      // Position tooltip
+      const rect = container.getBoundingClientRect();
+      let x, y;
+      if (evt && (evt.clientX !== undefined)) {
+        x = evt.clientX - rect.left;
+        y = evt.clientY - rect.top;
+      } else if (el) {
+        const b = el.getBoundingClientRect();
+        x = b.left - rect.left + b.width / 2;
+        y = b.top  - rect.top;
+      } else {
+        x = rect.width / 2;
+        y = 40;
+      }
+      // Clamp so tip stays inside the container
+      const minX = 60, maxX = rect.width - 60;
+      if (x < minX) x = minX;
+      if (x > maxX) x = maxX;
+      tip.style.left = x + "px";
+      tip.style.top  = y + "px";
+
+      live.textContent = name + ', ' + (valueLabel || 'value') + ' ' + val + ', ' + tierLabel + '.';
+    }
+    function hideInfo() {
+      tip.dataset.visible = "false";
+      tip.setAttribute("aria-hidden", "true");
+    }
+
+    svg.selectAll("path.state-path")
+      .data(states.features)
+      .join("path")
+      .attr("class", "state-path")
+      .attr("d", pathGen)
+      .attr("tabindex", 0)
+      .attr("fill", d => {
+        const fips = String(d.id).padStart(2, "0");
+        const row  = stateData[fips];
+        return row ? ADAPARC_TIER_COLOR[row[0]] : ADAPARC_TIER_COLOR.na;
+      })
+      .attr("stroke", "#ffffff")
+      .attr("stroke-width", 0.6)
+      .attr("role", "button")
+      .attr("aria-label", d => {
+        const fips = String(d.id).padStart(2, "0");
+        const name = NAMES[fips] || "Unknown state";
+        const row  = stateData[fips];
+        const val  = row ? row[1] : "N/A";
+        const tier = row ? ADAPARC_TIER_LABEL[row[0]] : ADAPARC_TIER_LABEL.na;
+        return name + ': ' + (valueLabel || 'value') + ' ' + val + ', ' + tier + '.';
+      })
+      .each(function(d) {
+        // Keep a native SVG <title> for baseline browser/AT support
+        const fips = String(d.id).padStart(2, "0");
+        const name = NAMES[fips] || "Unknown state";
+        const row  = stateData[fips];
+        const val  = row ? row[1] : "N/A";
+        const tier = row ? ADAPARC_TIER_LABEL[row[0]] : ADAPARC_TIER_LABEL.na;
+        d3.select(this).append("title")
+          .text(name + ': ' + val + ' (' + tier + ')');
+      })
+      .on("mouseenter", function(event, d) {
+        const fips = String(d.id).padStart(2, "0");
+        d3.select(this).raise().classed("is-active", true);
+        showInfo(fips, this, event);
+      })
+      .on("mousemove", function(event, d) {
+        const fips = String(d.id).padStart(2, "0");
+        showInfo(fips, this, event);
+      })
+      .on("mouseleave", function() {
+        d3.select(this).classed("is-active", false);
+        hideInfo();
+      })
+      .on("focus", function(event, d) {
+        const fips = String(d.id).padStart(2, "0");
+        d3.select(this).raise().classed("is-active", true);
+        showInfo(fips, this, null);
+      })
+      .on("blur", function() {
+        d3.select(this).classed("is-active", false);
+        hideInfo();
+      });
+
+    svg.append("path")
+      .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
+      .attr("fill", "none")
+      .attr("stroke", "#ffffff")
+      .attr("stroke-width", 0.5)
+      .attr("d", pathGen)
+      .attr("aria-hidden", "true")
+      .style("pointer-events", "none");
+
+    if (descEl) descEl.remove();
+
+  } catch (err) {
+    container.innerHTML =
+      '<div class="map-error" role="alert">Map could not be loaded (' + err.message +
+      '). All data is available in the table below.</div>';
+  }
+}
+// Expose globally for per-factsheet code blocks.
+window.adaparcRenderMap = adaparcRenderMap;
+window.ADAPARC_TIER_COLOR = ADAPARC_TIER_COLOR;
+window.ADAPARC_TIER_LABEL = ADAPARC_TIER_LABEL;
+
+// HCBS spending: total annual community living spend per Medicaid recipient.
+// Higher spending = better performance (Excellent).
+const HCBS_DATA = {
+  "01":["below","$650M"],"02":["poor","$369M"],"04":["above","$1.9B"],
+  "05":["below","$623M"],"06":["excellent","$8.4B"],"08":["above","$2.8B"],
+  "09":["above","$2.1B"],"10":["poor","$566M"],"11":["below","$740M"],
+  "12":["excellent","$3.3B"],"13":["above","$2.2B"],"15":["poor","$260M"],
+  "16":["poor","$573M"],"17":["excellent","$3.1B"],"18":["above","$2.2B"],
+  "19":["above","$1.2B"],"20":["below","$761M"],"21":["above","$1.3B"],
+  "22":["below","$1.1B"],"23":["below","$857M"],"24":["above","$2.7B"],
+  "25":["excellent","$4.6B"],"26":["excellent","$3.0B"],"27":["excellent","$6.2B"],
+  "28":["below","$585M"],"29":["above","$2.7B"],"30":["poor","$274M"],
+  "31":["below","$680M"],"32":["poor","$463M"],"33":["poor","$485M"],
+  "34":["excellent","$3.8B"],"35":["below","$1.2B"],"36":["excellent","$24.4B"],
+  "37":["above","$2.5B"],"38":["poor","$286M"],"39":["excellent","$5.0B"],
+  "40":["below","$671M"],"41":["above","$1.8B"],"42":["excellent","$11.5B"],
+  "44":["poor","$534M"],"45":["below","$1.1B"],"46":["poor","$195M"],
+  "47":["above","$1.6B"],"48":["excellent","$7.6B"],"49":["poor","$443M"],
+  "50":["poor","$386M"],"51":["excellent","$3.2B"],"53":["excellent","$4.3B"],
+  "54":["below","$806M"],"55":["above","$1.4B"],"56":["poor","$161M"]
+};
+
+adaparcRenderMap({
+  containerId: "map-hcbs",
+  descId:      "hcbs-map-desc",
+  stateData:   HCBS_DATA,
+  valueLabel:  "Total spend",
+  svgTitle:    "Total annual community living (HCBS) spending per Medicaid recipient, by U.S. state",
+  svgDesc:     "Choropleth map of the 50 U.S. states and the District of Columbia shaded by HCBS spending tier. Deep maroon (Excellent) marks the highest-spending states: New York ($24.4B), Pennsylvania ($11.5B), California ($8.4B), Texas ($7.6B) and Minnesota ($6.2B). Pale gold (Poor) marks the lowest-spending states: Wyoming ($161M), South Dakota ($195M), Hawaii ($260M), Montana ($274M) and North Dakota ($286M). Full data is in the tables below."
+});
+</script>
+</body>
+</html>

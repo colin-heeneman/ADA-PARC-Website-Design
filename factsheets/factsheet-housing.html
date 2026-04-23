@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Access to Housing | ADA-PARC Factsheet</title>
+  <meta name="description" content="ADA-PARC factsheet on community living access to housing for people with disabilities, including state-by-state data on public housing and Housing Choice Voucher programs.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:        #1c2b3a;
+      --navy-dark:   #152233;
+      --gold-banner: #f5c842;
+      --bg-page:     #f5f7fa;
+      --bg-card:     #ffffff;
+      --border:      #e4e8ef;
+      --text-body:   #1c2b3a;
+      /* ADA-PARC canonical tier palette (matches scorecard):
+         Excellent = deep maroon (best performance)
+         Poor      = pale gold   (worst performance) */
+      --tier-excellent-bg:   #630801;
+      --tier-excellent-text: #ffffff;
+      --tier-above-bg:       #c41306;
+      --tier-above-text:     #ffffff;
+      --tier-below-bg:       #fa8e57;
+      --tier-below-text:     #1c2b3a;
+      --tier-poor-bg:        #e8c84a;
+      --tier-poor-text:      #1c2b3a;
+      --tier-na-bg:          #e0e0e0;
+      --tier-na-text:        #444444;
+      /* Backwards-compatible aliases so legacy .best/.good/.fair/.worst
+         class selectors keep working with the new palette. */
+      --tier-best-bg:    var(--tier-excellent-bg);
+      --tier-best-text:  var(--tier-excellent-text);
+      --tier-good-bg:    var(--tier-above-bg);
+      --tier-good-text:  var(--tier-above-text);
+      --tier-fair-bg:    var(--tier-below-bg);
+      --tier-fair-text:  var(--tier-below-text);
+      --tier-worst-bg:   var(--tier-poor-bg);
+      --tier-worst-text: var(--tier-poor-text);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'EB Garamond', Garamond, Georgia, serif; font-size: 18px; line-height: 1.65; color: var(--text-body); background: var(--bg-page); }
+    .skip-link { position: absolute; top: -3rem; left: 1rem; background: var(--navy); color: #fff; padding: .5rem 1rem; border-radius: 0 0 4px 4px; font-weight: 600; text-decoration: none; z-index: 100; transition: top .2s; }
+    .skip-link:focus { top: 0; }
+    :focus-visible { outline: 3px solid #0d3b8e; outline-offset: 2px; border-radius: 2px; }
+    .page-wrapper { max-width: 900px; margin: 0 auto; background: var(--bg-card); box-shadow: 0 2px 16px rgba(28,43,58,.10); }
+    /* Header */
+    .factsheet-header { background: var(--gold-banner); padding: 1rem 1.5rem; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; border-bottom: 3px solid #d4a800; }
+    .logo-adaparc { font-family: 'EB Garamond', serif; font-size: 1.3rem; font-weight: 700; line-height: 1.1; color: var(--navy); white-space: nowrap; }
+    .logo-adaparc .ada { color: #1c6ab0; }
+    .logo-adaparc .parc { color: #c2410c; }
+    .header-title { text-align: center; }
+    .header-title h1 { font-size: 1.4rem; font-weight: 700; color: var(--navy); line-height: 1.25; margin-bottom: .2rem; }
+    .header-title .published { font-size: .95rem; color: #4a3800; font-style: italic; }
+    .logo-ada-national { font-family: 'EB Garamond', serif; font-size: 1.1rem; font-weight: 700; color: #1c6ab0; text-align: center; white-space: nowrap; border: 2px solid #1c6ab0; padding: .3rem .5rem; border-radius: 3px; }
+    /* Body */
+    .factsheet-body { padding: 2rem 2.5rem; }
+    .intro-section p { margin-bottom: 1rem; }
+    .intro-section p:last-child { margin-bottom: 0; }
+    .section-heading { font-size: 1.25rem; font-weight: 700; color: var(--navy); margin: 2rem 0 .75rem; padding-bottom: .4rem; border-bottom: 2px solid var(--border); }
+    /* Maps */
+    .maps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+    .map-figure { margin: 0; }
+    .map-title { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: .6rem; line-height: 1.3; }
+    .map-container { background: #f0f4f9; border-radius: 6px; min-height: 220px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .map-container svg { display: block; }
+    .map-loading { color: #4a5a67; font-size: .9rem; font-style: italic; padding: 1rem; }
+    .map-error { color: #b91c1c; font-size: .9rem; padding: 1rem; }
+    .map-noscript { font-size: .9rem; color: #4a5a67; padding: 1rem; }
+    /* Legend */
+    .map-legend { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 .5rem; align-items: center; }
+    .map-caption { font-size: .82rem; color: #4a5a67; line-height: 1.45; margin-top: .5rem; }
+    .map-caption a { color: #0d3b8e; }
+    /* Tier chips */
+    .tier-chip { display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 100px; font-size: .8rem; font-weight: 700; letter-spacing: .03em; }
+    .tier-chip.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
+    .tier-chip.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
+    .tier-chip.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
+    .tier-chip.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
+    .tier-chip.na    { background: #e0e0e0; color: #444; }
+    /* Tables */
+    .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
+    .tier-table-group { margin-bottom: 1.25rem; }
+    .tier-header { display: block; padding: .4rem .75rem; font-weight: 700; font-size: 1rem; letter-spacing: .04em; text-transform: uppercase; border-radius: 4px 4px 0 0; }
+    .tier-header.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
+    .tier-header.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
+    .tier-header.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
+    .tier-header.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
+    table { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--bg-card); }
+    thead tr { background: var(--navy); color: #fff; }
+    thead th { padding: .5rem .75rem; text-align: left; font-weight: 600; font-size: .85rem; letter-spacing: .03em; }
+    thead th:not(:first-child) { text-align: right; }
+    tbody tr:nth-child(even) { background: #fafbfd; }
+    tbody td { padding: .4rem .75rem; border-bottom: 1px solid var(--border); }
+    tbody td:not(:first-child) { text-align: right; }
+    tbody tr:last-child td { border-bottom: none; }
+    /* Footnotes */
+    .footnotes { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .82rem; color: #4a5a67; line-height: 1.5; }
+    .footnotes ol { padding-left: 1.2rem; }
+    .footnotes li { margin-bottom: .35rem; }
+    /* Footer */
+    .factsheet-footer { background: #f0f4f9; border-top: 2px solid var(--border); padding: 1.25rem 2.5rem; font-size: .9rem; line-height: 1.55; }
+    .factsheet-footer p { margin-bottom: .5rem; }
+    .factsheet-footer p:last-child { margin-bottom: 0; }
+    .factsheet-footer a { color: #0d3b8e; }
+    .factsheet-footer a:hover { text-decoration: underline; }
+    .funding-note { font-style: italic; font-size: .85rem; color: #4a5a67; margin-bottom: .75rem !important; }
+    /* Responsive */
+    @media (max-width: 680px) {
+      .maps-grid, .tables-grid { grid-template-columns: 1fr; }
+      .factsheet-body { padding: 1.25rem; }
+      .factsheet-header { grid-template-columns: 1fr; text-align: center; }
+    }
+    @media print {
+      body { background: #fff; font-size: 11pt; }
+      .page-wrapper { box-shadow: none; max-width: 100%; }
+      .skip-link { display: none; }
+      .factsheet-body { padding: 1rem; }
+      .maps-grid, .tables-grid { grid-template-columns: 1fr 1fr; }
+    }
+    /* SVG state hover */
+    .state-path { transition: opacity .15s; cursor: default; }
+    .state-path:hover, .state-path:focus { opacity: .8; outline: none; }
+  
+    /* ─── ADA-PARC tier classes (new canonical names) ─── */
+    .tier-chip.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .tier-chip.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .tier-chip.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .tier-chip.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    .tier-chip.na        { background: var(--tier-na-bg);        color: var(--tier-na-text); }
+    .tier-header.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .tier-header.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .tier-header.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .tier-header.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    /* ─── Enhanced SVG state interactivity (hover + keyboard focus) ─── */
+    .state-path { transition: filter .15s ease, stroke .15s ease, stroke-width .15s ease; cursor: pointer; outline: none; }
+    .state-path:hover,
+    .state-path:focus-visible { stroke: #1c2b3a; stroke-width: 2.25; filter: brightness(1.06); }
+    .state-path.is-active { stroke: #1c2b3a; stroke-width: 2.5; }
+    /* ─── Floating tooltip for hover / keyboard focus ─── */
+    .map-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: #1c2b3a;
+      color: #ffffff;
+      font-family: 'EB Garamond', Garamond, Georgia, serif;
+      font-size: .9rem;
+      line-height: 1.35;
+      padding: .55rem .8rem;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.18);
+      max-width: 260px;
+      z-index: 20;
+      opacity: 0;
+      transform: translate(-50%, calc(-100% - 10px));
+      transition: opacity .12s ease;
+    }
+    .map-tooltip[data-visible="true"] { opacity: 1; }
+    .map-tooltip .mt-name  { font-weight: 700; font-size: .95rem; display: block; }
+    .map-tooltip .mt-value { font-weight: 600; display: inline-block; margin-right: .35rem; }
+    .map-tooltip .mt-tier  { display: inline-block; padding: .05rem .45rem; border-radius: 3px;
+                              font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
+    .map-tooltip .mt-tier.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .map-tooltip .mt-tier.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .map-tooltip .mt-tier.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .map-tooltip .mt-tier.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    .map-tooltip .mt-tier.na        { background: var(--tier-na-bg);        color: var(--tier-na-text); }
+    .map-container { position: relative; }
+    /* ─── Screen-reader only (a11y live announcements) ─── */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+                overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    /* ─── Respect user's reduced-motion preference ─── */
+    @media (prefers-reduced-motion: reduce) {
+      .state-path { transition: none; }
+      .map-tooltip { transition: none; }
+      .skip-link   { transition: none; }
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<div class="page-wrapper">
+
+  <header class="factsheet-header" role="banner">
+    <div class="logo-adaparc" aria-label="ADA-PARC"><span class="ada">ADA</span><br><span class="parc">PARC</span></div>
+    <div class="header-title">
+      <h1>Community Living for People with Disabilities:<br>Access to Housing</h1>
+      <p class="published">Published by ADA-PARC, September 2025</p>
+    </div>
+    <div class="logo-ada-national" aria-label="ADA National Network"><span aria-hidden="true">ada</span></div>
+  </header>
+
+  <main id="main-content" class="factsheet-body">
+
+    <section class="intro-section" aria-label="Introduction">
+      <p>The Americans with Disabilities Act (ADA) mandates the right to live in the community with supports for people with disabilities instead of living in a nursing home. Similarly, the Fair Housing Act (FHA) expands on this right by prohibiting discrimination against people with disabilities by landlords and other housing providers. Despite this right to live in the community, people with disabilities face many difficulties in finding affordable and accessible housing.</p>
+      <p>Finding and securing housing is a challenge for people with disabilities, as they are far more likely to live in poverty than their non-disabled peers. Additionally, despite protections from the ADA and FHA, people with disabilities still face a great amount of discrimination from landlords. Supports such as the Section 8 Housing Choice Voucher program (HCV) and public housing are meant to alleviate these difficulties.<sup>1</sup></p>
+      <p>Some states are doing better than others to ensure access to HCVs and public housing for people with disabilities. To honor the ADA and its mandates of inclusion, states must work to increase the representation of people with disabilities in their housing support, especially the Housing Choice Voucher program, which provides the greatest access to integrated community living.</p>
+    </section>
+
+    <h2 class="section-heading">State Maps</h2>
+    <p>Maps show the percentage of housing support going to heads of households with a disability, by state. Higher percentages indicate better performance. All map data is in the tables below. <strong>Note:</strong> Puerto Rico data is in the tables but not shown on the maps.</p>
+
+    <div class="maps-grid">
+
+      <figure class="map-figure">
+        <h3 class="map-title" id="ph-map-heading">Public Housing: % of Heads of Household with a Disability</h3>
+        <div id="map-ph" class="map-container" role="img" aria-labelledby="ph-map-heading ph-map-desc">
+          <p id="ph-map-desc" class="map-loading" aria-live="polite">Loading map…</p>
+          <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+        </div>
+        <div class="map-legend" aria-label="Map color legend: higher percentage of public housing heads of household with a disability">
+          <span class="tier-chip excellent">Excellent (&gt;44%)</span>
+          <span class="tier-chip above">Above Average (39–44%)</span>
+          <span class="tier-chip below">Below Average (36–39%)</span>
+          <span class="tier-chip poor">Poor (&lt;36%)</span>
+        </div>
+        <figcaption class="map-caption">Lighter colors = higher percentage of public housing heads of household with a disability (better). Puerto Rico (12.8%) is not shown on the map. <a href="https://adaparc.org" target="_blank" rel="noopener noreferrer">Explore the interactive version ↗</a></figcaption>
+      </figure>
+
+      <figure class="map-figure">
+        <h3 class="map-title" id="hcv-map-heading">Housing Choice Vouchers: % of Heads of Household with a Disability</h3>
+        <div id="map-hcv" class="map-container" role="img" aria-labelledby="hcv-map-heading hcv-map-desc">
+          <p id="hcv-map-desc" class="map-loading" aria-live="polite">Loading map…</p>
+          <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+        </div>
+        <div class="map-legend" aria-label="Map color legend: higher percentage of HCV heads of household with a disability">
+          <span class="tier-chip excellent">Excellent (&gt;51%)</span>
+          <span class="tier-chip above">Above Average (47–51%)</span>
+          <span class="tier-chip below">Below Average (43–47%)</span>
+          <span class="tier-chip poor">Poor (&lt;43%)</span>
+        </div>
+        <figcaption class="map-caption">Lighter colors = higher percentage of Housing Choice Voucher recipients with a disability as head of household (better). Puerto Rico (13.2%) is not shown. <a href="https://adaparc.org" target="_blank" rel="noopener noreferrer">Explore the interactive version ↗</a></figcaption>
+      </figure>
+
+    </div>
+
+    <!-- ─── PUBLIC HOUSING TABLES ─── -->
+    <h2 class="section-heading">Public Housing: % of Heads of Household with a Disability</h2>
+    <p>Higher percentages indicate more disability representation in public housing. Excellent = highest representation; Poor = lowest.</p>
+    <div class="tables-grid">
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header excellent" aria-hidden="true">Excellent</span>
+          <table aria-label="Public Housing - Excellent performers states">
+            <thead><tr><th scope="col">State</th><th scope="col">Percent</th></tr></thead>
+            <tbody>
+              <tr><td>Idaho</td><td>68.0%</td></tr>
+              <tr><td>New Hampshire</td><td>59.4%</td></tr>
+              <tr><td>Vermont</td><td>53.9%</td></tr>
+              <tr><td>Oregon</td><td>53.7%</td></tr>
+              <tr><td>Michigan</td><td>48.5%</td></tr>
+              <tr><td>Colorado</td><td>48.5%</td></tr>
+              <tr><td>Minnesota</td><td>48.4%</td></tr>
+              <tr><td>Washington</td><td>47.7%</td></tr>
+              <tr><td>Massachusetts</td><td>47.6%</td></tr>
+              <tr><td>Pennsylvania</td><td>46.8%</td></tr>
+              <tr><td>Wisconsin</td><td>45.4%</td></tr>
+              <tr><td>Maine</td><td>45.1%</td></tr>
+              <tr><td>South Dakota</td><td>44.6%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tier-table-group">
+          <span class="tier-header above" aria-hidden="true">Above Average</span>
+          <table aria-label="Public Housing - Above Average performers states">
+            <thead><tr><th scope="col">State</th><th scope="col">Percent</th></tr></thead>
+            <tbody>
+              <tr><td>Oklahoma</td><td>44.4%</td></tr>
+              <tr><td>Rhode Island</td><td>44.4%</td></tr>
+              <tr><td>Utah</td><td>43.4%</td></tr>
+              <tr><td>Iowa</td><td>43.1%</td></tr>
+              <tr><td>Connecticut</td><td>42.8%</td></tr>
+              <tr><td>Delaware</td><td>42.3%</td></tr>
+              <tr><td>Indiana</td><td>41.3%</td></tr>
+              <tr><td>New Jersey</td><td>41.0%</td></tr>
+              <tr><td>Hawaii</td><td>40.9%</td></tr>
+              <tr><td>Maryland</td><td>40.8%</td></tr>
+              <tr><td>Missouri</td><td>40.6%</td></tr>
+              <tr><td>New York</td><td>40.2%</td></tr>
+              <tr><td>New Mexico</td><td>39.6%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header below" aria-hidden="true">Below Average</span>
+          <table aria-label="Public Housing - Below Average performers states">
+            <thead><tr><th scope="col">State</th><th scope="col">Percent</th></tr></thead>
+            <tbody>
+              <tr><td>Wyoming</td><td>39.4%</td></tr>
+              <tr><td>Kentucky</td><td>39.4%</td></tr>
+              <tr><td>Arkansas</td><td>38.6%</td></tr>
+              <tr><td>Nevada</td><td>38.6%</td></tr>
+              <tr><td>Ohio</td><td>38.5%</td></tr>
+              <tr><td>West Virginia</td><td>38.1%</td></tr>
+              <tr><td>Texas</td><td>37.8%</td></tr>
+              <tr><td>Kansas</td><td>37.6%</td></tr>
+              <tr><td>Nebraska</td><td>37.5%</td></tr>
+              <tr><td>Florida</td><td>37.2%</td></tr>
+              <tr><td>Montana</td><td>36.8%</td></tr>
+              <tr><td>North Dakota</td><td>36.6%</td></tr>
+              <tr><td>Tennessee</td><td>36.1%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tier-table-group">
+          <span class="tier-header poor" aria-hidden="true">Poor</span>
+          <table aria-label="Public Housing - Poor performers states">
+            <thead><tr><th scope="col">State</th><th scope="col">Percent</th></tr></thead>
+            <tbody>
+              <tr><td>Illinois</td><td>35.8%</td></tr>
+              <tr><td>Virginia</td><td>35.5%</td></tr>
+              <tr><td>Washington DC</td><td>35.1%</td></tr>
+              <tr><td>Louisiana</td><td>34.7%</td></tr>
+              <tr><td>North Carolina</td><td>34.2%</td></tr>
+              <tr><td>Arizona</td><td>34.1%</td></tr>
+              <tr><td>Alabama</td><td>33.2%</td></tr>
+              <tr><td>California</td><td>33.0%</td></tr>
+              <tr><td>Mississippi</td><td>32.0%</td></tr>
+              <tr><td>Alaska</td><td>31.8%</td></tr>
+              <tr><td>South Carolina</td><td>31.5%</td></tr>
+              <tr><td>Georgia</td><td>30.8%</td></tr>
+              <tr><td>Puerto Rico</td><td>12.8%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── HCV TABLES ─── -->
+    <h2 class="section-heading">Housing Choice Vouchers: % of Heads of Household with a Disability</h2>
+    <p>Higher percentages indicate more disability representation in the HCV program. Excellent = highest; Poor = lowest.</p>
+    <div class="tables-grid">
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header excellent" aria-hidden="true">Excellent</span>
+          <table aria-label="Housing Choice Vouchers - Excellent performers states">
+            <thead><tr><th scope="col">State</th><th scope="col">Percent</th></tr></thead>
+            <tbody>
+              <tr><td>Maine</td><td>61.8%</td></tr>
+              <tr><td>New Hampshire</td><td>61.8%</td></tr>
+              <tr><td>Utah</td><td>61.3%</td></tr>
+              <tr><td>Idaho</td><td>61.1%</td></tr>
+              <tr><td>Vermont</td><td>60.6%</td></tr>
+              <tr><td>New Mexico</td><td>57.0%</td></tr>
+              <tr><td>Washington</td><td>56.2%</td></tr>
+              <tr><td>Wyoming</td><td>55.9%</td></tr>
+              <tr><td>Oregon</td><td>55.4%</td></tr>
+              <tr><td>Montana</td><td>54.1%</td></tr>
+              <tr><td>North Dakota</td><td>52.9%</td></tr>
+              <tr><td>Alaska</td><td>52.6%</td></tr>
+              <tr><td>Iowa</td><td>51.4%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tier-table-group">
+          <span class="tier-header above" aria-hidden="true">Above Average</span>
+          <table aria-label="Housing Choice Vouchers - Above Average performers states">
+            <thead><tr><th scope="col">State</th><th scope="col">Percent</th></tr></thead>
+            <tbody>
+              <tr><td>Colorado</td><td>51.2%</td></tr>
+              <tr><td>South Dakota</td><td>51.2%</td></tr>
+              <tr><td>California</td><td>50.8%</td></tr>
+              <tr><td>Wisconsin</td><td>50.8%</td></tr>
+              <tr><td>Nebraska</td><td>50.4%</td></tr>
+              <tr><td>Kansas</td><td>49.6%</td></tr>
+              <tr><td>Massachusetts</td><td>49.5%</td></tr>
+              <tr><td>Oklahoma</td><td>49.4%</td></tr>
+              <tr><td>Arizona</td><td>49.2%</td></tr>
+              <tr><td>West Virginia</td><td>48.0%</td></tr>
+              <tr><td>Nevada</td><td>47.6%</td></tr>
+              <tr><td>Michigan</td><td>47.4%</td></tr>
+              <tr><td>Arkansas</td><td>47.0%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header below" aria-hidden="true">Below Average</span>
+          <table aria-label="Housing Choice Vouchers - Below Average performers states">
+            <thead><tr><th scope="col">State</th><th scope="col">Percent</th></tr></thead>
+            <tbody>
+              <tr><td>New York</td><td>46.8%</td></tr>
+              <tr><td>Minnesota</td><td>46.6%</td></tr>
+              <tr><td>Ohio</td><td>46.4%</td></tr>
+              <tr><td>Pennsylvania</td><td>46.0%</td></tr>
+              <tr><td>Kentucky</td><td>45.4%</td></tr>
+              <tr><td>Missouri</td><td>45.0%</td></tr>
+              <tr><td>Indiana</td><td>44.8%</td></tr>
+              <tr><td>Rhode Island</td><td>44.5%</td></tr>
+              <tr><td>Maryland</td><td>43.6%</td></tr>
+              <tr><td>North Carolina</td><td>43.6%</td></tr>
+              <tr><td>Florida</td><td>43.3%</td></tr>
+              <tr><td>Virginia</td><td>42.9%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tier-table-group">
+          <span class="tier-header poor" aria-hidden="true">Poor</span>
+          <table aria-label="Housing Choice Vouchers - Poor performers states">
+            <thead><tr><th scope="col">State</th><th scope="col">Percent</th></tr></thead>
+            <tbody>
+              <tr><td>Texas</td><td>41.2%</td></tr>
+              <tr><td>Delaware</td><td>41.2%</td></tr>
+              <tr><td>Hawaii</td><td>40.5%</td></tr>
+              <tr><td>Connecticut</td><td>40.3%</td></tr>
+              <tr><td>New Jersey</td><td>39.4%</td></tr>
+              <tr><td>Louisiana</td><td>39.0%</td></tr>
+              <tr><td>Tennessee</td><td>38.4%</td></tr>
+              <tr><td>Illinois</td><td>37.9%</td></tr>
+              <tr><td>South Carolina</td><td>37.5%</td></tr>
+              <tr><td>Georgia</td><td>36.8%</td></tr>
+              <tr><td>Washington DC</td><td>36.5%</td></tr>
+              <tr><td>Mississippi</td><td>34.4%</td></tr>
+              <tr><td>Alabama</td><td>33.2%</td></tr>
+              <tr><td>Puerto Rico</td><td>13.2%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="footnotes" role="note" aria-label="Data source">
+      <ol>
+        <li>U.S. Department of Housing and Urban Development (HUD), PD&amp;R, <em>A Picture of Subsidized Households (PSH)</em>, state totals (Summary Level 3), Public Housing (program=2) and Housing Choice Vouchers (program=3).</li>
+      </ol>
+    </div>
+  </main>
+
+  <footer class="factsheet-footer" role="contentinfo">
+    <p class="funding-note">The ADA-PARC is funded by the National Institute for Disability, Independent Living, and Rehabilitation Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.</p>
+    <p>The Americans with Disabilities Act Participation Action Research Consortium (ADA-PARC) is a collaborative national project to document participation disparities experienced by people with disabilities at the national, state, and city levels. For more information on your state, visit <a href="https://adaparc.org" target="_blank" rel="noopener noreferrer">ADAPARC.ORG</a>. For more information about your rights, go to the ADA National Network at <a href="https://adata.org" target="_blank" rel="noopener noreferrer">ADATA.ORG</a>. Please contact <a href="mailto:hammel@uic.edu">hammel@uic.edu</a> with any questions.</p>
+  </footer>
+</div>
+
+<!-- ═══ D3 MAP SCRIPTS (ADA-PARC shared) ═══ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+// ── ADA-PARC shared map palette & renderer ─────────────────────
+const ADAPARC_TIER_COLOR = {
+  excellent: "#630801",  // deep maroon  (Excellent, best performance)
+  above:     "#c41306",  // dark red     (Above Average)
+  below:     "#fa8e57",  // orange       (Below Average)
+  poor:      "#e8c84a",  // pale gold    (Poor, worst performance)
+  na:        "#e0e0e0"
+};
+
+const ADAPARC_TIER_LABEL = {
+  excellent: "Excellent",
+  above:     "Above Average",
+  below:     "Below Average",
+  poor:      "Poor",
+  na:        "No data available"
+};
+
+// FIPS -> full state name
+const NAMES = {
+  "01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California",
+  "08":"Colorado","09":"Connecticut","10":"Delaware","11":"District of Columbia",
+  "12":"Florida","13":"Georgia","15":"Hawaii","16":"Idaho","17":"Illinois",
+  "18":"Indiana","19":"Iowa","20":"Kansas","21":"Kentucky","22":"Louisiana",
+  "23":"Maine","24":"Maryland","25":"Massachusetts","26":"Michigan","27":"Minnesota",
+  "28":"Mississippi","29":"Missouri","30":"Montana","31":"Nebraska","32":"Nevada",
+  "33":"New Hampshire","34":"New Jersey","35":"New Mexico","36":"New York",
+  "37":"North Carolina","38":"North Dakota","39":"Ohio","40":"Oklahoma",
+  "41":"Oregon","42":"Pennsylvania","44":"Rhode Island","45":"South Carolina",
+  "46":"South Dakota","47":"Tennessee","48":"Texas","49":"Utah","50":"Vermont",
+  "51":"Virginia","53":"Washington","54":"West Virginia","55":"Wisconsin","56":"Wyoming"
+};
+
+let __topoCache = null;
+async function __getTopoJSON() {
+  if (__topoCache) return __topoCache;
+  const r = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json");
+  if (!r.ok) throw new Error("Failed to fetch map data");
+  __topoCache = await r.json();
+  return __topoCache;
+}
+
+// Build or reuse a floating tooltip element attached to the map container.
+function __ensureTooltip(container, liveId) {
+  let tip = container.querySelector(".map-tooltip");
+  if (!tip) {
+    tip = document.createElement("div");
+    tip.className = "map-tooltip";
+    tip.setAttribute("role", "tooltip");
+    tip.setAttribute("aria-hidden", "true");
+    container.appendChild(tip);
+  }
+  let live = document.getElementById(liveId);
+  if (!live) {
+    live = document.createElement("div");
+    live.id = liveId;
+    live.className = "sr-only";
+    live.setAttribute("aria-live", "polite");
+    live.setAttribute("aria-atomic", "true");
+    container.appendChild(live);
+  }
+  return { tip, live };
+}
+
+/**
+ * Render an interactive, hover/keyboard-accessible choropleth.
+ * @param {object} opts
+ * @param {string} opts.containerId   DOM id of the map container
+ * @param {string} opts.descId        DOM id of the 'Loading…' paragraph to remove
+ * @param {object} opts.stateData     { FIPS -> [tier, displayValue] }
+ * @param {string} opts.svgTitle      accessible <title>
+ * @param {string} opts.svgDesc       accessible <desc>
+ * @param {string} opts.valueLabel    short label describing the value (e.g. "Poverty rate")
+ */
+async function adaparcRenderMap(opts) {
+  const { containerId, descId, stateData, svgTitle, svgDesc, valueLabel } = opts;
+  const container = document.getElementById(containerId);
+  const descEl    = descId ? document.getElementById(descId) : null;
+  if (!container) return;
+
+  try {
+    const us = await __getTopoJSON();
+    const W = 880, H = 540;
+    container.innerHTML = "";
+
+    const { tip, live } = __ensureTooltip(container, containerId + "-live");
+
+    const svg = d3.select(container)
+      .append("svg")
+      .attr("viewBox", `0 0 ${W} ${H}`)
+      .attr("width", "100%")
+      .attr("role", "img")
+      .attr("aria-labelledby", `${containerId}-svgtitle ${containerId}-svgdesc`);
+
+    svg.append("title")
+      .attr("id", `${containerId}-svgtitle`)
+      .text(svgTitle);
+    svg.append("desc")
+      .attr("id", `${containerId}-svgdesc`)
+      .text(svgDesc);
+
+    const proj    = d3.geoAlbersUsa().scale(1080).translate([W / 2, H / 2]);
+    const pathGen = d3.geoPath().projection(proj);
+    const states  = topojson.feature(us, us.objects.states);
+
+    function showInfo(fips, el, evt) {
+      const name = NAMES[fips] || "Unknown state";
+      const row  = stateData[fips];
+      const tier = row ? row[0] : "na";
+      const val  = row ? row[1] : "N/A";
+      const tierLabel = ADAPARC_TIER_LABEL[tier] || "No data available";
+      tip.innerHTML =
+          '<span class="mt-name">' + name + '</span>' +
+          '<span class="mt-value">' + (valueLabel || "Value") + ': ' + val + '</span>' +
+          '<span class="mt-tier ' + tier + '">' + tierLabel + '</span>';
+      tip.setAttribute("aria-hidden", "false");
+      tip.dataset.visible = "true";
+
+      // Position tooltip
+      const rect = container.getBoundingClientRect();
+      let x, y;
+      if (evt && (evt.clientX !== undefined)) {
+        x = evt.clientX - rect.left;
+        y = evt.clientY - rect.top;
+      } else if (el) {
+        const b = el.getBoundingClientRect();
+        x = b.left - rect.left + b.width / 2;
+        y = b.top  - rect.top;
+      } else {
+        x = rect.width / 2;
+        y = 40;
+      }
+      // Clamp so tip stays inside the container
+      const minX = 60, maxX = rect.width - 60;
+      if (x < minX) x = minX;
+      if (x > maxX) x = maxX;
+      tip.style.left = x + "px";
+      tip.style.top  = y + "px";
+
+      live.textContent = name + ', ' + (valueLabel || 'value') + ' ' + val + ', ' + tierLabel + '.';
+    }
+    function hideInfo() {
+      tip.dataset.visible = "false";
+      tip.setAttribute("aria-hidden", "true");
+    }
+
+    svg.selectAll("path.state-path")
+      .data(states.features)
+      .join("path")
+      .attr("class", "state-path")
+      .attr("d", pathGen)
+      .attr("tabindex", 0)
+      .attr("fill", d => {
+        const fips = String(d.id).padStart(2, "0");
+        const row  = stateData[fips];
+        return row ? ADAPARC_TIER_COLOR[row[0]] : ADAPARC_TIER_COLOR.na;
+      })
+      .attr("stroke", "#ffffff")
+      .attr("stroke-width", 0.6)
+      .attr("role", "button")
+      .attr("aria-label", d => {
+        const fips = String(d.id).padStart(2, "0");
+        const name = NAMES[fips] || "Unknown state";
+        const row  = stateData[fips];
+        const val  = row ? row[1] : "N/A";
+        const tier = row ? ADAPARC_TIER_LABEL[row[0]] : ADAPARC_TIER_LABEL.na;
+        return name + ': ' + (valueLabel || 'value') + ' ' + val + ', ' + tier + '.';
+      })
+      .each(function(d) {
+        // Keep a native SVG <title> for baseline browser/AT support
+        const fips = String(d.id).padStart(2, "0");
+        const name = NAMES[fips] || "Unknown state";
+        const row  = stateData[fips];
+        const val  = row ? row[1] : "N/A";
+        const tier = row ? ADAPARC_TIER_LABEL[row[0]] : ADAPARC_TIER_LABEL.na;
+        d3.select(this).append("title")
+          .text(name + ': ' + val + ' (' + tier + ')');
+      })
+      .on("mouseenter", function(event, d) {
+        const fips = String(d.id).padStart(2, "0");
+        d3.select(this).raise().classed("is-active", true);
+        showInfo(fips, this, event);
+      })
+      .on("mousemove", function(event, d) {
+        const fips = String(d.id).padStart(2, "0");
+        showInfo(fips, this, event);
+      })
+      .on("mouseleave", function() {
+        d3.select(this).classed("is-active", false);
+        hideInfo();
+      })
+      .on("focus", function(event, d) {
+        const fips = String(d.id).padStart(2, "0");
+        d3.select(this).raise().classed("is-active", true);
+        showInfo(fips, this, null);
+      })
+      .on("blur", function() {
+        d3.select(this).classed("is-active", false);
+        hideInfo();
+      });
+
+    svg.append("path")
+      .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
+      .attr("fill", "none")
+      .attr("stroke", "#ffffff")
+      .attr("stroke-width", 0.5)
+      .attr("d", pathGen)
+      .attr("aria-hidden", "true")
+      .style("pointer-events", "none");
+
+    if (descEl) descEl.remove();
+
+  } catch (err) {
+    container.innerHTML =
+      '<div class="map-error" role="alert">Map could not be loaded (' + err.message +
+      '). All data is available in the table below.</div>';
+  }
+}
+// Expose globally for per-factsheet code blocks.
+window.adaparcRenderMap = adaparcRenderMap;
+window.ADAPARC_TIER_COLOR = ADAPARC_TIER_COLOR;
+window.ADAPARC_TIER_LABEL = ADAPARC_TIER_LABEL;
+
+// Public Housing: % of HoHs with a disability.  Higher = better performance.
+const PH_DATA = {
+  "01":["poor","33.2%"],"02":["poor","31.8%"],"04":["poor","34.1%"],
+  "05":["below","38.6%"],"06":["poor","33.0%"],"08":["excellent","48.5%"],
+  "09":["above","42.8%"],"10":["above","42.3%"],"11":["poor","35.1%"],
+  "12":["below","37.2%"],"13":["poor","30.8%"],"15":["above","40.9%"],
+  "16":["excellent","68.0%"],"17":["poor","35.8%"],"18":["above","41.3%"],
+  "19":["above","43.1%"],"20":["below","37.6%"],"21":["below","39.4%"],
+  "22":["poor","34.7%"],"23":["excellent","45.1%"],"24":["above","40.8%"],
+  "25":["excellent","47.6%"],"26":["excellent","48.5%"],"27":["excellent","48.4%"],
+  "28":["poor","32.0%"],"29":["above","40.6%"],"30":["below","36.8%"],
+  "31":["below","37.5%"],"32":["below","38.6%"],"33":["excellent","59.4%"],
+  "34":["above","41.0%"],"35":["above","39.6%"],"36":["above","40.2%"],
+  "37":["poor","34.2%"],"38":["below","36.6%"],"39":["below","38.5%"],
+  "40":["above","44.4%"],"41":["excellent","53.7%"],"42":["excellent","46.8%"],
+  "44":["above","44.4%"],"45":["poor","31.5%"],"46":["excellent","44.6%"],
+  "47":["below","36.1%"],"48":["below","37.8%"],"49":["above","43.4%"],
+  "50":["excellent","53.9%"],"51":["poor","35.5%"],"53":["excellent","47.7%"],
+  "54":["below","38.1%"],"55":["excellent","45.4%"],"56":["below","39.4%"]
+};
+
+// Housing Choice Vouchers: % of HoHs with a disability.  Higher = better.
+const HCV_DATA = {
+  "01":["poor","33.2%"],"02":["excellent","52.6%"],"04":["above","49.2%"],
+  "05":["above","47.0%"],"06":["above","50.8%"],"08":["above","51.2%"],
+  "09":["poor","40.3%"],"10":["poor","41.2%"],"11":["poor","36.5%"],
+  "12":["below","43.3%"],"13":["poor","36.8%"],"15":["poor","40.5%"],
+  "16":["excellent","61.1%"],"17":["poor","37.9%"],"18":["below","44.8%"],
+  "19":["excellent","51.4%"],"20":["above","49.6%"],"21":["below","45.4%"],
+  "22":["poor","39.0%"],"23":["excellent","61.8%"],"24":["below","43.6%"],
+  "25":["above","49.5%"],"26":["above","47.4%"],"27":["below","46.6%"],
+  "28":["poor","34.4%"],"29":["below","45.0%"],"30":["excellent","54.1%"],
+  "31":["above","50.4%"],"32":["above","47.6%"],"33":["excellent","61.8%"],
+  "34":["poor","39.4%"],"35":["excellent","57.0%"],"36":["below","46.8%"],
+  "37":["below","43.6%"],"38":["excellent","52.9%"],"39":["below","46.4%"],
+  "40":["above","49.4%"],"41":["excellent","55.4%"],"42":["below","46.0%"],
+  "44":["below","44.5%"],"45":["poor","37.5%"],"46":["above","51.2%"],
+  "47":["poor","38.4%"],"48":["poor","41.2%"],"49":["excellent","61.3%"],
+  "50":["excellent","60.6%"],"51":["below","42.9%"],"53":["excellent","56.2%"],
+  "54":["above","48.0%"],"55":["above","50.8%"],"56":["excellent","55.9%"]
+};
+
+adaparcRenderMap({
+  containerId: "map-ph",
+  descId:      "ph-map-desc",
+  stateData:   PH_DATA,
+  valueLabel:  "% HoHs with disability",
+  svgTitle:    "Public Housing: percentage of heads of household with a disability, by U.S. state",
+  svgDesc:     "Choropleth map of the 50 U.S. states and the District of Columbia. Darker maroon shading identifies the states with the highest share of public housing heads of household with a disability (Excellent tier); pale gold shading identifies the states with the lowest share (Poor tier). Idaho (68.0%), New Hampshire (59.4%), Vermont (53.9%) and Oregon (53.7%) are among the Excellent tier. Georgia (30.8%), South Carolina (31.5%), Alaska (31.8%) and Mississippi (32.0%) are among the Poor tier. Puerto Rico (12.8%) is not shown. Full data is in the table below."
+});
+adaparcRenderMap({
+  containerId: "map-hcv",
+  descId:      "hcv-map-desc",
+  stateData:   HCV_DATA,
+  valueLabel:  "% HoHs with disability",
+  svgTitle:    "Housing Choice Vouchers: percentage of heads of household with a disability, by U.S. state",
+  svgDesc:     "Choropleth map showing Housing Choice Voucher recipients whose head of household has a disability. States in the Excellent tier (deep maroon) include Maine and New Hampshire (61.8%), Utah (61.3%) and Idaho (61.1%). States in the Poor tier (pale gold) include Alabama (33.2%), Mississippi (34.4%), Washington DC (36.5%) and Georgia (36.8%). Puerto Rico (13.2%) is not shown. Full data is in the table below."
+});
+</script>
+</body>
+</html>

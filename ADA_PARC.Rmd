@@ -24,6 +24,13 @@ resource_files:
 - www/ScorecardReport.pdf
 - www/factsheets
 - www/styles.css
+- data/final/us_states.Rds
+- scorecard/state_scorecard.qmd
+- scorecard/category_scorecard.qmd
+- scorecard/scorecard_state.css
+- scorecard/scorecard_v3.css
+- scorecard/dictionary
+- scorecard/scorecard_data
 editor_options: 
   markdown: 
     wrap: 72
@@ -62,6 +69,8 @@ library(reactR)
 
 
 
+
+extrafont::loadfonts(quiet = TRUE)
 
 options(scipen = 999999,
         tigris_use_cache = TRUE,
@@ -135,178 +144,498 @@ source(here::here("scripts", "functions.R"), local = TRUE)
 
 ```{r home}
 ui <- fluidPage(
-  theme = shinytheme("yeti"),
   tags$head(
     tags$style(HTML("
+      @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap');
+      *, *::before, *::after { box-sizing: border-box; }
       body, html {
         height: 100%;
         margin: 0;
         padding: 0;
         overflow-x: hidden;
         overflow-y: scroll;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        background: #f5f7fa;
       }
       .main-content {
-        padding: 20px;
-        box-sizing: border-box;
+        padding: 2.5rem 2.5rem 3rem 2.5rem;
         width: 100%;
-        height: 100%;
+        max-width: 880px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-left: 1px solid #e4e8ef;
+        border-right: 1px solid #e4e8ef;
+        min-height: 100vh;
+      }
+
+      /* ---- Hero ---- */
+      .home-hero {
+        text-align: center;
+        padding: 1.5rem 0 1.75rem 0;
+        border-bottom: 1px solid #e4e8ef;
+        margin-bottom: 2rem;
+      }
+      .home-logo-wrap {
+        margin-bottom: 1.25rem;
+      }
+      .home-logo-wrap img {
+        max-width: 300px;
+        height: auto;
+        display: inline-block;
       }
       .welcome-text {
-        font-size: 32px;
-        font-weight: bold;
-        color: #2c3e50;
-        text-align: center;
-        margin-bottom: 20px;
+        font-size: 2.6rem;
+        font-weight: 700;
+        color: #1c2b3a;
+        margin: 0 0 0.35rem 0;
+        line-height: 1.15;
+        letter-spacing: -0.01em;
+      }
+      .welcome-sub {
+        font-size: 1.2rem;
+        color: #4a5568;
+        margin: 0;
+        font-style: italic;
+      }
+
+      /* ---- Nav Cards ---- */
+      .nav-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.1rem;
+        margin-bottom: 2rem;
+      }
+      .nav-card {
+        background: #ffffff;
+        border: 1px solid #e4e8ef;
+        border-top: 3px solid #7B1A1A;
+        border-radius: 6px;
+        padding: 1.6rem 1.4rem 1.5rem 1.4rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: box-shadow 0.2s ease, transform 0.15s ease;
+      }
+      .nav-card:hover {
+        box-shadow: 0 6px 20px rgba(123,26,26,0.12);
+        transform: translateY(-2px);
+      }
+      .nav-card-icon {
+        width: 44px;
+        height: 44px;
+        background: #f5f0e8;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.9rem;
+        flex-shrink: 0;
+      }
+      .nav-card-icon svg {
+        width: 22px;
+        height: 22px;
+        fill: none;
+        stroke: #7B1A1A;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .nav-card-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #1c2b3a;
+        margin-bottom: 0.4rem;
+        line-height: 1.2;
+      }
+      .nav-card-desc {
+        font-size: 1.05rem;
+        color: #4a5568;
+        line-height: 1.55;
+        margin-bottom: 1.1rem;
+        flex-grow: 1;
+      }
+      .nav-card-btn {
+        display: inline-block;
+        padding: 0.45rem 1.15rem;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #ffffff !important;
+        background-color: #7B1A1A;
+        border-radius: 4px;
+        text-decoration: none !important;
+        letter-spacing: 0.02em;
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+        border: none;
+      }
+      .nav-card-btn:hover {
+        background-color: #5e1414;
+        color: #C9A428 !important;
+      }
+
+      /* ---- Info Grid ---- */
+      .home-divider {
+        border: none;
+        border-top: 1px solid #e4e8ef;
+        margin: 0 0 2rem 0;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        align-items: start;
+      }
+      .info-col-left {
+        padding-right: 2rem;
+        border-right: 1px solid #e4e8ef;
+      }
+      .info-col-right {
+        padding-left: 2rem;
+      }
+      .info-col-section {
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid #f0f2f5;
+      }
+      .info-col-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
       }
       .section-title {
-        font-size: 20px;
-        font-weight: bold;
-        color: #2c3e50;
-        margin-top: 25px;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #1c2b3a;
+        margin: 0 0 0.6rem 0;
+        line-height: 1.25;
+        border-left: 3px solid #7B1A1A;
+        padding-left: 0.6rem;
       }
       .section-subtitle {
-        font-size: 14px;
-        font-style: italic;
-        color: #2c3e50;
-        margin-bottom: 10px;
-      }
-      .section-content, .list-content, .footer {
-        font-size: 14px;
-        color: #2c3e50;
+        font-size: 1.1rem;
+        color: #4a5568;
+        margin-bottom: 0.7rem;
         line-height: 1.6;
-      }
-      .list-content {
-        margin-left: 25px;
-        margin-bottom: 10px;
-      }
-      .inline-list {
-        font-size: 13px;
-        color: #2c3e50;
-        display: inline-block;
-        width: 45%;
-        margin-right: 10px;
-      }
-      .italicized {
         font-style: italic;
-        color: #2c3e50;
       }
-      .footer {
-        font-size: 12px;
-        text-align: center;
-        border-top: 1px solid #ddd;
-        padding: 10px;
+      .section-content {
+        font-size: 1.1rem;
+        color: #2d3748;
+        line-height: 1.75;
       }
-      img {
-        display: block;
-        max-width: 100%;
-        height: auto;
-        margin: 10px auto 20px auto;
+
+      /* ---- Regions Grid ---- */
+      .regions-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.2rem 0.75rem;
+        margin: 0.5rem 0 0.85rem 0;
+        list-style: none;
+        padding: 0;
+      }
+      .regions-grid li {
+        font-size: 1.05rem;
+        color: #2d3748;
+        line-height: 1.55;
+        padding: 0.15rem 0;
+      }
+      .region-num {
+        color: #7B1A1A;
+        font-weight: 600;
+        margin-right: 0.3rem;
+      }
+
+      /* ---- Callout ---- */
+      .callout-box {
+        background: #fdf8f0;
+        border-left: 4px solid #C9A428;
+        border-radius: 4px;
+        padding: 1rem 1.2rem;
+        margin: 0.5rem 0;
+        font-size: 1.15rem;
+        color: #1c2b3a;
+        line-height: 1.7;
+        font-weight: 500;
+        font-style: italic;
+      }
+
+      /* ---- Bottom Bar ---- */
+      .bottom-bar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        background: #f8f9fb;
+        border: 1px solid #e4e8ef;
+        border-radius: 6px;
+        padding: 1.5rem 1.75rem;
+        margin-top: 2rem;
+      }
+      .bottom-col-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1c2b3a;
+        margin-bottom: 0.5rem;
+        line-height: 1.2;
+        border-left: 3px solid #7B1A1A;
+        padding-left: 0.55rem;
+      }
+      .bottom-col-body {
+        font-size: 1.05rem;
+        color: #4a5568;
+        line-height: 1.7;
+      }
+      .bottom-col-body a {
+        color: #7B1A1A;
+        text-decoration: underline;
       }
       .email-button {
         display: inline-block;
-        padding: 10px 15px;
-        font-size: 14px;
-        font-weight: bold;
-        color: white;
-        background-color: #2c3e50;
-        border-radius: 5px;
-        text-align: center;
-        text-decoration: none;
-        margin-top: 10px;
+        padding: 0.5rem 1.2rem;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: white !important;
+        background-color: #7B1A1A;
+        border-radius: 4px;
+        text-decoration: none !important;
+        margin: 0.6rem 0 0.5rem 0;
+        letter-spacing: 0.02em;
+        transition: background-color 0.2s ease;
       }
       .email-button:hover {
-        background-color: #34495e;
-        text-decoration: none;
+        background-color: #5e1414;
+        text-decoration: none !important;
+      }
+      .questions-contact {
+        font-size: 1.05rem;
+        color: #4a5568;
+        font-style: italic;
+      }
+
+      @media (max-width: 640px) {
+        .main-content { padding: 1.5rem 1.25rem 2rem 1.25rem; }
+        .nav-cards { grid-template-columns: 1fr; }
+        .info-grid { grid-template-columns: 1fr; }
+        .info-col-left { border-right: none; padding-right: 0; border-bottom: 1px solid #e4e8ef; padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+        .info-col-right { padding-left: 0; }
+        .bottom-bar { grid-template-columns: 1fr; }
+        .regions-grid { grid-template-columns: 1fr; }
+        .welcome-text { font-size: 2rem; }
       }
     "))
   ),
-  
+
   div(class = "main-content",
-      div(class = "welcome-text", "Welcome to ADA-PARC!"),
-      
-      # Add the ADA-PARC logo image here
-      img(src = "https://i.imgur.com/q6kwni7.png", alt = "ADA-PARC Logo"),
-      
-      # How to Navigate Section
-      div(class = "section-title", "How to Navigate this Website"),
-      div(class = "section-subtitle", "For more information, see the Help section."),
-      tags$ul(
-        class = "list-content",
-        tags$li("National Data: examine the status of people with disabilities at the national and state level."),
-        tags$li("City Data: investigate people with disabilities statistics at the municipal level."),
-        tags$li("Scorecard: view our state by state report cards for each category."),
-        tags$li("Help: for more information and to set color palettes for national/city data.")
+
+      # Hero
+      div(class = "home-hero",
+        div(class = "home-logo-wrap",
+          tags$img(src = "adaparclogo.png", alt = "ADA-PARC Logo")
+        ),
+        div(class = "welcome-text", "Welcome to ADA-PARC"),
+        div(class = "welcome-sub", "Tracking disability participation across the United States")
       ),
-      
-      # What is the ADA Section
-      div(class = "section-title", "What is the ADA?"),
-      div(class = "section-content", 
-          "The Americans with Disabilities Act (ADA), established in 1990, is a landmark civil rights law that prohibits discrimination against individuals with disabilities in all areas of public life.",
-          " Since the ADA, organizations across public and private sectors have worked to improve the quality of life for individuals with disabilities in the U.S. ADA-PARC emphasizes key components of Census and HUD data to shed light on the lived experiences and outcomes for people with disabilities."
-      ),
-      
-      # Did You Know Section
-      div(class = "section-title", "Did You Know?"),
-      div(class = "section-content", "Nationally, between the ages of 18 to 64, 1 in 4 individuals with a disability live below the poverty line."),
-      
-      # About ADA-PARC Section
-      div(class = "section-title", "About the ADA-PARC"),
-      div(class = "section-subtitle italicized", "The ADA-PARC is a collaborative research project of ten Americans with Disabilities Act (ADA) Regional Centers."),
-      
-      # ADA-PARC Regions in Multi-column Layout
-      div(class = "list-content", 
-          tags$ul(
-            class = "list-content",
-            tags$li(class = "inline-list", "Region 1 New England ADA Center"),
-            tags$li(class = "inline-list", "Region 2 Northeast ADA Center"),
-            tags$li(class = "inline-list", "Region 3 Mid-Atlantic ADA Center"),
-            tags$li(class = "inline-list", "Region 4 Southeast ADA Center"),
-            tags$li(class = "inline-list", "Region 5 Great Lakes ADA Center"),
-            tags$li(class = "inline-list", "Region 6 Southwest ADA Center"),
-            tags$li(class = "inline-list", "Region 7 Great Plains ADA Center"),
-            tags$li(class = "inline-list", "Region 8 Rocky Mountain ADA Center"),
-            tags$li(class = "inline-list", "Region 9 Pacific ADA Center"),
-            tags$li(class = "inline-list", "Region 10 Northwest ADA Center")
+
+      # Navigation script (unchanged logic)
+      tags$script(HTML(paste(
+        "window.adaparcNavigateToTab = function(label) {",
+        "  var slugs = {",
+        "    'National Data': 'national-data',",
+        "    'City Data': 'city-data',",
+        "    'Scorecards': 'scorecards',",
+        "    'Scorecard': 'scorecards',",
+        "    'Fact Sheets': 'fact-sheets',",
+        "    'Help': 'help',",
+        "    'Home': 'home'",
+        "  };",
+        "  var docs = [];",
+        "  try {",
+        "    var w = window;",
+        "    var guard = 0;",
+        "    while (w && guard < 10) {",
+        "      try { if (docs.indexOf(w.document) === -1) docs.push(w.document); } catch (e) {}",
+        "      if (w === w.parent) break;",
+        "      w = w.parent;",
+        "      guard++;",
+        "    }",
+        "  } catch (e) {}",
+        "  try { if (docs.indexOf(top.document) === -1) docs.push(top.document); } catch (e) {}",
+        "  var sels = ['.navbar-nav a', '.nav-tabs a', '[data-toggle=\"tab\"]', '[data-bs-toggle=\"tab\"]'];",
+        "  var slug = slugs[label];",
+        "  for (var d = 0; d < docs.length; d++) {",
+        "    var doc = docs[d];",
+        "    for (var s = 0; s < sels.length; s++) {",
+        "      var els;",
+        "      try { els = doc.querySelectorAll(sels[s]); } catch (e) { continue; }",
+        "      for (var i = 0; i < els.length; i++) {",
+        "        if ((els[i].textContent || '').trim() === label) {",
+        "          try { els[i].click(); } catch (e) {}",
+        "          return true;",
+        "        }",
+        "      }",
+        "    }",
+        "    if (slug) {",
+        "      var byHref;",
+        "      try { byHref = doc.querySelectorAll('a[href$=\"#' + slug + '\"]'); } catch (e) { byHref = []; }",
+        "      for (var j = 0; j < byHref.length; j++) {",
+        "        try { byHref[j].click(); return true; } catch (e) {}",
+        "      }",
+        "    }",
+        "  }",
+        "  if (slug) {",
+        "    try { top.location.hash = '#' + slug; return true; } catch (e) {}",
+        "    try { window.parent.location.hash = '#' + slug; return true; } catch (e) {}",
+        "  }",
+        "  return false;",
+        "};",
+        sep = "\n"
+      ))),
+
+      # Navigation Cards
+      div(class = "nav-cards",
+
+        div(class = "nav-card",
+          div(class = "nav-card-icon",
+            HTML('<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 20L3 17V4l6 3m0 13l6-3m-6 3V7m6 10l6 3V7l-6-3m0 13V7M9 7l6-3"/></svg>')
+          ),
+          div(class = "nav-card-title", "National Data"),
+          div(class = "nav-card-desc", "Examine national and state-level patterns for people with disabilities."),
+          tags$button(
+            class = "nav-card-btn", type = "button",
+            `aria-label` = "Navigate to National Data",
+            onclick = "window.adaparcNavigateToTab('National Data');",
+            HTML("Explore \u2192")
           )
+        ),
+
+        div(class = "nav-card",
+          div(class = "nav-card-icon",
+            HTML('<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="8" width="5" height="13"/><rect x="9.5" y="3" width="5" height="18"/><rect x="16" y="11" width="5" height="10"/></svg>')
+          ),
+          div(class = "nav-card-title", "City Data"),
+          div(class = "nav-card-desc", "Investigate disability statistics at the municipal and city level."),
+          tags$button(
+            class = "nav-card-btn", type = "button",
+            `aria-label` = "Navigate to City Data",
+            onclick = "window.adaparcNavigateToTab('City Data');",
+            HTML("Explore \u2192")
+          )
+        ),
+
+        div(class = "nav-card",
+          div(class = "nav-card-icon",
+            HTML('<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>')
+          ),
+          div(class = "nav-card-title", "Scorecard"),
+          div(class = "nav-card-desc", "View state-by-state report cards across each disability domain."),
+          tags$button(
+            class = "nav-card-btn", type = "button",
+            `aria-label` = "Navigate to Scorecards",
+            onclick = "window.adaparcNavigateToTab('Scorecards');",
+            HTML("View \u2192")
+          )
+        )
+
       ),
-      
-      # Collaborating Institutions
-      div(class = "section-subtitle italicized", 
-          "Other collaborating institutions include: The ADA Knowledge Translation Center, TIRR Memorial Hermann, and universities such as Syracuse University and the University of Illinois at Chicago."
+
+      tags$hr(class = "home-divider"),
+
+      # Two-column info grid
+      div(class = "info-grid",
+
+        div(class = "info-col-left",
+
+          div(class = "info-col-section",
+            div(class = "section-title", "What is the ADA?"),
+            div(class = "section-content",
+              "The Americans with Disabilities Act (ADA), established in 1990, is a landmark civil rights law that prohibits discrimination against individuals with disabilities in all areas of public life.",
+              " Since the ADA, organizations across public and private sectors have worked to improve the quality of life for individuals with disabilities in the U.S. ADA-PARC emphasizes key components of Census and HUD data to shed light on the lived experiences and outcomes for people with disabilities."
+            )
+          ),
+
+          div(class = "info-col-section",
+            div(class = "section-title", "Work of the ADA-PARC"),
+            div(class = "section-content",
+              "The ADA-PARC has research teams focused on Community Living, Community Participation, and Work/Economic Participation measures, using Regional Steering Committees in each of the ten participating regions to gather and review appropriate data.",
+              " The intent of this effort is to inform ADA Center technical assistance and to help community-level stakeholders increase participation opportunities in their communities."
+            )
+          ),
+
+          div(class = "info-col-section",
+            div(class = "section-title", "Grant Information"),
+            div(class = "section-content",
+              "The ADA Participation Action Consortium is funded by the National Institute on Disability, Independent Living, and Rehabilitation Research (NIDILRR) (90DP0026 and 90DPAD0001), a Center within the Administration for Community Living (ACL), Department of Health and Human Services (HHS).",
+              " The contents of this website do not necessarily represent the policy of NIDILRR, ACL, or HHS, and you should not assume endorsement by the Federal Government."
+            )
+          )
+
+        ),
+
+        div(class = "info-col-right",
+
+          div(class = "info-col-section",
+            div(class = "section-title", "Did You Know?"),
+            div(class = "callout-box",
+              "Nationally, between the ages of 18 to 64, 1 in 4 individuals with a disability live below the poverty line."
+            )
+          ),
+
+          div(class = "info-col-section",
+            div(class = "section-title", "About the ADA-PARC"),
+            div(class = "section-subtitle",
+              "A collaborative research project of ten ADA Regional Centers:"
+            ),
+            tags$ul(
+              class = "regions-grid",
+              role = "list",
+              tags$li(HTML('<span class="region-num">1.</span> New England')),
+              tags$li(HTML('<span class="region-num">2.</span> Northeast')),
+              tags$li(HTML('<span class="region-num">3.</span> Mid-Atlantic')),
+              tags$li(HTML('<span class="region-num">4.</span> Southeast')),
+              tags$li(HTML('<span class="region-num">5.</span> Great Lakes')),
+              tags$li(HTML('<span class="region-num">6.</span> Southwest')),
+              tags$li(HTML('<span class="region-num">7.</span> Great Plains')),
+              tags$li(HTML('<span class="region-num">8.</span> Rocky Mountain')),
+              tags$li(HTML('<span class="region-num">9.</span> Pacific')),
+              tags$li(HTML('<span class="region-num">10.</span> Northwest'))
+            ),
+            div(class = "section-subtitle",
+              "Collaborating institutions include the ADA Knowledge Translation Center, TIRR Memorial Hermann, Syracuse University, and the University of Illinois at Chicago."
+            )
+          ),
+
+          div(class = "info-col-section",
+            div(class = "section-title", "Purpose of Website"),
+            div(class = "section-content",
+              "The ADA-PARC website presents public data that illuminates the status of people with disabilities in local communities, including national, state, county, and city data.",
+              " The three main data domains are Community Living, Community Participation, and Work & Economics, each presented in map and tabular form."
+            )
+          )
+
+        )
       ),
-      
-      # Work of the ADA-PARC Section
-      div(class = "section-title", "Work of the ADA-PARC"),
-      div(class = "section-content", 
-          "The ADA-PARC has research teams focused on Community Living, Community Participation & Work/Economic Participation measures and uses Regional Steering Committees in each of the ten participating regions to gather, review, and choose appropriate data to achieve the project's purposes. The data are mainly from national data sources that have enough statistical power to be relevant on the local level.",
-          " The intent of this effort is to use this information to inform: 1. ADA Center technical assistance and resource dissemination, and 2. Community level stakeholders to increase participation opportunities in their communities."
-      ),
-      
-      # Purpose of Website Section
-      div(class = "section-title", "Purpose of Website"),
-      div(class = "section-content", 
-          "The ADA-PARC website is a collection of public data sets that can help shed light on the status of people with disabilities in local communities. The data includes national, state, county, and city data.",
-          " In addition to Demographic data describing the population, the three main areas of data to illuminate the status of disability in an area are: Community Living, Community Participation and Work & Economics.",
-          " Each of the three areas presents data in map form as well as in tabular form. A summary of what is important about the data is presented on each page.",
-          " The data source is described along with the calculation to arrive at the values used in the tables and maps. Data is first presented by state, and then if available, at county and city level."
-      ),
-      
-      # Grant Identifying Information Section
-      div(class = "section-title", "Grant Identifying Information"),
-      div(class = "section-content", 
-          "The ADA Participation Action Consortium is funded by the National Institute on Disability, Independent Living, and Rehabilitation Research (NIDILRR) (90DP0026 and 90DPAD0001).",
-          " NIDILRR is a Center within the Administration for Community Living (ACL), Department of Health and Human Services (HHS). The contents of this website do not necessarily represent the policy of NIDILRR, ACL, HHS, and you should not assume endorsement by the Federal Government."
-      ),
-      
-      # Questions Section
-      div(class = "section-title", "Questions?"),
-      a(href = "mailto:joyhammel@uic.edu", class = "email-button", "Email Joy Hammel"),
-      div(class = "section-content", "Director of Graduate Studies UIC College of Applied Health Sciences"),
-      
-      div(class = "footer",
-          "Application authors: Ethan Jantz, Sean Connelly, Jane Huber, Colin Heeneman, and Randy D. Colón",
-          tags$br(),
-          tags$a(href = "https://voorheescenter.uic.edu/", "UIC Voorhees Center")
+
+      # Bottom bar
+      div(class = "bottom-bar",
+
+        div(
+          div(class = "bottom-col-title", "Questions?"),
+          a(href = "mailto:joyhammel@uic.edu", class = "email-button", "Email Joy Hammel"),
+          div(class = "questions-contact", "Director of Graduate Studies, UIC College of Applied Health Sciences")
+        ),
+
+        div(
+          div(class = "bottom-col-title", "Application Authors"),
+          div(class = "bottom-col-body",
+            "Ethan Jantz, Sean Connelly, Jane Huber, Colin Heeneman, and Randy D. Col\u00f3n",
+            tags$br(), tags$br(),
+            tags$a(href = "https://voorheescenter.uic.edu/", "UIC Voorhees Center")
+          )
+        )
+
       )
   )
 )
@@ -325,6 +654,19 @@ library(dplyr)
 library(tibble)
 library(shinycssloaders)
 library(DT)
+library(ggiraph)
+
+# Pre-compute initial topic choices so the selector has a valid value on load
+.initial_nat_choices <- dict_vars %>%
+  filter(is_demographics == TRUE, !is.na(national_dropdown_label)) %>%
+  select(national_dropdown_label, var_readable) %>%
+  tibble::deframe() %>%
+  names()
+.initial_nat_selected <- if ("People with Disabilities" %in% .initial_nat_choices) {
+  "People with Disabilities"
+} else {
+  .initial_nat_choices[1]
+}
 
 ui <- fluidPage(
   tags$head(
@@ -352,18 +694,23 @@ ui <- fluidPage(
       .table_national {
         width: 100%;
         border-collapse: collapse;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
       }
       .table_national th {
         position: sticky;
         top: 0;
-        background-color: #E2E2E0;
-        color: #000000;
+        background-color: #1c2b3a;
+        color: #ffffff;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
         z-index: 1;
         white-space: normal;      /* allow wrapping */
         word-wrap: break-word;    /* wrap long words */
         padding-top: 10px;
         padding-bottom: 10px;
         line-height: 1.2;
+      }
+      .table_national td {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
       }
 
       /* Center all cells except first (State) */
@@ -377,18 +724,90 @@ ui <- fluidPage(
       /* Remove extra space under h1 */
       h1 {
         margin-bottom: 0.25rem;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
       }
 
-      /* Italic intro text under National Data */
+      /* Intro text under National Data */
       .national-intro {
-        font-style: italic;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 18px;
+        color: #1c2b3a;
         margin-top: 0.25rem;
         margin-bottom: 0.75rem;
       }
 
-      /* Italic map summary text */
+      /* Map summary text */
       .map-summary {
-        font-style: italic;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 18px;
+        color: #1c2b3a;
+      }
+
+      /* DataTables controls font */
+      div.dataTables_wrapper,
+      div.dataTables_wrapper label,
+      div.dataTables_wrapper select,
+      div.dataTables_wrapper input {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+      }
+
+      /* Map title styling */
+      .national-map-title {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        color: #1c2b3a;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      /* SelectInput controls styling */
+      .shiny-input-container label {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 18px;
+        color: #1c2b3a;
+        font-weight: 500;
+      }
+      select.form-control, .selectize-input {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        font-size: 18px !important;
+      }
+
+      /* Leaflet legend styling */
+      .leaflet-control-layers-list label {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        font-size: 16px !important;
+      }
+      .info {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        font-size: 16px !important;
+        padding: 10px 15px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 5px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      }
+      .info h4 {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        font-size: 16px;
+        margin: 0 0 5px 0;
+        font-weight: 600;
+      }
+      .legend {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        font-size: 17px !important;
+      }
+      .legend label {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      /* Source note below table */
+      .national-source-note {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 16px;
+        color: #444;
+        margin-top: 0.75rem;
+        margin-bottom: 1rem;
       }
 
       /* Length + search controls: left-aligned with some spacing */
@@ -414,7 +833,7 @@ ui <- fluidPage(
     ),
     tags$section(
       role = "region",
-      `aria-labelledby` = "sidebar",
+      `aria-label` = "Data selection controls",
       tags$aside(
         class = "sidebar",
         selectInput(
@@ -429,27 +848,40 @@ ui <- fluidPage(
           selected = "Demographics"
         ),
         selectInput(
-          inputId = "national_variable_selector",
-          label   = "Select a topic",
-          choices = NULL
+          inputId  = "national_variable_selector",
+          label    = "Select a topic",
+          choices  = .initial_nat_choices,
+          selected = .initial_nat_selected
         ),
-        uiOutput("national_map_summary") %>% withSpinner()
+        div(`aria-live` = "polite",
+          uiOutput("national_map_summary") %>% withSpinner()
+        )
       )
     ),
     tags$section(
-      `aria-labelledby` = "section-national-title",
+      `aria-label` = "Selected topic title",
+      `aria-live` = "polite",
       uiOutput("national_map_title") %>% withSpinner()
     ),
     tags$section(
-      `aria-labelledby` = "section-state-by-state-map-of-selected-topic",
+      `aria-label` = "State-by-state map of selected topic",
       div(
+        id         = "national_map_img",
         role       = "img",
-        `aria-label` = "Map of the United States showing selected data by state. Use the topic dropdown to change the variable displayed.",
-        plotOutput("national_ggmap", width = "100%", height = "400px") %>% withSpinner()
+        `aria-label` = "Map of the United States. Use the topic dropdown to select a variable.",
+        girafeOutput("national_ggmap", width = "100%", height = "400px") %>% withSpinner()
       )
     ),
+    # Tiny JS handler: updates the map div's aria-label reactively
+    tags$script(HTML("
+      Shiny.addCustomMessageHandler('updateMapAriaLabel', function(x) {
+        var el = document.getElementById('national_map_img');
+        if (el) el.setAttribute('aria-label', x.label);
+      });
+    ")),
     tags$section(
-      `aria-labelledby` = "section-table-of-selected-topic",
+      `aria-label` = "Data table for selected topic",
+      `aria-live` = "polite",
       div(
         class = "table-container",
         div(
@@ -457,6 +889,11 @@ ui <- fluidPage(
           uiOutput("national_table") %>% withSpinner()
         )
       )
+    ),
+    tags$section(
+      `aria-label` = "Data source",
+      `aria-live` = "polite",
+      uiOutput("national_source_note")
     )
   )
 )
@@ -465,40 +902,9 @@ server <- function(input, output, session) {
   # Flag to control rendering
   ready_to_render <- reactiveVal(FALSE)
 
-  # Preload variable choices immediately based on default category
-  observe({
-    freezeReactiveValue(input, "national_variable_selector")
-    choices <- dict_vars %>%
-      filter(is_demographics == TRUE, !is.na(national_dropdown_label)) %>%
-      select(national_dropdown_label, var_readable) %>%
-      deframe() %>%
-      names()
-
-    default <- if ("People with Disabilities" %in% choices) {
-      "People with Disabilities"
-    } else {
-      choices[1]
-    }
-
-    updateSelectInput(
-      session,
-      "national_variable_selector",
-      choices  = choices,
-      selected = default
-    )
-  })
-
-  # When both selectors have values, allow rendering
-  observe({
-    if (!is.null(input$national_category_selector) &&
-        !is.null(input$national_variable_selector)) {
-      ready_to_render(TRUE)
-    }
-  })
-
   national_category_selected <- reactive({
     switch(
-      input$national_category_selector,
+      input$national_category_selector %||% "Demographics",
       "Demographics"            = "is_demographics",
       "Community Participation" = "is_community_participation",
       "Community Living"        = "is_community_living",
@@ -517,29 +923,91 @@ server <- function(input, output, session) {
     )
   })
 
-  observeEvent(national_variable_choices(), {
-    choices <- names(national_variable_choices())
-    default <- if ("People with Disabilities" %in% choices) {
+  # ─────────────────────────────────────────────────────────────────────
+  # Pre-populate the topic selector BEFORE the first reactive flush so the
+  # map + table render with defaults on initial page load (without the
+  # user having to change a dropdown). Uses freezeReactiveValue so
+  # downstream reactives don't see a transient NULL/"" during the
+  # selectize rebuild.
+  # ─────────────────────────────────────────────────────────────────────
+  observe({
+    freezeReactiveValue(input, "national_variable_selector")
+    cat_col <- national_category_selected()
+    init_choices <- dict_vars %>%
+      filter(!!sym(cat_col) == TRUE, !is.na(national_dropdown_label)) %>%
+      select(national_dropdown_label, var_readable) %>%
+      tibble::deframe() %>%
+      names()
+    init_default <- if ("People with Disabilities" %in% init_choices) {
       "People with Disabilities"
     } else {
-      choices[1]
+      init_choices[1]
     }
     updateSelectInput(
       session,
       "national_variable_selector",
-      choices  = choices,
-      selected = default
+      choices  = init_choices,
+      selected = init_default
     )
+  }, priority = 1000)
+
+  # When both selectors have values, allow rendering
+  observe({
+    if (!is.null(input$national_category_selector) &&
+        !is.null(input$national_variable_selector) &&
+        nzchar(input$national_variable_selector)) {
+      ready_to_render(TRUE)
+    }
   })
 
   national_variable_selected <- reactive({
     req(national_category_selected())
     choices <- national_variable_choices()
-    req(input$national_variable_selector %in% names(choices))
-    choices[[input$national_variable_selector]]
+    # If the select has not yet echoed its updated value back to the server,
+    # fall back to the default so the table/map still render on first paint.
+    current <- input$national_variable_selector
+    if (is.null(current) || !nzchar(current) || !(current %in% names(choices))) {
+      current <- if ("People with Disabilities" %in% names(choices)) {
+        "People with Disabilities"
+      } else {
+        names(choices)[1]
+      }
+    }
+    req(current)
+    choices[[current]]
+  })
+
+  # Reactively update the map image's aria-label whenever the topic changes,
+  # so screen readers announce which variable is currently shown on the map.
+  observe({
+    req(national_variable_selected())
+    topic_label <- dict_vars %>%
+      filter(var_readable == national_variable_selected()) %>%
+      head(1) %>%
+      pull(national_dropdown_label) %>%
+      sub(".*:", "", .) %>%
+      trimws()
+    category_label <- input$national_category_selector
+    new_label <- paste0(
+      "Choropleth map of the United States showing ", topic_label,
+      " (", category_label, ") by state.",
+      " Use the topic dropdown above to change the variable displayed."
+    )
+    session$sendCustomMessage("updateMapAriaLabel", list(label = new_label))
   })
 
   output$national_map_summary <- renderUI({
+    req(ready_to_render())
+    req(national_variable_selected())
+    HTML(
+      sprintf(
+        '<span class="map-summary">%s</span>',
+        altText(national_data, national_variable_selected())
+      )
+    )
+  })
+
+  output$national_source_note <- renderUI({
     req(ready_to_render())
     req(national_variable_selected())
     hud_data <- c("pwd_housing_choice_voucher_pct", "pwd_pubhousing_pct")
@@ -548,13 +1016,10 @@ server <- function(input, output, session) {
     } else {
       "2020-2024 American Community Survey five-year estimates"
     }
-    full_text <- paste0(".<br><br>Source: ", source_text)
-    HTML(
-      sprintf(
-        '<span class="map-summary">%s%s</span>',
-        altText(national_data, national_variable_selected()),
-        full_text
-      )
+    tags$p(
+      class = "national-source-note",
+      tags$strong("Source: "),
+      source_text
     )
   })
 
@@ -567,15 +1032,35 @@ server <- function(input, output, session) {
       pull(national_dropdown_label) %>%
       sub(".*:", "", .) %>%
       trimws()
-    h4(title)
+    div(h4(title, class = "national-map-title"))
   })
 
-  output$national_ggmap <- renderPlot({
+  output$national_ggmap <- renderGirafe({
     req(ready_to_render())
     req(national_variable_selected())
-    render_national_map(
+    gg <- render_national_map(
       national_variable_selected(),
       access_map_palette_selected()
+    )
+    girafe(
+      ggobj      = gg,
+      width_svg  = 10,
+      height_svg = 5,
+      options    = list(
+        opts_tooltip(
+          css = paste0(
+            "background:#1c2b3a; color:white; ",
+            "font-family:'EB Garamond',Georgia,serif; ",
+            "font-size:15px; padding:8px 11px; border-radius:6px; ",
+            "line-height:1.55; white-space:pre;"
+          ),
+          offx = 12, offy = -28, use_cursor_pos = TRUE
+        ),
+        opts_hover(css = "fill-opacity:0.75; stroke:#1c2b3a; stroke-width:1.5px;"),
+        opts_sizing(rescale = TRUE, width = 1),
+        opts_toolbar(saveaspng = FALSE),
+        opts_selection(type = "none")
+      )
     )
   })
 
@@ -708,36 +1193,198 @@ normalize_tract_geoid <- function(x) {
 # UI
 # ----------------------------
 ui <- fluidPage(
-  titlePanel("City Data"),
+  tags$head(
+    tags$style(HTML("
+      /* ── City Data tab: enforce EB Garamond throughout ── */
+      .city-title {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 2.6rem;
+        font-weight: 700;
+        color: #1c2b3a;
+        margin-bottom: 0.5rem;
+      }
+      .city-note {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 1.05rem;
+        color: #4a5568;
+        line-height: 1.6;
+        max-width: 72ch;
+      }
+      /* City map title */
+      .city-map-title {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        color: #1c2b3a;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.6rem;
+        margin-top: 0.6rem;
+        letter-spacing: -0.01em;
+      }
 
-  mainPanel(
-    fluidRow(
-      column(6,
-             selectInput(
-               "state_selector", "Select a state",
-               choices = names(state_choices),
-               selected = "Illinois"
-             )),
-      column(6, uiOutput("city_selector_ui"))
-    ),
+      /* Summary section below the map: larger type, consistent rhythm,
+         constrained measure for readability, and a soft card background
+         that coordinates with the muted Positron basemap. */
+      .city-summary {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        color: #1c2b3a;
+        margin: 1.25rem 0 1.5rem 0;
+        padding: 1.25rem 1.5rem 1.5rem 1.5rem;
+        background: #fafbfc;
+        border: 1px solid #e4e8ef;
+        border-radius: 8px;
+        height: 100%;
+        box-sizing: border-box;
+      }
+      .city-summary h3,
+      .city-summary h4,
+      .city-summary p,
+      .city-summary ul,
+      .city-summary li,
+      .city-summary b {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        color: #1c2b3a;
+      }
+      .city-summary h3 {
+        font-size: 1.9rem;
+        font-weight: 700;
+        margin: 0.25rem 0 0.9rem 0;
+        padding-bottom: 0.45rem;
+        border-bottom: 2px solid #1c2b3a;
+        letter-spacing: -0.01em;
+      }
+      .city-summary h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 1.4rem;
+        margin-bottom: 0.4rem;
+        padding-left: 0.6rem;
+        border-left: 3px solid #1c2b3a;
+        line-height: 1.3;
+      }
+      .city-summary p {
+        font-size: 1.25rem;
+        line-height: 1.75;
+        margin-bottom: 0.75rem;
+      }
+      .city-summary b {
+        font-weight: 700;
+      }
+      .city-summary > div > b,
+      .city-summary .col-md-12 > b {
+        display: inline-block;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-top: 0.75rem;
+        margin-bottom: 0.35rem;
+        color: #1c2b3a;
+        letter-spacing: 0.01em;
+      }
+      .city-summary ul {
+        font-size: 1.2rem;
+        line-height: 1.8;
+        margin-top: 0.35rem;
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+      }
+      .city-summary li {
+        margin-bottom: 0.45rem;
+        padding-left: 0.1rem;
+      }
+      /* Helper / context text inside the summary (e.g. the
+         Percentages-displayed-in line). A hair smaller and italic to
+         distinguish from the data. */
+      .city-summary .city-summary-help {
+        font-size: 1.1rem;
+        font-style: italic;
+        color: #4a5568;
+        margin-top: -0.1rem;
+        margin-bottom: 0.85rem;
+        line-height: 1.65;
+      }
+      /* selectInput labels */
+      .control-label {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        font-size: 20px !important;
+        font-weight: 500;
+      }
+      /* selectize dropdown text */
+      .selectize-input, .selectize-dropdown, .selectize-dropdown-content {
+        font-size: 20px !important;
+      }
 
-    fluidRow(
-      column(
-        12,
-        tags$p(
-          "Not Applicable or NA values may display for cities where data is unavailable, mostly in cities with a population less than 30,000.",
-          style = "font-style: italic; color: #000000;"
+      /* Leaflet overlay controls: readable typography that coordinates
+         with the rest of the City Data tab. */
+      .leaflet-container .legend {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        font-size: 1.1rem !important;
+        color: #1c2b3a !important;
+        background: rgba(255,255,255,1.0) !important;
+        padding: 10px 14px !important;
+        border-radius: 6px !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+      }
+      .leaflet-container .legend .info {
+        background: transparent !important;
+      }
+    "))
+  ),
+
+  tags$main(
+    role = "main",
+
+    tags$h1("City Data", class = "city-title"),
+
+    mainPanel(
+      width = 12,
+
+      # ── Selection controls ──────────────────────────────────────────────
+      tags$section(
+        role = "region",
+        `aria-label` = "City selection controls",
+
+        fluidRow(
+          column(6,
+                 selectInput(
+                   "state_selector", "Select a state",
+                   choices = names(state_choices),
+                   selected = "Illinois"
+                 )),
+          column(6, uiOutput("city_selector_ui"))
+        )
+
+      ),
+
+      # ── Interactive tract map ───────────────────────────────────────────
+      tags$section(
+        role = "region",
+        `aria-label` = "City tract map showing disability rates",
+
+        fluidRow(
+          column(12, div(`aria-live` = "polite", withSpinner(uiOutput("city_map_title")))),
+          column(12, withSpinner(leafletOutput("snapshotmap", height = 550)))
+        )
+      ),
+
+      # ── City summary statistics ─────────────────────────────────────────
+      tags$section(
+        role = "region",
+        `aria-label` = "City summary statistics for people with disabilities",
+
+        fluidRow(
+          column(12, div(`aria-live` = "polite", withSpinner(uiOutput("city_summary"))))
+        )
+      ),
+
+      # ── Footer note ─────────────────────────────────────────────────────
+      fluidRow(
+        column(
+          12,
+          tags$p(
+            "Note: Not Applicable or NA values may display for cities where data is unavailable, mostly in cities with a population less than 30,000.",
+            class = "city-note"
+          )
         )
       )
-    ),
-
-    fluidRow(
-      column(12, withSpinner(uiOutput("city_map_title"))),
-      # if you still ever see blank tiles, uncomment the height:
-      column(12, withSpinner(leafletOutput("snapshotmap", height = 550)))    ),
-
-    fluidRow(
-      column(12, withSpinner(uiOutput("city_summary")))
     )
   )
 )
@@ -860,7 +1507,7 @@ server <- function(input, output, session) {
     title <- city_place() %>%
       mutate(NAME = str_replace_all(NAME, " (city|village|municipality|town), ", ", ")) %>%
       pull(NAME)
-    h4(title)
+    div(h4(title, class = "city-map-title"))
   })
 
   # ----------------------------
@@ -875,7 +1522,8 @@ server <- function(input, output, session) {
     v <- city_tract()$pct_cni_total_dis_place
     req(is.numeric(v))
 
-    map_palette <- access_map_palette_selected()
+    raw_palette <- access_map_palette_selected()
+    map_palette <- if (is.function(raw_palette)) raw_palette(256) else raw_palette
 
     if (all(is.na(v))) {
       # safe fallback palette so polygons still draw with na.color
@@ -905,13 +1553,37 @@ server <- function(input, output, session) {
     has_any_data <- any(!is.na(data$pct_cni_total_dis_place))
 
     m <- leaflet(data) %>%
-      addProviderTiles(providers$CartoDB.Positron) %>%
+      # Muted, high-contrast neutral basemap (light gray / white) so the
+      # tract choropleth does the color work and the map remains
+      # accessible. CartoDB.Positron is WCAG-friendly and keeps labels
+      # legible against any palette.
+      addProviderTiles(
+        providers$CartoDB.Positron,
+        options = providerTileOptions(opacity = 0.9)
+      ) %>%
       addResetMapButton() %>%
       addPolygons(
-        stroke = TRUE, color = "#444444", weight = 1, smoothFactor = 0,
+        stroke = TRUE, color = "#1c2b3a", weight = 1, smoothFactor = 0,
         fillColor = ~pal_city()(pct_cni_total_dis_place),
-        fillOpacity = 0.75,
-        layerId = ~tract_GEOID
+        fillOpacity = 0.82,
+        layerId = ~tract_GEOID,
+        label = ~lapply(ifelse(
+          is.na(pct_cni_total_dis_place),
+          paste0("<b>Tract ", tract_GEOID, "</b><br/>No data available"),
+          paste0("<b>Tract ", tract_GEOID, "</b><br/>",
+                 round(pct_cni_total_dis_place, 1), "% with disability")
+        ), htmltools::HTML),
+        labelOptions = labelOptions(
+          style = list("font-weight" = "normal", padding = "3px 8px"),
+          textsize = "13px",
+          direction = "auto"
+        ),
+        highlight = highlightOptions(
+          weight = 2.5,
+          color = "#222222",
+          fillOpacity = 0.95,
+          bringToFront = TRUE
+        )
       ) %>%
       addSearchOSM(
         options = searchOptions(
@@ -958,8 +1630,7 @@ server <- function(input, output, session) {
   output$city_summary <- renderUI({
     req(city_place())
 
-    city_summary_text <- paste0(
-      "<h3>People with Disabilities - Summary Tables</h3>",
+    introductory_text <- paste0(
       "Based on ACS 2024 5-Year Estimates, <b>", fmt_num(city_place()$pop_cni_dis_total_place),
       "</b> of the city's <b>", fmt_num(city_place()$pop_cni_total_all),
       "</b> residents (<b>", fmt_pct_1dp(city_place()$pct_cni_total_dis_place), "</b>) are people with disabilities.<br><br>"
@@ -1031,21 +1702,34 @@ server <- function(input, output, session) {
       str_c(collapse = "")
 
     city_summary_tables <- paste0(
-      '<div class="row">',
-      '<div class="col-md-12"><h4 style="color: maroon; font-weight: bold;">Disability Demographics</h4>',
-      '<p style="font-style: italic; color: #000000;">Percentages displayed in the "Disability Demographics" section refer to the % of the given demographic population of selected city which have a disability.</p>',
-      '<div class="col-md-12"><b>Race / Ethnicity</b><ul>', race_ethnicity, '</ul></div>',
-      '<div class="col-md-12"><b>Sex</b><ul>', sex, '</ul></div>',
-      '</div>',
-      '<div class="col-md-12"><h4 style="color: maroon; font-weight: bold;">Disability Types</h4><ul>', disability_types, '</ul></div>',
-      '<div class="col-md-12"><h4 style="color: maroon; font-weight: bold;">ADA-PARC Key Indicators</h4>',
-      '<div class="col-md-12"><b>Economic</b><ul>', employment, '</ul></div>',
-      '<div class="col-md-12"><b>Education</b><ul>', education, '</ul></div>',
-      '</div>',
-      '</div>'
+      '<div class="row" style="margin-top:1.25rem;">',
+
+      # ── Left card: Demographics + Disability Types ──────────────────────────
+      '<div class="col-md-6">',
+      '<div class="city-summary">',
+      '<h3>People with Disabilities - Summary Tables</h3>',
+      '<p>', introductory_text, '</p>',
+      '<h4>Disability Demographics</h4>',
+      '<p class="city-summary-help">Percentages displayed in the "Disability Demographics" section refer to the % of the given demographic population of the selected city which have a disability.</p>',
+      '<b>Race / Ethnicity</b><ul>', race_ethnicity, '</ul>',
+      '<b>Sex</b><ul>', sex, '</ul>',
+      '<h4>Disability Types</h4><ul>', disability_types, '</ul>',
+      '</div>',   # end .city-summary
+      '</div>',   # end .col-md-6
+
+      # ── Right card: ADA-PARC Key Indicators ────────────────────────────────
+      '<div class="col-md-6">',
+      '<div class="city-summary">',
+      '<h3>ADA-PARC Key Indicators</h3>',
+      '<h4>Economic</h4><ul>', employment, '</ul>',
+      '<h4>Education</h4><ul>', education, '</ul>',
+      '</div>',   # end .city-summary
+      '</div>',   # end .col-md-6
+
+      '</div>'    # end .row
     )
 
-    HTML(paste0(city_summary_text, city_summary_tables))
+    HTML(city_summary_tables)
   })
 }
 
@@ -1055,299 +1739,1061 @@ shinyApp(ui, server)
 
 # Scorecards
 
-```{r tableau scorecards}
+```{r scorecard_new, message=FALSE, warning=FALSE}
 library(shiny)
+library(shinyjs)
+library(quarto)
+library(readr)
+library(dplyr)
 
-# Define UI
-ui <- fluidPage(
-  # Application title
-  titlePanel("Scorecard Dashboard"),
+# ── Resolve app root to an absolute path ───────────────────────────────────
+# getOption("shiny.appdir") is set by rmarkdown::run() to the .Rmd's directory,
+# so this works whether the app is launched from RStudio, the R console, or
+# shinyapps.io. Falls back to getwd() as a safety net.
+app_root <- normalizePath(
+  getOption("shiny.appdir", default = getwd()),
+  mustWork = FALSE
+)
 
-  # Custom CSS to ensure Tableau visualizations take full width
-  tags$head(
-    tags$style(HTML("
-      .tableauPlaceholder {
-        width: 100% !important;
-      }
-      .tableauViz {
-        width: 100% !important;
-        height: 850px !important;
-      }
-    "))
-  ),
+# ── Path to the scorecard directory ────────────────────────────────────────
+# All data files, dictionaries, and .qmd templates are copied here from the
+# data pipeline repo (ADAPARCDataPipeline/scorecard_quarto) so that the app
+# is self-contained and deploys correctly to shinyapps.io.
+# To update: re-run the data pipeline and copy the new index_scores_wide.csv
+# into scorecard/scorecard_data/final/, then copy the updated .qmd files too.
+scorecard_dir <- file.path(app_root, "scorecard")
 
-  # Selector and body text
-  fluidRow(
-    column(
-      12,
-      selectInput(
-        inputId = "scorecard_choice",
-        label = "Select a Scorecard:",
-        choices = list(
-          "Community Participation" = "participation",
-          "Community Living"        = "living",
-          "Work Economic"           = "work_economic"
-        ),
-        selected = "participation"
+# ── Output directory ──────────────────────────────────────────────────────
+# Shiny auto-serves www/ for top-level apps, but inside an embedded
+# shinyApp() chunk in flexdashboard the sub-app is mounted at its own
+# URL prefix, so bare relative iframe srcs like "state_output.html"
+# resolve against the sub-app path instead of the root — returning 404.
+# Registering an explicit resource path makes the files reachable at
+# /sc_out/… regardless of how the sub-app is mounted.
+www_dir <- file.path(app_root, "www")
+dir.create(www_dir, showWarnings = FALSE)
+shiny::addResourcePath("sc_out", www_dir)
+
+# Clean up leftover renders from any previous session
+invisible(unlink(c(
+  file.path(www_dir, "state_output.html"),
+  file.path(www_dir, "cat_output.html")
+)))
+
+# ── Load dictionaries ───────────────────────────────────────────────────────
+indicator_dict <- tryCatch(
+  read_csv(file.path(scorecard_dir, "dictionary/scorecard_indicator_dictionary.csv"),
+           show_col_types = FALSE),
+  error = function(e) { warning("Could not load indicator dictionary: ", conditionMessage(e)); NULL }
+)
+
+index_dict <- tryCatch(
+  read_csv(file.path(scorecard_dir, "dictionary/scorecard_index_dictionary.csv"),
+           show_col_types = FALSE),
+  error = function(e) { warning("Could not load index dictionary: ", conditionMessage(e)); NULL }
+)
+
+# ── Build state/territory choice list from the data ─────────────────────────
+state_choices <- tryCatch({
+  raw <- read_csv(file.path(scorecard_dir, "scorecard_data/final/index_scores_wide.csv"),
+                  show_col_types = FALSE)
+  df  <- raw |>
+    filter(ABBR != "USA", !is.na(NAME), !is.na(ABBR)) |>
+    mutate(NAME = as.character(NAME), ABBR = as.character(ABBR)) |>
+    arrange(NAME)
+  setNames(df$ABBR, df$NAME)
+}, error = function(e) {
+  warning("Could not read data file for state list: ", conditionMessage(e))
+  c("Illinois" = "IL", "New York" = "NY", "California" = "CA")
+})
+
+cat_choices <- c(
+  "Community Living"        = "CL",
+  "Community Participation" = "CP",
+  "Work & Economic"         = "WE"
+)
+
+# ── Index hierarchy definition (2024 revision) ──────────────────────────────
+index_hierarchy <- list(
+
+  CL = list(
+    label = "Community Living",
+    color = "#C9A227",
+    bg    = "#fdf8ec",
+    category_index = "Community Living Index",
+    indices = list(
+      list(
+        id         = "index_rel_living_arrangements",
+        label      = "Living Arrangements",
+        indicators = c("rel_score_home", "rel_score_noninstgroupquarters",
+                       "rel_score_nursing_18to64", "rel_score_corrections")
       ),
-
-      HTML("<p style='margin-top: 20px; font-size: 16px;'>
-        <strong>Scorecards are constructed using data from the U.S. Census 2024 ACS-5.</strong>
-        Scores are displayed in two ways: Firstly, a 0–100 score where 100 means FAR BETTER than the median state and 0 means FAR WORSE than the median state.
-        Secondly, quartiles are displayed to show discrepancies in outcomes for people with disabilities across states.
-        <strong>Q1</strong> are the worst scores, representing poor opportunity for people with disabilities,
-        <strong>Q2</strong> is below average,
-        <strong>Q3</strong> is above average, and
-        <strong>Q4</strong> are the best scores, representing great opportunity for people with disabilities.
-        For more information on scorecards, navigate to the 'Help' section and find 'Understanding ADA-PARC Scorecards.'
-      </p>")
+      list(
+        id         = "index_rel_community_resource",
+        label      = "Community Resources",
+        indicators = c("rel_score_hcbs_ratio", "rel_score_hcbs_per_individual",
+                       "rel_score_hcv_hoh", "rel_score_pubhousing_hoh")
+      )
     )
   ),
 
-  # Dashboard display
-  fluidRow(
-    column(12, uiOutput("scorecard_ui"))
+  CP = list(
+    label = "Community Participation",
+    color = "#CC5500",
+    bg    = "#fdf4f0",
+    category_index = "Community Participation Index",
+    indices = list(
+      list(
+        id         = "index_rel_tech",
+        label      = "Technology Access",
+        indicators = c("rel_score_computer", "rel_score_smartphone", "rel_score_int")
+      ),
+      list(
+        id         = "index_rel_insurance",
+        label      = "Health Insurance",
+        indicators = c("rel_score_privatehealth", "rel_score_publichealth",
+                       "rel_score_nohealthins")
+      ),
+      list(
+        id         = "index_rel_education",
+        label      = "Education Access",
+        indicators = c("rel_score_noGED", "rel_score_bachelors")
+      ),
+      list(
+        id         = "index_rel_commute",
+        label      = "Transportation Access",
+        indicators = c("rel_score_transit", "rel_score_drivealone")
+      ),
+      list(
+        id         = "index_rel_safety",
+        label      = "Public Safety",
+        indicators = c("rel_score_propertycrime", "rel_score_violentcrime")
+      )
+    )
+  ),
+
+  WE = list(
+    label = "Work & Economic",
+    color = "#800000",
+    bg    = "#fdf0f0",
+    category_index = "Work-Economic Index",
+    indices = list(
+      list(
+        id         = "index_rel_positive_work",
+        label      = "Positive Work Score",
+        indicators = c("rel_score_employment", "rel_score_coladj_ind_income",
+                       "rel_score_coladj_hh_income")
+      ),
+      list(
+        id         = "index_rel_negative_work",
+        label      = "Negative Work Score",
+        indicators = c("rel_score_poverty", "rel_score_unemployed", "rel_score_labor")
+      ),
+      list(
+        id         = "index_rel_housing_affordability",
+        label      = "Housing Affordability",
+        indicators = c("rel_score_ssi_rent", "rel_score_renter_burden",
+                       "rel_score_owner_burden")
+      )
+    )
   )
 )
 
-# Define server logic
-server <- function(input, output, session) {
+# ══════════════════════════════════════════════════════════════════════════════
+# Indicator → data source lookup (used in About tab source table)
+# ══════════════════════════════════════════════════════════════════════════════
+ind_src <- c(
+  # CL — Living Arrangements
+  rel_score_home                 = "ACS PUMS",
+  rel_score_noninstgroupquarters = "ACS PUMS",
+  rel_score_nursing_18to64       = "ACS PUMS",
+  rel_score_corrections          = "ACS PUMS",
+  # CL — Community Resources
+  rel_score_hcbs_ratio           = "KFF / CMS-64 (FY2024)",
+  rel_score_hcbs_per_individual  = "KFF / CMS-64 (FY2024)",
+  rel_score_hcv_hoh              = "HUD POSH (2023)",
+  rel_score_pubhousing_hoh       = "HUD POSH (2023)",
+  # CP — Technology Access
+  rel_score_computer             = "ACS PUMS",
+  rel_score_smartphone           = "ACS PUMS",
+  rel_score_int                  = "ACS PUMS",
+  # CP — Health Insurance
+  rel_score_privatehealth        = "ACS B18135",
+  rel_score_publichealth         = "ACS B18135",
+  rel_score_nohealthins          = "ACS B18135",
+  # CP — Education Access
+  rel_score_noGED                = "ACS S1811",
+  rel_score_bachelors            = "ACS S1811",
+  # CP — Transportation Access
+  rel_score_transit              = "ACS PUMS",
+  rel_score_drivealone           = "ACS PUMS",
+  # CP — Public Safety
+  rel_score_propertycrime        = "FBI NIBRS (2024)",
+  rel_score_violentcrime         = "FBI NIBRS (2024)",
+  # WE — Positive Work
+  rel_score_employment           = "ACS B18131",
+  rel_score_coladj_ind_income    = "ACS PUMS + BEA RPP (2022)",
+  rel_score_coladj_hh_income     = "ACS PUMS + BEA RPP (2022)",
+  # WE — Negative Work
+  rel_score_poverty              = "ACS B18130 (derived)",
+  rel_score_unemployed           = "ACS B18131",
+  rel_score_labor                = "ACS B18131",
+  # WE — Housing Affordability
+  rel_score_ssi_rent             = "SSA ASR 2024 + HUD FMR (FY2025)",
+  rel_score_renter_burden        = "ACS PUMS",
+  rel_score_owner_burden         = "ACS PUMS"
+)
 
-  output$scorecard_ui <- renderUI({
+# ── Build the source table for the About tab ──────────────────────────────
+build_source_table <- function(hierarchy, ind_df, src_lookup) {
+  rel_df <- if (!is.null(ind_df)) ind_df |> filter(dimension == "relative") else NULL
 
-    # Community Participation (CP) — 2024 embed
-    if (input$scorecard_choice == "participation") {
+  get_label <- function(ind_id) {
+    if (is.null(rel_df)) return(ind_id)
+    row <- rel_df |> filter(indicator_id == ind_id)
+    if (nrow(row) == 0) return(ind_id)
+    sub(":\\s*Relative$", "", row$indicator_label[1])
+  }
+  get_dir <- function(ind_id) {
+    if (is.null(rel_df)) return("")
+    row <- rel_df |> filter(indicator_id == ind_id)
+    if (nrow(row) == 0) return("")
+    if (!is.na(row$direction[1]) && row$direction[1] == "higher_better")
+      "\u2191 Higher = better" else "\u2193 Lower = better"
+  }
+  get_src <- function(ind_id) {
+    v <- src_lookup[ind_id]
+    if (is.na(v)) "—" else v
+  }
 
-      HTML("
-        <div class='tableauPlaceholder' id='viz1773681931473' style='position: relative'>
-          <noscript>
-            <a href='#'>
-              <img alt=' ' src='https://public.tableau.com/static/images/Co/CommunityParticipation2024ACS-5ADA-PARC/CommunityParticipationOverall/1_rss.png' style='border: none' />
-            </a>
-          </noscript>
-          <object class='tableauViz' style='display:none;'>
-            <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
-            <param name='embed_code_version' value='3' />
-            <param name='site_root' value='' />
-            <param name='name' value='CommunityParticipation2024ACS-5ADA-PARC/CommunityParticipationOverall' />
-            <param name='tabs' value='yes' />
-            <param name='toolbar' value='yes' />
-            <param name='static_image' value='https://public.tableau.com/static/images/Co/CommunityParticipation2024ACS-5ADA-PARC/CommunityParticipationOverall/1.png' />
-            <param name='animate_transition' value='yes' />
-            <param name='display_static_image' value='yes' />
-            <param name='display_spinner' value='yes' />
-            <param name='display_overlay' value='yes' />
-            <param name='display_count' value='yes' />
-            <param name='language' value='en-US' />
-          </object>
-        </div>
+  cat_colors <- list(CL = "#C9A227", CP = "#CC5500", WE = "#800000")
 
-        <script type='text/javascript'>
-          var divElement = document.getElementById('viz1773681931473');
-          var vizElement = divElement.getElementsByTagName('object')[0];
-          vizElement.style.width  = '100%';
-          vizElement.style.height = '850px';
-
-          var scriptElement = document.createElement('script');
-          scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
-          vizElement.parentNode.insertBefore(scriptElement, vizElement);
-        </script>
-      ")
-
-    # Community Living (CL) — 2024 embed
-    } else if (input$scorecard_choice == "living") {
-
-      HTML("
-        <div class='tableauPlaceholder' id='viz1773681915237' style='position: relative'>
-          <noscript>
-            <a href='#'>
-              <img alt=' ' src='https://public.tableau.com/static/images/Co/CommunityLiving2024ACS-5ADA-PARC/CommunityLivingOverall/1_rss.png' style='border: none' />
-            </a>
-          </noscript>
-          <object class='tableauViz' style='display:none;'>
-            <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
-            <param name='embed_code_version' value='3' />
-            <param name='site_root' value='' />
-            <param name='name' value='CommunityLiving2024ACS-5ADA-PARC/CommunityLivingOverall' />
-            <param name='tabs' value='yes' />
-            <param name='toolbar' value='yes' />
-            <param name='static_image' value='https://public.tableau.com/static/images/Co/CommunityLiving2024ACS-5ADA-PARC/CommunityLivingOverall/1.png' />
-            <param name='animate_transition' value='yes' />
-            <param name='display_static_image' value='yes' />
-            <param name='display_spinner' value='yes' />
-            <param name='display_overlay' value='yes' />
-            <param name='display_count' value='yes' />
-            <param name='language' value='en-US' />
-          </object>
-        </div>
-
-        <script type='text/javascript'>
-          var divElement = document.getElementById('viz1773681915237');
-          var vizElement = divElement.getElementsByTagName('object')[0];
-          vizElement.style.width  = '100%';
-          vizElement.style.height = '850px';
-
-          var scriptElement = document.createElement('script');
-          scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
-          vizElement.parentNode.insertBefore(scriptElement, vizElement);
-        </script>
-      ")
-
-    # Work Economic (WE) — 2024 embed
-    } else if (input$scorecard_choice == "work_economic") {
-
-      HTML("
-        <div class='tableauPlaceholder' id='viz1773683116001' style='position: relative'>
-          <noscript>
-            <a href='#'>
-              <img alt=' ' src='https://public.tableau.com/static/images/Wo/WorkEconomic2024ACS-5ADA-PARC/WorkEconomicOverall/1_rss.png' style='border: none' />
-            </a>
-          </noscript>
-          <object class='tableauViz' style='display:none;'>
-            <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
-            <param name='embed_code_version' value='3' />
-            <param name='site_root' value='' />
-            <param name='name' value='WorkEconomic2024ACS-5ADA-PARC/WorkEconomicOverall' />
-            <param name='tabs' value='yes' />
-            <param name='toolbar' value='yes' />
-            <param name='static_image' value='https://public.tableau.com/static/images/Wo/WorkEconomic2024ACS-5ADA-PARC/WorkEconomicOverall/1.png' />
-            <param name='animate_transition' value='yes' />
-            <param name='display_static_image' value='yes' />
-            <param name='display_spinner' value='yes' />
-            <param name='display_overlay' value='yes' />
-            <param name='display_count' value='yes' />
-            <param name='language' value='en-US' />
-          </object>
-        </div>
-
-        <script type='text/javascript'>
-          var divElement = document.getElementById('viz1773683116001');
-          var vizElement = divElement.getElementsByTagName('object')[0];
-          vizElement.style.width  = '100%';
-          vizElement.style.height = '850px';
-
-          var scriptElement = document.createElement('script');
-          scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
-          vizElement.parentNode.insertBefore(scriptElement, vizElement);
-        </script>
-      ")
+  rows <- list()
+  for (cat_id in names(hierarchy)) {
+    cat_info  <- hierarchy[[cat_id]]
+    cat_color <- cat_colors[[cat_id]]
+    rows[[length(rows) + 1]] <- tags$tr(
+      tags$td(
+        colspan = "3",
+        style = sprintf(
+          paste0("background:%s;color:white;font-weight:700;font-size:1rem;",
+                 "padding:0.5rem 0.9rem;letter-spacing:0.02em;"),
+          cat_color
+        ),
+        cat_info$label
+      )
+    )
+    for (idx_info in cat_info$indices) {
+      rows[[length(rows) + 1]] <- tags$tr(
+        tags$td(
+          colspan = "3",
+          style = sprintf(
+            paste0("background:%s22;color:#1c2b3a;font-weight:700;font-size:1rem;",
+                   "padding:0.35rem 0.9rem 0.3rem 1.5rem;border-top:1px solid #eee;",
+                   "text-transform:uppercase;letter-spacing:0.06em;"),
+            cat_color
+          ),
+          idx_info$label
+        )
+      )
+      for (ind_id in idx_info$indicators) {
+        rows[[length(rows) + 1]] <- tags$tr(
+          style = "border-bottom:1px solid #f0f0f0;",
+          tags$td(
+            style = "padding:0.35rem 0.9rem 0.35rem 2.2rem;font-size:1rem;color:#1c2b3a;",
+            get_label(ind_id)
+          ),
+          tags$td(
+            style = "padding:0.35rem 0.6rem;font-size:1rem;color:#444;white-space:nowrap;",
+            get_dir(ind_id)
+          ),
+          tags$td(
+            style = "padding:0.35rem 0.9rem;font-size:1rem;color:#333;",
+            get_src(ind_id)
+          )
+        )
+      }
     }
-  })
+  }
+
+  div(
+    style = "margin-top:1.5rem;",
+    tags$h4(
+      style = paste0("font-size:1rem;font-weight:700;text-transform:uppercase;",
+                     "letter-spacing:0.07em;color:#1c2b3a;margin:0 0 0.6rem;"),
+      "Indicators & Data Sources"
+    ),
+    div(
+      style = paste0("background:white;border-radius:8px;",
+                     "box-shadow:0 1px 4px rgba(0,0,0,0.07);overflow:hidden;"),
+      tags$table(
+        style = "width:100%;border-collapse:collapse;",
+        tags$caption(
+          style = "text-align:left;font-size:1rem;color:#1c2b3a;padding:0.5rem 0.9rem;caption-side:top;",
+          "ADA-PARC Scorecard indicators organized by category, with direction of measurement and data source for each."
+        ),
+        tags$thead(
+          tags$tr(
+            style = "background:#f0f2f6;border-bottom:2px solid #dde2ea;",
+            tags$th(scope = "col", style = "padding:0.5rem 0.9rem;text-align:left;font-size:1rem;text-transform:uppercase;letter-spacing:0.07em;color:#1c2b3a;", "Indicator"),
+            tags$th(scope = "col", style = "padding:0.5rem 0.6rem;text-align:left;font-size:1rem;text-transform:uppercase;letter-spacing:0.07em;color:#1c2b3a;", "Direction"),
+            tags$th(scope = "col", style = "padding:0.5rem 0.9rem;text-align:left;font-size:1rem;text-transform:uppercase;letter-spacing:0.07em;color:#1c2b3a;", "Data Source")
+          )
+        ),
+        tags$tbody(rows)
+      )
+    )
+  )
 }
 
-# Run the application
+source_table <- build_source_table(index_hierarchy, indicator_dict, ind_src)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Reference tab helper functions
+# ══════════════════════════════════════════════════════════════════════════════
+
+indicator_row_ui <- function(ind_id, ind_df) {
+  if (is.null(ind_df)) return(tags$li(style = "list-style:none;", ind_id))
+  row <- ind_df |> filter(indicator_id == ind_id)
+  if (nrow(row) == 0) return(tags$li(style = "list-style:none;", ind_id))
+  label     <- sub(":\\s*(Relative|Equity)$", "", row$indicator_label[1])
+  direction <- row$direction[1]
+  dir_icon  <- if (!is.na(direction) && direction == "higher_better") "\u2191" else "\u2193"
+  tags$li(
+    style = "list-style:none;padding:3px 0;",
+    tags$span(style = "font-size:1rem;color:#1c2b3a;", dir_icon, " ", label)
+  )
+}
+
+sub_index_card_ui <- function(idx_info, ind_df, accent_color) {
+  ind_rows <- lapply(idx_info$indicators, indicator_row_ui, ind_df = ind_df)
+  div(
+    style = sprintf(
+      paste0("background:white;border-radius:7px;border-left:3px solid %s;",
+             "padding:0.75rem 1rem;margin-bottom:0.65rem;",
+             "box-shadow:0 1px 3px rgba(0,0,0,0.07);"),
+      accent_color
+    ),
+    tags$h5(
+      style = "font-size:1rem;font-weight:700;color:#1c2b3a;margin:0 0 0.3rem;",
+      idx_info$label
+    ),
+    tags$ul(style = "margin:0;padding:0;", ind_rows)
+  )
+}
+
+category_column_ui <- function(cat_id, cat_info, ind_df) {
+  body_content <- lapply(cat_info$indices, sub_index_card_ui,
+                         ind_df = ind_df, accent_color = cat_info$color)
+  div(
+    style = "flex:1;min-width:270px;",
+    div(
+      style = sprintf(
+        paste0("background:%s;color:white;border-radius:8px 8px 0 0;",
+               "padding:0.75rem 1.1rem;margin-bottom:0.7rem;"),
+        cat_info$color
+      ),
+      tags$h4(style = "margin:0;font-size:1.1rem;font-weight:700;", cat_info$label),
+      tags$p(
+        style = "margin:0.15rem 0 0;font-size:1rem;",
+        "\u2192 ", cat_info$category_index
+      )
+    ),
+    body_content
+  )
+}
+
+build_reference_panel <- function(hierarchy, ind_df) {
+  rel_df <- if (!is.null(ind_df)) ind_df |> filter(dimension == "relative") else NULL
+
+  key <- div(
+    style = paste0("margin-bottom:1rem;padding:0.5rem 1rem;background:white;",
+                   "border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.07);",
+                   "display:inline-block;"),
+    tags$span(style = "font-size:1rem;color:#444;",
+              "\u2191 higher = better  \u00b7  \u2193 lower = better")
+  )
+
+  cols <- mapply(
+    category_column_ui,
+    cat_id   = names(hierarchy),
+    cat_info = hierarchy,
+    MoreArgs = list(ind_df = rel_df),
+    SIMPLIFY = FALSE
+  )
+
+  tagList(
+    key,
+    div(
+      style = "display:flex;gap:1.1rem;align-items:flex-start;flex-wrap:wrap;",
+      cols
+    )
+  )
+}
+
+reference_panel <- build_reference_panel(index_hierarchy, indicator_dict)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CSS
+# ══════════════════════════════════════════════════════════════════════════════
+app_css <- "
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&display=swap');
+
+  body {
+    font-family: 'EB Garamond', Georgia, serif;
+    background: #f0f2f6;
+    color: #1c2b3a;
+  }
+  .app-header { padding: 1.4rem 0 0.6rem; border-bottom: 2px solid #e2e6ed; margin-bottom: 1.4rem; }
+  .app-header h2 { font-size: 2.6rem; font-weight: 700; color: #1c2b3a; margin: 0 0 0.2rem; letter-spacing: -0.015em; line-height: 1; }
+  .app-header p { color: #1c2b3a; font-size: 1.2rem; margin: 0; line-height: 1.6; }
+  .app-header .revision-badge { display: inline-block; background: #0d3b8e; color: white; font-size: 0.9rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-left: 10px; vertical-align: middle; letter-spacing: 0.04em; }
+  .controls-box { background: white; border-radius: 10px; padding: 1.1rem 1.6rem 1rem; margin-bottom: 1.2rem; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .controls-box label { font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.07em; color: #1c2b3a; margin-bottom: 0.4rem; display: block; }
+  .controls-box .form-group { margin-bottom: 0; }
+  .controls-box select { font-family: 'EB Garamond', Georgia, serif; font-size: 1.1rem; color: #1c2b3a; }
+  .btn-generate { background: #0d3b8e !important; color: white !important; border: none !important; border-radius: 6px !important; font-family: 'EB Garamond', Georgia, serif !important; font-size: 1.15rem !important; font-weight: 700 !important; padding: 9px 20px !important; margin-top: 24px; width: 100%; }
+  .btn-generate:hover { background: #0a2d6e !important; }
+  .btn-download { background: white !important; color: #000000 !important; border: 1.5px solid #1c2b3a !important; border-radius: 6px !important; font-family: 'EB Garamond', Georgia, serif !important; font-size: 1.15rem !important; font-weight: 700 !important; padding: 9px 20px !important; margin-top: 24px; width: 100%; }
+  .btn-download:hover { background: #f0f4fc !important; }
+  .btn-download:disabled, .btn-download[disabled] { opacity: 0.45 !important; cursor: not-allowed !important; }
+  .placeholder-box { background: white; border-radius: 10px; padding: 5rem 2rem; text-align: center; color: #1c2b3a; font-size: 1.15rem; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .placeholder-box .ph-icon { font-size: 2.4rem; margin-bottom: 0.8rem; display: block; opacity: 0.35; }
+  .scorecard-frame { width: 100%; border: none; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.09); display: block; }
+  .nav-tabs { border-bottom: 2px solid #dde2ea; margin-bottom: 0; }
+  .nav-tabs .nav-link { font-family: 'EB Garamond', Georgia, serif; font-size: 1.2rem; font-weight: 600; color: #1c2b3a; border: none !important; border-radius: 0 !important; padding: 0.5rem 1.2rem 0.6rem; }
+  .nav-tabs .nav-link:hover { color: #0d3b8e; background: transparent; }
+  .nav-tabs .nav-link.active { color: #0d3b8e !important; border-bottom: 3px solid #0d3b8e !important; background: transparent !important; }
+  .tab-content { padding-top: 1.2rem; }
+  .ref-section-note { font-size: 1rem; color: #444; font-style: italic; margin: 0 0 0.9rem; }
+"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# UI
+# ══════════════════════════════════════════════════════════════════════════════
+ui <- fluidPage(
+  useShinyjs(),
+  tags$head(tags$style(HTML(app_css))),
+
+  div(
+    style = "max-width: 1100px; margin: 0 auto; padding: 0 1.2rem 3rem;",
+
+    div(class = "app-header",
+        tags$h2(
+          "ADA-PARC Scorecard",
+          tags$span(class = "revision-badge", "2024 Revision")
+        ),
+        tags$p(
+          "Select a state or category to generate a scorecard report, or visit the ",
+          tags$strong("About"), " tab to learn about the scorecard indices, indicators, and data sources."
+        )
+    ),
+
+    tabsetPanel(id = "main_tabs", type = "tabs",
+
+      # ── National Scorecard ─────────────────────────────────────────────────
+      tabPanel("National Scorecard",
+        br(),
+        div(class = "controls-box",
+          fluidRow(
+            column(6,
+              selectInput("category", "Category",
+                          choices  = cat_choices,
+                          selected = "CL",
+                          width    = "100%")
+            ),
+            column(3,
+              actionButton("render_cat", "Generate Scorecard",
+                           class = "btn-generate", width = "100%",
+                           `aria-label` = "Generate National Category Scorecard")
+            ),
+            column(3,
+              downloadButton("download_cat", "Download HTML",
+                             class = "btn-download",
+                             `aria-label` = "Download National Category Scorecard HTML")
+            )
+          )
+        ),
+        uiOutput("cat_output_ui")
+      ),
+
+      # ── State Scorecard ────────────────────────────────────────────────────
+      tabPanel("State Scorecard",
+        br(),
+        div(class = "controls-box",
+          fluidRow(
+            column(6,
+              selectInput("state_abbr", "State or Territory",
+                          choices  = state_choices,
+                          selected = "IL",
+                          width    = "100%")
+            ),
+            column(3,
+              actionButton("render_state", "Generate Scorecard",
+                           class = "btn-generate", width = "100%",
+                           `aria-label` = "Generate State Scorecard")
+            ),
+            column(3,
+              downloadButton("download_state", "Download HTML",
+                             class = "btn-download",
+                             `aria-label` = "Download State Scorecard HTML")
+            )
+          )
+        ),
+        uiOutput("state_output_ui")
+      ),
+
+      # ── About ──────────────────────────────────────────────────────────────
+      tabPanel("About",
+        br(),
+        div(
+          style = paste0("background:white;border-radius:10px;padding:1.6rem 2rem 1.4rem;",
+                         "margin-bottom:1.4rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);"),
+          tags$h3(
+            style = "font-size:1.7rem;font-weight:700;color:#1c2b3a;margin:0 0 0.8rem;line-height:1.3;",
+            "About the ADA-PARC Scorecard"
+          ),
+          tags$p(
+            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.75;margin:0 0 0.9rem;",
+            "The ADA-PARC (Americans with Disabilities Act — Policy and Research Collaborative) ",
+            "Scorecard is a comprehensive, evidence-based tool for measuring how well each U.S. ",
+            "state supports the full inclusion and wellbeing of people with disabilities. ",
+            "Grounded in the civil rights framework of the ADA, the scorecard evaluates states ",
+            "not just on the presence of disability policy, but on measurable outcomes — ",
+            "where people with disabilities actually live, work, participate, and thrive."
+          ),
+          tags$p(
+            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.75;margin:0 0 0.9rem;",
+            "Scores are drawn from multiple federal data sources, including the U.S. Census ",
+            "Bureau American Community Survey (ACS), the Department of Housing and Urban ",
+            "Development (HUD), the FBI's National Incident-Based Reporting System (NIBRS), ",
+            "the Social Security Administration (SSA), the Kaiser Family Foundation and Centers ",
+            "for Medicare & Medicaid Services (KFF/CMS), and the Bureau of Economic Analysis ",
+            "(BEA). All scores range from 0 to 100, where higher is always better."
+          ),
+          tags$p(
+            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.75;margin:0 0 0.9rem;",
+            "The scorecard is organized into three domains:"
+          ),
+          tags$ul(
+            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.85;margin:0 0 0.9rem;padding-left:1.6rem;",
+            tags$li(
+              style = "margin-bottom:0.5rem;",
+              tags$strong("Community Living"), " — measures whether people with disabilities ",
+              "live in integrated community settings rather than nursing homes or correctional ",
+              "facilities, and whether states invest in community-based supports such as ",
+              "Medicaid Home and Community-Based Services (HCBS) and affordable housing programs."
+            ),
+            tags$li(
+              style = "margin-bottom:0.5rem;",
+              tags$strong("Community Participation"), " — captures access to the tools and ",
+              "systems that enable people with disabilities to participate fully in community life, ",
+              "including technology access, health insurance coverage, educational attainment, ",
+              "transportation options, and public safety."
+            ),
+            tags$li(
+              style = "margin-bottom:0;",
+              tags$strong("Work & Economic"), " — measures economic inclusion and security, ",
+              "including employment rates, cost-of-living-adjusted income, poverty and ",
+              "unemployment rates, and housing affordability for people with disabilities."
+            )
+          ),
+          tags$p(
+            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.75;margin:0 0 0.9rem;",
+            "Within each domain, individual indicators are standardized using z-scores and ",
+            "combined into sub-index scores, which are then aggregated into a single domain ",
+            "score. States are ranked among all 50 states, Washington D.C., and Puerto Rico, ",
+            "and assigned a performance tier: ",
+            tags$strong("Excellent"), " (ranks 1–12), ",
+            tags$strong("Above Average"), " (13–25), ",
+            tags$strong("Below Average"), " (26–39), or ",
+            tags$strong("Poor"), " (40+)."
+          ),
+          tags$p(
+            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.75;margin:0;",
+            "The ADA-PARC Scorecard is produced with the intention of informing policymakers, advocates, and the ",
+            "public about the state of disability inclusion across the country, and to highlight ",
+            "the states leading the way, as well as those with the most room to improve."
+          )
+        ),
+        source_table
+      )
+    )
+  )
+)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SERVER
+# ══════════════════════════════════════════════════════════════════════════════
+server <- function(input, output, session) {
+
+  state_rendered <- reactiveVal(FALSE)
+  cat_rendered   <- reactiveVal(FALSE)
+
+  shinyjs::disable("download_state")
+  shinyjs::disable("download_cat")
+
+  placeholder <- function(msg) {
+    div(class = "placeholder-box",
+        tags$span(class = "ph-icon", HTML("&#9634;")),
+        msg)
+  }
+
+  # ── STATE SCORECARD ────────────────────────────────────────────────────────
+  observeEvent(input$render_state, {
+
+    state_rendered(FALSE)
+    shinyjs::disable("download_state")
+
+    state_label <- names(state_choices)[state_choices == input$state_abbr]
+
+    withProgress(
+      message = paste0("Generating scorecard for ", state_label, "\u2026"),
+      detail  = "This usually takes 15\u201325 seconds.",
+      value   = 0.15,
+      {
+        tryCatch({
+          quarto::quarto_render(
+            input          = file.path(scorecard_dir, "state_scorecard.qmd"),
+            execute_params = list(state_abbr = input$state_abbr, year = 2024),
+            execute_dir    = scorecard_dir
+          )
+          file.copy(
+            file.path(scorecard_dir, "state_scorecard.html"),
+            file.path(www_dir, "state_output.html"),
+            overwrite = TRUE
+          )
+          setProgress(1)
+          state_rendered(TRUE)
+          shinyjs::enable("download_state")
+        }, error = function(e) {
+          showNotification(
+            ui       = paste("Render failed:", conditionMessage(e)),
+            type     = "error",
+            duration = 15
+          )
+        })
+      }
+    )
+  })
+
+  output$state_output_ui <- renderUI({
+    if (!state_rendered()) {
+      placeholder("Select a state above and click \u201cGenerate Scorecard\u201d to view the report.")
+    } else {
+      cache_v     <- as.integer(Sys.time())
+      state_label <- names(state_choices)[state_choices == input$state_abbr]
+      tags$iframe(
+        src       = paste0("sc_out/state_output.html?v=", cache_v),
+        class     = "scorecard-frame",
+        height    = "940px",
+        scrolling = "yes",
+        title     = paste0(state_label, " ADA-PARC State Scorecard")
+      )
+    }
+  })
+
+  output$download_state <- downloadHandler(
+    filename = function() {
+      state_label <- names(state_choices)[state_choices == input$state_abbr]
+      paste0("ADAPARC_", gsub("[^A-Za-z0-9]+", "_", state_label),
+             "_Scorecard_2024.html")
+    },
+    content = function(file) {
+      if (file.exists(file.path(www_dir, "state_output.html"))) {
+        file.copy(file.path(www_dir, "state_output.html"), file)
+      } else {
+        writeLines("<html><body>No scorecard generated yet.</body></html>", file)
+      }
+    }
+  )
+
+  # ── CATEGORY SCORECARD ─────────────────────────────────────────────────────
+  observeEvent(input$render_cat, {
+
+    cat_rendered(FALSE)
+    shinyjs::disable("download_cat")
+
+    cat_label <- names(cat_choices)[cat_choices == input$category]
+
+    withProgress(
+      message = paste0("Generating ", cat_label, " scorecard\u2026"),
+      detail  = "This usually takes 15\u201325 seconds.",
+      value   = 0.15,
+      {
+        tryCatch({
+          quarto::quarto_render(
+            input          = file.path(scorecard_dir, "category_scorecard.qmd"),
+            execute_params = list(category = input$category, year = 2024),
+            execute_dir    = scorecard_dir
+          )
+          file.copy(
+            file.path(scorecard_dir, "category_scorecard.html"),
+            file.path(www_dir, "cat_output.html"),
+            overwrite = TRUE
+          )
+          setProgress(1)
+          cat_rendered(TRUE)
+          shinyjs::enable("download_cat")
+        }, error = function(e) {
+          showNotification(
+            ui       = paste("Render failed:", conditionMessage(e)),
+            type     = "error",
+            duration = 15
+          )
+        })
+      }
+    )
+  })
+
+  output$cat_output_ui <- renderUI({
+    if (!cat_rendered()) {
+      placeholder("Select a category above and click \u201cGenerate Scorecard\u201d to view the report.")
+    } else {
+      cache_v   <- as.integer(Sys.time())
+      cat_label <- names(cat_choices)[cat_choices == input$category]
+      tags$iframe(
+        src       = paste0("sc_out/cat_output.html?v=", cache_v),
+        class     = "scorecard-frame",
+        height    = "1080px",
+        scrolling = "yes",
+        title     = paste0(cat_label, " ADA-PARC Category Scorecard")
+      )
+    }
+  })
+
+  output$download_cat <- downloadHandler(
+    filename = function() {
+      cat_label <- names(cat_choices)[cat_choices == input$category]
+      paste0("ADAPARC_", gsub("[^A-Za-z0-9]+", "_", cat_label),
+             "_Scorecard_2024.html")
+    },
+    content = function(file) {
+      if (file.exists(file.path(www_dir, "cat_output.html"))) {
+        file.copy(file.path(www_dir, "cat_output.html"), file)
+      } else {
+        writeLines("<html><body>No scorecard generated yet.</body></html>", file)
+      }
+    }
+  )
+
+}
+
 shinyApp(ui = ui, server = server)
 ```
 
 # Fact Sheets
 
-```{r fact_sheets_full_embed, echo=FALSE, message=FALSE, warning=FALSE}
+```{r fact_sheets_html, echo=FALSE, message=FALSE, warning=FALSE}
 library(shiny)
 library(htmltools)
 
-# --- Config on disk
-pdf_dir <- "www/factsheets"  # your real folder on disk (case-sensitive)
+# Serve the factsheets/ directory so HTML files are reachable in the browser
+shiny::addResourcePath("factsheets", normalizePath("factsheets", mustWork = TRUE))
 
-# --- Validate the folder exists locally
-if (!dir.exists(pdf_dir)) {
-  stop("Folder not found: ", pdf_dir,
-       "\nCreate it and put PDFs inside (or fix the path).")
-}
-
-# --- Discover PDFs (filenames can have spaces)
-pdfs <- list.files(pdf_dir, pattern = "\\.pdf$", ignore.case = TRUE)
-if (!length(pdfs)) {
-  stop("No PDFs found in ", pdf_dir)
-}
-
-# --- Serve this folder at a stable URL prefix, independent of 'www/'
-#     This sidesteps Rmd resource bundling issues.
-#     The URL base will be '/facts' no matter what.
-shiny::addResourcePath("facts", normalizePath(pdf_dir, mustWork = TRUE))
-
-# --- UI (full-page embed)
-ui <- fluidPage(
-  tags$head(
-    tags$style(HTML("
-      html, body { height: 100%; }
-      .topbar { padding: 10px 0; border-bottom: 1px solid #eee; }
-      #pdf_container { position: relative; height: calc(100vh - 90px); }
-      #pdf_frame { position: absolute; inset:0; width:100%; height:100%; border:none; }
-      .status { margin-left: 10px; color: #999; }
-    "))
+# Fact sheet metadata — title, subtitle, description, and filename
+fact_sheets <- list(
+  list(
+    id       = "housing",
+    title    = "Access to Housing",
+    subtitle = "Community Living for People with Disabilities",
+    desc     = "Examines access to Public Housing and Housing Choice Voucher programs for people with disabilities, with state-by-state rankings and interactive maps.",
+    file     = "factsheet-housing.html"
   ),
-  div(class="topbar container-fluid",
-      fluidRow(
-        column(6,
-               selectInput("choice", NULL,
-                 choices = setNames(pdfs, sub("\\.pdf$", "", pdfs, ignore.case = TRUE)),
-                 selected = pdfs[1], width = "100%")
-        ),
-        column(6,
-               div(class="pull-right",
-                   tags$a(id="open_new", class="btn btn-link", target="_blank", rel="noopener", "Open in new tab"),
-                   downloadButton("dl", "Download"),
-                   span(id="status", class="status")
-               )
-        )
-      )
+  list(
+    id       = "hcbs",
+    title    = "State HCBS Spending",
+    subtitle = "Home and Community-Based Services",
+    desc     = "Compares state Medicaid spending on Home and Community-Based Services that support people with disabilities in living in the community.",
+    file     = "factsheet-hcbs.html"
   ),
-  div(id="pdf_container", tags$iframe(id="pdf_frame", src=""))
+  list(
+    id       = "nursing-home",
+    title    = "Nursing Home Rates",
+    subtitle = "Institutionalization Ages 18 to 64",
+    desc     = "Shows rates of nursing home institutionalization among working-age people with disabilities across all 50 states, with tier-based rankings.",
+    file     = "factsheet-nursing-home.html"
+  ),
+  list(
+    id       = "poverty",
+    title    = "Poverty Rates",
+    subtitle = "Working-Age People with Disabilities",
+    desc     = "Compares poverty rates between people with and without disabilities of working age, highlighting state-level disparities across the country.",
+    file     = "factsheet-poverty.html"
+  )
 )
 
-server <- function(input, output, session){
+ui <- fluidPage(
+  tags$head(
+    tags$link(rel = "preconnect", href = "https://fonts.googleapis.com"),
+    tags$link(
+      rel  = "stylesheet",
+      href = "https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+    ),
+    tags$style(HTML("
+      body {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        background: #f9f7f4;
+        margin: 0;
+      }
+      .fs-page {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1.75rem 1.25rem 2.5rem;
+      }
+      .fs-heading {
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: #6b0f0f;
+        margin: 0 0 0.3rem;
+        border-left: 4px solid #c8a743;
+        padding-left: 0.65rem;
+      }
+      .fs-subheading {
+        font-size: 1.05rem;
+        color: #444;
+        margin: 0 0 1.75rem 0;
+        padding-left: 0.65rem;
+        line-height: 1.55;
+      }
+      .fs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+      }
+      .fs-card {
+        background: #fff;
+        border: 1px solid #e0dbd2;
+        border-top: 4px solid #6b0f0f;
+        border-radius: 4px;
+        padding: 1.4rem 1.3rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+        transition: box-shadow 0.15s;
+      }
+      .fs-card:hover {
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      }
+      .fs-card-subtitle {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #6b0f0f;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0 0 0.35rem;
+      }
+      .fs-card-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1c1c1c;
+        margin: 0 0 0.6rem;
+      }
+      .fs-card-desc {
+        font-size: 1.05rem;
+        color: #444;
+        line-height: 1.6;
+        flex-grow: 1;
+        margin-bottom: 1.1rem;
+      }
+      .fs-btn-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .fs-btn-view {
+        flex: 1;
+        min-width: 70px;
+        background: #6b0f0f;
+        color: #fff !important;
+        border: none;
+        border-radius: 3px;
+        padding: 0.45rem 0.7rem;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        transition: background 0.15s;
+        text-decoration: none;
+        display: inline-block;
+        line-height: 1.4;
+      }
+      .fs-btn-view:hover, .fs-btn-view:focus {
+        background: #8c1515;
+        color: #fff !important;
+        text-decoration: none;
+        outline: 2px solid #c8a743;
+        outline-offset: 2px;
+      }
+      .fs-btn-view.active {
+        background: #c8a743;
+        color: #1c1c1c !important;
+      }
+      .fs-btn-dl {
+        flex: 1;
+        min-width: 70px;
+        background: #fff;
+        color: #6b0f0f !important;
+        border: 1.5px solid #6b0f0f;
+        border-radius: 3px;
+        padding: 0.45rem 0.7rem;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        transition: background 0.15s;
+        text-decoration: none;
+        display: inline-block;
+        line-height: 1.4;
+      }
+      .fs-btn-dl:hover, .fs-btn-dl:focus {
+        background: #fdf5f5;
+        color: #6b0f0f !important;
+        text-decoration: none;
+        outline: 2px solid #c8a743;
+        outline-offset: 2px;
+      }
+      .fs-preview-wrap {
+        border: 1px solid #e0dbd2;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+      }
+      .fs-preview-bar {
+        background: #1c1c1c;
+        color: #fff;
+        padding: 0.55rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 1rem;
+        gap: 1rem;
+      }
+      .fs-preview-bar span {
+        font-weight: 600;
+        color: #e8e8e8;
+      }
+      .fs-preview-bar a {
+        color: #c8a743;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .fs-preview-bar a:hover {
+        text-decoration: underline;
+      }
+      #fs_frame {
+        width: 100%;
+        height: 78vh;
+        border: none;
+        display: none;
+      }
+      .fs-empty {
+        height: 220px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #595959;
+        font-size: 1.05rem;
+        background: #fafaf8;
+        font-style: italic;
+      }
+    "))
+  ),
 
-  # Build URL for the selected file under the explicit '/facts' path
-  file_url <- reactive({
-    req(input$choice)
-    paste0("facts/", URLencode(input$choice, reserved = TRUE))
-  })
+  div(class = "fs-page",
 
-  file_disk <- reactive({
-    req(input$choice)
-    file.path(pdf_dir, input$choice)
-  })
+    h2(class = "fs-heading", "ADA-PARC Fact Sheets"),
+    p(class = "fs-subheading",
+      "Accessible, interactive fact sheets on disability community living indicators. ",
+      "Select any fact sheet to preview it below, or download the HTML file directly."
+    ),
 
-  # Wire iframe + link + status
-  observe({
-    url <- file_url()
-    # iframe
-    session$sendCustomMessage("setPdfSrc", list(src = url))
-    # open-in-new-tab
-    session$sendCustomMessage("setOpenHref", list(href = url))
-    # status text (shows disk path for quick sanity check)
-    txt <- paste("Serving:", file_disk())
-    session$sendCustomMessage("setStatus", list(text = txt))
-  })
+    # Card grid
+    div(class = "fs-grid",
+      lapply(fact_sheets, function(fs) {
+        div(class = "fs-card",
+          p(class = "fs-card-subtitle", fs$subtitle),
+          h3(class = "fs-card-title", fs$title),
+          p(class = "fs-card-desc", fs$desc),
+          div(class = "fs-btn-row",
+            tags$button(
+              class   = "fs-btn-view",
+              id      = paste0("view_", fs$id),
+              onclick = paste0("loadFS('", fs$file, "', '", fs$title, "', this)"),
+              "View"
+            ),
+            tags$a(
+              class    = "fs-btn-dl",
+              href     = paste0("factsheets/", fs$file),
+              download = fs$file,
+              "Download"
+            )
+          )
+        )
+      })
+    ),
 
-  # Download handler (from disk)
-  output$dl <- downloadHandler(
-    filename = function() input$choice,
-    content  = function(file) { file.copy(file_disk(), file, overwrite = TRUE) },
-    contentType = "application/pdf"
-  )
+    # Preview pane
+    div(class = "fs-preview-wrap",
+      div(class = "fs-preview-bar",
+        tags$span(id = "fs_current_title", "Select a fact sheet above to preview it here"),
+        tags$a(
+          id     = "fs_open_new",
+          href   = "#",
+          target = "_blank",
+          rel    = "noopener",
+          style  = "display:none",
+          "Open in new tab \u2197"
+        )
+      ),
+      tags$iframe(
+        id      = "fs_frame",
+        src     = "",
+        title   = "Fact Sheet viewer",
+        tabindex = "0"
+      ),
+      div(id = "fs_empty", class = "fs-empty",
+        "Select a fact sheet above to preview it here."
+      )
+    )
 
-  # Minimal JS glue
-  session$sendCustomMessage("init", list())
-}
+  ), # end .fs-page
 
-# Inject tiny JS helpers
-ui <- tagList(
-  ui,
+  # Vanilla JS — no Shiny messages needed
   tags$script(HTML("
-    Shiny.addCustomMessageHandler('setPdfSrc', function(x){
-      var f = document.getElementById('pdf_frame'); if (f) f.src = x.src;
-    });
-    Shiny.addCustomMessageHandler('setOpenHref', function(x){
-      var a = document.getElementById('open_new'); if (a) a.href = x.href;
-    });
-    Shiny.addCustomMessageHandler('setStatus', function(x){
-      var s = document.getElementById('status'); if (s) s.textContent = x.text;
-    });
+    function loadFS(file, title, btn) {
+      var frame    = document.getElementById('fs_frame');
+      var empty    = document.getElementById('fs_empty');
+      var label    = document.getElementById('fs_current_title');
+      var openLink = document.getElementById('fs_open_new');
+      var url      = 'factsheets/' + file;
+
+      // Update active button highlight
+      document.querySelectorAll('.fs-btn-view').forEach(function(b) {
+        b.classList.remove('active');
+      });
+      btn.classList.add('active');
+
+      // Load in iframe
+      frame.src          = url;
+      frame.style.display = 'block';
+      empty.style.display = 'none';
+
+      // Update bar
+      label.textContent  = title;
+      openLink.href      = url;
+      openLink.style.display = 'inline';
+    }
   "))
 )
 
-# Run the application
+server <- function(input, output, session) {}
 shinyApp(ui = ui, server = server)
 ```
 
@@ -1357,92 +2803,152 @@ shinyApp(ui = ui, server = server)
 library(shiny)
 library(htmltools)
 
-# -----------------------------
-# Robust PDF setup (same pattern as fact sheets)
-# -----------------------------
-pdf_dir  <- "www"
-pdf_file <- "ScorecardReport.pdf"
-pdf_disk <- file.path(pdf_dir, pdf_file)
+# Help page styles
+tags$style(HTML("
+  /* ── Help page layout ───────────────────────────────────────────── */
+  .help-wrap {
+    max-width: 680px;
+    margin: 2.5rem auto;
+    padding: 0 1.5rem 3rem 1.5rem;
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+  }
 
-if (!file.exists(pdf_disk)) {
-  stop("Help PDF not found at: ", pdf_disk)
-}
+  /* ── Page heading ───────────────────────────────────────────────── */
+  .help-heading {
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #1c2b3a;
+    margin: 0 0 0.25rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #c8a743;
+    letter-spacing: -0.01em;
+  }
 
-# Serve www/ via an explicit, stable path
-shiny::addResourcePath("helpdocs", normalizePath(pdf_dir, mustWork = TRUE))
+  .help-subheading {
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 1.6rem;
+    color: #252930;
+    font-style: italic;
+    margin: 0 0 2rem 0;
+  }
 
-# -----------------------------
-# EXISTING HELP CONTENT (unchanged)
-# -----------------------------
+  /* ── Section cards ──────────────────────────────────────────────── */
+  .help-card {
+    background: #ffffff;
+    border: 1px solid #e4e8ef;
+    border-radius: 4px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.25rem;
+  }
 
-# Heading and Subheading
-tags$h1(
-  "Help",
-  style = "font-weight: bold; font-size: 28px; margin-bottom: 10px;"
-)
+  .help-card-title {
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #591313;
+    margin: 0 0 0.6rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 1.25rem;
+  }
 
-# Message with Contact Button
-tags$p(
-  style = "color: black; font-size: 16px; margin-bottom: 10px;",
-  "You have reached the page for additional information on getting the most out of our website. If you have questions beyond this scope, feel free to contact us!"
-)
+  .help-card p {
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 1.4rem;
+    color: #1c2b3a;
+    line-height: 1.75;
+    margin: 0 0 1rem 0;
+  }
 
-tags$a(
-  href  = "mailto:joyhammel@uic.edu",
-  class = "email-button",
-  style = "font-weight: bold; font-size: 18px; display: inline-block; margin-top: 5px;",
-  "Contact Us"
-)
+  /* ── Palette selector within card ──────────────────────────────── */
+  .help-card .control-label,
+  .help-card label,
+  .help-card h4 {
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 1.4rem !important;
+    font-weight: 600;
+    color: #1c2b3a;
+    margin-bottom: 0.4rem;
+  }
 
-# Updated Map Palette Choices
-access_map_palette_choices <- list(
-  "Purple Gradient"       = "Purples",
-  "Yellow-Orange-Red"     = "YlOrRd",
-  "Grayscale Gradient"    = "Greys",
-  "Teal-Blue Gradient"    = "GnBu",
-  "Green-Yellow Gradient" = "YlGn",
-  "Brown-Blue Diverging"  = "BrBG"
-)
+  .help-card .form-control,
+  .help-card .selectize-input,
+  .help-card .selectize-dropdown {
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 1.6rem;
+    border-color: #d0d7e2;
+  }
 
-# Select Input for Map Palette
-selectInput(
-  inputId = "access_map_palette",
-  label   = h5("Select Map Color Palette:"),
-  choices = names(access_map_palette_choices),
-  selected = "Yellow-Orange-Red"
+  .help-card .selectize-input.focus {
+    border-color: #c8a743 !important;
+    box-shadow: 0 0 0 3px rgba(200, 167, 67, 0.2) !important;
+  }
+
+  .help-palette-note {
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 1.6rem;
+    color: #4a5568;
+    font-style: italic;
+    margin-top: 0.6rem;
+    margin-bottom: 0;
+  }
+"))
+
+# Help page content
+div(class = "help-wrap",
+
+  # Page title
+  tags$h1("Help", class = "help-heading"),
+  tags$p("Resources and settings for the ADA-PARC Data Tool.", class = "help-subheading"),
+
+  # Contact card
+  div(class = "help-card",
+    tags$p(class = "help-card-title", "Contact"),
+    tags$p(
+      "For questions about the data, methodology, or site functionality, please reach out to our team."
+    ),
+    tags$a(
+      href  = "mailto:joyhammel@uic.edu",
+      class = "email-button",
+      "Contact Us"
+    )
+  ),
+
+  # Map settings card
+  div(class = "help-card",
+    tags$p(class = "help-card-title", "Map Display Settings"),
+    {
+      ada_parc_colors <- c("#f7e49c", "#fa8e57", "#c41306", "#630801")
+      ada_parc_palette <- colorRampPalette(ada_parc_colors)
+
+      access_map_palette_choices <<- list(
+        "ADA-PARC"              = ada_parc_palette,
+        "Purple Gradient"       = "Purples",
+        "Yellow-Orange-Red"     = "YlOrRd",
+        "Grayscale Gradient"    = "Greys",
+        "Teal-Blue Gradient"    = "GnBu",
+        "Green-Yellow Gradient" = "YlGn",
+        "Brown-Blue Diverging"  = "BrBG"
+      )
+      selectInput(
+        inputId  = "access_map_palette",
+        label    = "Select Map Color Palette:",
+        choices  = names(access_map_palette_choices),
+        selected = "ADA-PARC"
+      )
+    },
+    tags$p(class = "help-palette-note",
+      "Your selected palette applies to choropleth maps in national data, city data."
+    )
+  )
+
 )
 
 # Reactive Palette Selection (unchanged)
 access_map_palette_selected <- reactive({
   access_map_palette_choices[[input$access_map_palette]]
 })
-
-# -----------------------------
-# Scorecard info (ONLY PDF EMBED CHANGED)
-# -----------------------------
-tags$div(
-  style = "text-align: left;",
-
-  tags$p(
-    style = "font-weight: bold; font-size: 18px; margin-bottom: 10px;",
-    "Understanding ADA-PARC Scorecards"
-  ),
-
-  # Optional helper link (non-breaking addition)
-  tags$a(
-    href   = "helpdocs/ScorecardReport.pdf",
-    target = "_blank",
-    rel    = "noopener",
-    class  = "btn btn-link",
-    "Open in new tab"
-  ),
-
-  # Robust PDF embed (matches fact sheet architecture)
-  tags$iframe(
-    style = "height: 750px; width: 100%; border: none; overflow-y: scroll;",
-    src   = "helpdocs/ScorecardReport.pdf"
-  )
-)
 ```
 
 <!-- Custom Javascript  -->
@@ -1463,19 +2969,41 @@ Shiny.setInputValue("active_tab", $(e.target).parent().index());
 /* Fonts */
 /* #################### */
 
+/* Ensure Garamond on all elements (belt-and-suspenders over Yeti theme) */
+body, p, div, li, a, label, span, input, select, textarea, button,
+.form-control, .selectize-input, .selectize-dropdown,
+.selectize-dropdown-content, .shiny-input-container {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
+
 /* Headers */
-h2,h3,h4,h5 { 
-font-weight: bold;
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+  font-weight: bold;
 }
 
 /* Section title color */
-h3 { 
-color: black;
+h3 {
+color: #1c2b3a;
 }
 
 /* #################### */
 /* Coloring */
 /* #################### */
+
+/* Leaflet legend styling with Garamond font */
+.leaflet-control-container .leaflet-control {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
+
+.leaflet-control .legend {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+  font-size: 16px !important;
+}
+
+.leaflet-control .legend div {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
 
 /* Leaflet border */
 .leaflet .legend i{

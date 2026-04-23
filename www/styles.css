@@ -1,14 +1,69 @@
 /* ================================
-   ADA-PARC Table Styling (Slate)
+   ADA-PARC Table Styling
+   Updated: aligned with scorecard redesign aesthetic
+   ================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700;800&display=swap');
+
+/* ── Design tokens ─────────────────────────────────────────────────────── */
+:root {
+  --navy:       #1c2b3a;   /* replaces slate #4A5A67 — matches scorecard dark */
+  --navy-dark:  #152233;   /* active/hover state */
+  --bg-page:    #f5f7fa;   /* lighter background for better contrast */
+  --bg-card:    #ffffff;
+  --bg-stripe:  #fafbfd;   /* lighter zebra stripe */
+  --border:     #e4e8ef;   /* scorecard border tone */
+  --text-body:  #1c2b3a;
+  --text-muted: #1c2b3a;
+}
+
+/* ── Body & base typography ─────────────────────────────────────────────── */
+body {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+  color: var(--text-body);
+  background: var(--bg-page);
+  font-size: 21px;
+  line-height: 1.6;
+}
+
+/* Override Yeti / Bootstrap sans-serif on all common text elements */
+p, span, div, li, a, label, input, select, textarea, button,
+.shiny-input-container, .form-control, .control-label,
+.selectize-input, .selectize-dropdown, .selectize-dropdown-content,
+.selectize-input input {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+  font-size: 20px;
+}
+
+/* Form controls and select input sizing */
+.form-control, .control-label,
+.selectize-input, .selectize-dropdown, .selectize-dropdown-content {
+  font-size: 20px !important;
+}
+
+/* Navbar links explicitly */
+.navbar .navbar-nav > li > a,
+.navbar-nav li a {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
+
+/* Buttons */
+.btn {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
+
+/* ================================
+   Table Styling
    ================================ */
 
 table {
-  border-spacing: 1;
+  border-spacing: 0;
   border-collapse: separate !important;
-  background: white;
+  background: var(--bg-card);
   overflow: hidden;
   width: 100%;
   margin: 0 auto;
+  font-size: 17px;
 }
 
 /* Allow horizontal scrolling for wide tables */
@@ -16,27 +71,27 @@ table {
   overflow: auto;
 }
 
-/* Cell padding */
+/* Cell padding — more breathing room than original 8px */
 table td,
 table th {
-  padding: 8px;
+  padding: 10px 12px;
 }
 
-/* Zebra striping for rows */
+/* Zebra striping — cool-tinted, matches scorecard neutral palette */
 tr:nth-child(even) {
-  background-color: #f2f2f2;
+  background-color: var(--bg-stripe);
 }
 
 /* ----- TABLE HEADER (THEAD) ----- */
-/* Uses gunmetal slate (#4A5A67) for accessibility */
 table thead tr {
-  height: 60px;
-  background: #4A5A67;     /* Gunmetal slate */
+  height: 56px;
+  background: var(--navy);
   font-size: 16px;
-  color: white !important; /* Ensures contrast */
+  color: white !important;
   position: sticky;
   top: 0;
-  z-index: 2;               /* Prevent overlap issues */
+  z-index: 2;
+  letter-spacing: 0.02em;
 }
 
 /* Last row bottom border removed */
@@ -46,7 +101,7 @@ table tbody tr:last-child {
 
 /* Column alignment */
 table td {
-  text-align: center; /* Center data cells */
+  text-align: center;
 }
 
 /* Left-align the first column (State) */
@@ -60,10 +115,45 @@ table th {
   font-weight: 600;
 }
 
-/* Improve focus outline visibility for keyboard users */
+/* ============================================
+   Focus Visibility (WCAG 2.4.7 / 2.4.11)
+   Ensures keyboard users always see a clear
+   focus ring on any interactive element.
+   Uses :focus-visible so mouse users aren't
+   affected by the outline.
+   ============================================ */
+
+:focus-visible {
+  outline: 3px solid #0d3b8e !important;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Extra specificity for elements Bootstrap resets */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #0d3b8e !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(13, 59, 142, 0.2) !important;
+  border-radius: 2px;
+}
+
+/* Navbar links need slightly adjusted treatment on dark background */
+.navbar a:focus-visible,
+.navbar button:focus-visible {
+  outline: 3px solid #ffffff !important;
+  outline-offset: 2px;
+}
+
+/* Focus outline — updated to match navy token */
 table td:focus,
 table th:focus {
-  outline: 2px solid #4A5A67;
+  outline: 2px solid var(--navy);
   outline-offset: 2px;
 }
 
@@ -76,22 +166,19 @@ table th:focus {
    National Data table refinements
    -------------------------------- */
 
-/* Fix overly wide columns by using fixed layout + wrapping */
 .table_national {
-  table-layout: fixed;          /* columns share available width */
-  width: 100%;                  /* keep full-width */
+  table-layout: fixed;
+  width: 100%;
 }
 
-/* Header cells: wrap long names, cap width, center text */
 .table_national th {
-  white-space: normal;          /* allow wrapping */
-  word-wrap: break-word;        /* wrap long words */
-  word-break: break-word;       /* force break if needed */
-  max-width: 160px;             /* cap header width before wrapping */
-  text-align: center;           /* center header text */
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: 160px;
+  text-align: center;
 }
 
-/* Center all body cells except first (State) */
 .table_national td {
   text-align: center;
 }
@@ -100,22 +187,24 @@ table th:focus {
   text-align: left;
 }
 
-
 /* ============================================
-   ADA-PARC Gunmetal Slate Navbar & Primary UI
+   Navbar & Primary UI
    ============================================ */
-
-:root {
-  --slate-primary: #4A5A67;
-  --slate-primary-dark: #3b4853;
-}
 
 /* Navbar background & border */
 .navbar,
 .navbar-default,
 .navbar-inverse {
-  background-color: var(--slate-primary) !important;
-  border-color: var(--slate-primary) !important;
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+}
+
+/* Navbar brand — EB Garamond for coherence with scorecard headings */
+.navbar .navbar-brand {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
 }
 
 /* Navbar brand + links (default state) */
@@ -137,8 +226,8 @@ table th:focus {
 .navbar .navbar-nav > .active > a,
 .navbar .navbar-nav > .active > a:hover,
 .navbar .navbar-nav > .active > a:focus {
-  background-color: var(--slate-primary-dark) !important;
-  border-color: var(--slate-primary-dark) !important;
+  background-color: var(--navy-dark) !important;
+  border-color: var(--navy-dark) !important;
   color: #ffffff !important;
 }
 
@@ -146,27 +235,119 @@ table th:focus {
 .navbar .navbar-nav > .open > a,
 .navbar .navbar-nav > .open > a:hover,
 .navbar .navbar-nav > .open > a:focus {
-  background-color: var(--slate-primary-dark) !important;
-  border-color: var(--slate-primary-dark) !important;
+  background-color: var(--navy-dark) !important;
+  border-color: var(--navy-dark) !important;
   color: #ffffff !important;
 }
 
-/* Primary buttons (for consistency with navbar) */
+/* Primary buttons */
 .btn-primary,
 .btn-primary:focus,
 .btn-primary:active,
 .open > .dropdown-toggle.btn-primary {
-  background-color: var(--slate-primary) !important;
-  border-color: var(--slate-primary) !important;
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
 }
 
 .btn-primary:hover {
-  background-color: var(--slate-primary-dark) !important;
-  border-color: var(--slate-primary-dark) !important;
+  background-color: var(--navy-dark) !important;
+  border-color: var(--navy-dark) !important;
 }
 
 /* Focus outline on form controls (e.g., selectInput) */
 .form-control:focus {
-  border-color: var(--slate-primary) !important;
-  box-shadow: 0 0 5px rgba(74, 90, 103, 0.5) !important;
+  border-color: var(--navy) !important;
+  box-shadow: 0 0 5px rgba(28, 43, 58, 0.4) !important;
+}
+
+/* ============================================
+   Headings & Typography (Dashboard sections)
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+  color: var(--navy);
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 2.15rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  line-height: 1.3;
+}
+
+h3 {
+  font-size: 1.7rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Panel/box titles in flexdashboard */
+.section {
+  color: var(--text-body);
+}
+
+.section > h2,
+.section > h3 {
+  color: var(--navy);
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+
+/* Preserve list styling */
+ul, ol {
+  color: var(--text-body);
+  line-height: 1.7;
+}
+
+li {
+  margin-bottom: 0.5rem;
+}
+
+/* ── Home page: regions-list two-column layout ──────────────────────────── */
+/* Uses list-style disc so no manual bullets are needed in the HTML.        */
+.regions-list {
+  list-style: disc;
+  padding-left: 1.2rem;
+}
+
+.regions-list .inline-list {
+  display: inline-block;
+  width: 47%;
+  vertical-align: top;
+}
+
+/* Stack to single column on narrow screens */
+@media (max-width: 600px) {
+  .regions-list .inline-list {
+    display: block;
+    width: 100%;
+  }
+}
+
+/* ── Home page: mobile layout ───────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .main-content {
+    padding: 1.5rem 1rem;
+  }
+
+  .welcome-text {
+    font-size: 2rem !important;
+  }
+
+  /* Nav cards stack to full-width on small screens */
+  .nav-card-grid {
+    flex-direction: column !important;
+  }
+
+  .nav-card {
+    width: 100% !important;
+  }
 }

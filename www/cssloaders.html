@@ -82,6 +82,17 @@
 }
 .load1 .loader, .load1 .loader:before, .load1 .loader:after {background: #0275D8} .load1 .loader {color: #0275D8}
 .load1 .loader {font-size: 8px}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .load1 .loader,
+  .load1 .loader:before,
+  .load1 .loader:after {
+    -webkit-animation: none;
+    animation: none;
+    opacity: 0.6;
+  }
+}
 </style>
 <script>
 (function() {

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADA-PARC Website – Accessibility Audit Checklist</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'EB Garamond', Georgia, serif;
+      background: #f0f2f6;
+      color: #1c2b3a;
+      line-height: 1.65;
+      padding: 2rem 1.2rem 4rem;
+    }
+
+    .page { max-width: 860px; margin: 0 auto; }
+
+    h1 {
+      font-size: 2.4rem; font-weight: 700; margin-bottom: 0.3rem;
+      letter-spacing: -0.01em;
+    }
+    .subtitle {
+      color: #4b5563; font-size: 1.05rem; margin-bottom: 1.6rem;
+    }
+
+    /* ── Progress summary ──────────────────────────────────── */
+    .progress-banner {
+      background: #166534;
+      color: white;
+      border-radius: 10px;
+      padding: 1.2rem 2rem;
+      margin-bottom: 1.6rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .progress-banner .prog-count {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .progress-banner .prog-label {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+    .progress-banner .prog-sub {
+      font-size: 0.88rem;
+      opacity: 0.75;
+      margin-top: 0.15rem;
+    }
+    .prog-divider {
+      width: 1px;
+      height: 2.5rem;
+      background: rgba(255,255,255,0.3);
+      flex-shrink: 0;
+    }
+    .prog-bar-wrap {
+      flex: 1;
+      min-width: 180px;
+    }
+    .prog-bar-track {
+      background: rgba(255,255,255,0.25);
+      border-radius: 4px;
+      height: 10px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    .prog-bar-fill {
+      background: white;
+      height: 100%;
+      border-radius: 4px;
+      width: 94.4%;
+    }
+    .prog-bar-label {
+      font-size: 0.88rem;
+      opacity: 0.9;
+    }
+
+    /* ── Priority sections ─────────────────────────────────── */
+    .priority-section {
+      background: white; border-radius: 10px; padding: 1.6rem 2rem 1.4rem;
+      margin-bottom: 1.6rem; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .priority-section h2 {
+      font-size: 1.35rem; font-weight: 700; margin-bottom: 0.8rem;
+      padding-bottom: 0.5rem; border-bottom: 2px solid #e4e8ef;
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-block; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 2px 8px; border-radius: 4px; color: white;
+    }
+    .badge.critical { background: #b91c1c; }
+    .badge.serious  { background: #c2410c; }
+    .badge.moderate { background: #a16207; }
+    .badge.done-all {
+      background: #166534;
+      font-size: 0.7rem;
+    }
+
+    /* ── Checklist items ───────────────────────────────────── */
+    .checklist { list-style: none; padding: 0; }
+
+    .checklist li {
+      padding: 0.7rem 0.6rem 0.7rem 0;
+      border-bottom: 1px solid #f0f2f6;
+      display: flex; align-items: flex-start; gap: 0.7rem;
+    }
+    .checklist li:last-child { border-bottom: none; }
+
+    /* Completed item treatment */
+    .checklist li.done {
+      opacity: 0.72;
+    }
+    .checklist li.done .item-title {
+      text-decoration: line-through;
+      color: #4b5563;
+    }
+
+    /* Custom checkbox — show check icon for done items */
+    .check-box {
+      margin-top: 3px;
+      flex-shrink: 0;
+      width: 20px; height: 20px;
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+    .check-box.complete {
+      background: #166534;
+      color: white;
+    }
+    .check-box.pending {
+      background: #f0f2f6;
+      border: 2px solid #d1d5db;
+      color: transparent;
+    }
+
+    .item-text { flex: 1; }
+    .item-title { font-weight: 700; font-size: 1rem; color: #1c2b3a; }
+    .item-detail {
+      font-size: 0.92rem; color: #4b5563; margin-top: 0.15rem; line-height: 1.55;
+    }
+    .item-scope {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: #555; background: #f0f2f6; padding: 1px 6px;
+      border-radius: 3px; margin-right: 4px;
+    }
+
+    .completed-note {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #166534;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      padding: 1px 8px;
+      border-radius: 4px;
+      margin-top: 0.35rem;
+    }
+    .pending-note {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #a16207;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      padding: 1px 8px;
+      border-radius: 4px;
+      margin-top: 0.35rem;
+    }
+
+    /* ── Legend / footer ────────────────────────────────────── */
+    .legend {
+      font-size: 0.88rem; color: #4b5563; margin-top: 1.5rem;
+      border-top: 1px solid #dde2ea; padding-top: 1rem;
+    }
+    .legend strong { color: #1c2b3a; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>ADA-PARC Accessibility Checklist</h1>
+  <p class="subtitle">WCAG 2.1 Level AA compliance — last updated April 16, 2026</p>
+
+  <!-- ── Progress banner ─────────────────────────────────────── -->
+  <div class="progress-banner">
+    <div>
+      <div class="prog-count">17 / 18</div>
+      <div class="prog-label">items completed</div>
+      <div class="prog-sub">across 3 sessions</div>
+    </div>
+    <div class="prog-divider"></div>
+    <div class="prog-bar-wrap">
+      <div class="prog-bar-label">1 remaining — longer-term enhancement (m3)</div>
+      <div class="prog-bar-track"><div class="prog-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CRITICAL (WCAG Level A failures)
+  ════════════════════════════════════════════════════════ -->
+  <div class="priority-section">
+    <h2>Critical Fixes <span class="badge critical">Level A</span> <span class="badge done-all">All Complete ✓</span></h2>
+    <ul class="checklist">
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">1. Fix <code>aria-labelledby</code> ghost ID references</div>
+          <div class="item-detail">
+            <span class="item-scope">National Data</span>
+            Three <code>&lt;section&gt;</code> elements were using <code>aria-labelledby</code> pointing to IDs that don't exist in the DOM. Replaced with self-contained <code>aria-label</code> strings on all three sections.
+            <br><span class="completed-note">✓ Completed — ADA_PARC.Rmd</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">2. Add <code>title</code> attributes to all iframes</div>
+          <div class="item-detail">
+            <span class="item-scope">Scorecards</span>
+            <span class="item-scope">Fact Sheets</span>
+            Added dynamic <code>title</code> to state scorecard iframe (e.g., <code>"Illinois ADA-PARC State Scorecard"</code>), category scorecard iframe, and PDF fact sheet iframe. The fact sheet title also updates reactively when a new PDF is selected.
+            <br><span class="completed-note">✓ Completed — ADA_PARC.Rmd</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">3. Make SVG gauges accessible</div>
+          <div class="item-detail">
+            <span class="item-scope">State Scorecard</span>
+            The <code>make_gauge()</code> function now accepts a <code>gauge_label</code> parameter. All SVG outputs include <code>role="img"</code>, a <code>&lt;title&gt;</code> element as first child, and a descriptive <code>aria-label</code> with the score value and US average. NA case also has proper fallback text.
+            <br><span class="completed-note">✓ Completed — state_scorecard.qmd</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">4. Add alt text to bar chart images</div>
+          <div class="item-detail">
+            <span class="item-scope">State Scorecard</span>
+            All three ggplot2 bar chart chunks now have <code>#| fig-alt: !expr paste0(...)</code> options that dynamically describe sub-index scores and state ranks for Community Living, Civil Participation, and Work &amp; Earnings domains.
+            <br><span class="completed-note">✓ Completed — state_scorecard.qmd</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">5. Add label to Fact Sheets select input</div>
+          <div class="item-detail">
+            <span class="item-scope">Fact Sheets</span>
+            Changed <code>selectInput("choice", NULL, ...)</code> to <code>selectInput("choice", "Select a Fact Sheet", ...)</code>. A proper <code>&lt;label&gt;</code> element is now generated in the DOM.
+            <br><span class="completed-note">✓ Completed — ADA_PARC.Rmd</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">6. Add <code>aria-live</code> regions to dynamic content wrappers</div>
+          <div class="item-detail">
+            <span class="item-scope">National Data</span>
+            <span class="item-scope">City Data</span>
+            Key dynamic output sections wrapped in <code>div(aria-live="polite", aria-atomic="true", ...)</code>: the national map summary, national data table section, city map title, and city summary tables.
+            <br><span class="completed-note">✓ Completed — ADA_PARC.Rmd</span>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SERIOUS (WCAG Level AA failures)
+  ════════════════════════════════════════════════════════ -->
+  <div class="priority-section">
+    <h2>Serious Fixes <span class="badge serious">Level AA</span> <span class="badge done-all">All Complete ✓</span></h2>
+    <ul class="checklist">
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">7. Fix color contrast in scorecard rank pills</div>
+          <div class="item-detail">
+            <span class="item-scope">scorecard_state.css</span>
+            All rank pill tier colors replaced with AA-compliant dark alternatives on <code>#f4f6fa</code>: Excellent → <code>#166534</code>, Above Avg → <code>#1a6847</code>, Below Avg → <code>#b91c1c</code>, Poor → <code>#991b1b</code>. Also darkened <code>.rp-domain</code> and <code>.rp-of</code> helper text.
+            <br><span class="completed-note">✓ Completed — scorecard_state.css</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">8. Increase critically small font sizes in scorecards</div>
+          <div class="item-detail">
+            <span class="item-scope">scorecard_state.css</span>
+            <span class="item-scope">scorecard_v3.css</span>
+            All sub-12px labels scaled up: <code>.rp-domain</code> 0.6→0.75rem, <code>.overall-lbl</code> 0.72→0.82rem, <code>.score-lbl</code> 0.68→0.8rem, <code>.rp-qual</code> 0.75→0.82rem, <code>.pill-lbl</code> 0.68→0.8rem, <code>.perf-header</code> 0.68→0.8rem, <code>.footer-note</code> 0.82→0.88rem across both files.
+            <br><span class="completed-note">✓ Completed — scorecard_state.css &amp; scorecard_v3.css</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">9. Fix heading hierarchy in state scorecard</div>
+          <div class="item-detail">
+            <span class="item-scope">state_scorecard.qmd</span>
+            Domain titles changed from <code>&lt;p class="domain-heading"&gt;</code> to <code>&lt;h2 class="domain-heading"&gt;</code>. Sub-index section labels changed from <code>&lt;div class="chart-label"&gt;</code> to <code>&lt;h3 class="chart-label"&gt;</code>. CSS updated with <code>h2.domain-heading</code> and <code>h3.chart-label</code> selectors to preserve visual styling.
+            <br><span class="completed-note">✓ Completed — state_scorecard.qmd &amp; scorecard_state.css</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">10. Make national map <code>aria-label</code> reactive</div>
+          <div class="item-detail">
+            <span class="item-scope">National Data</span>
+            Added a custom Shiny message handler (<code>updateMapAriaLabel</code>) in JS and a server-side <code>observe()</code> block that sends a descriptive label whenever the selected variable changes — e.g., <code>"Choropleth map showing Employment Rate (Work &amp; Earnings) by state."</code>
+            <br><span class="completed-note">✓ Completed — ADA_PARC.Rmd</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">11. Add semantic landmarks to City Data tab</div>
+          <div class="item-detail">
+            <span class="item-scope">City Data</span>
+            Wrapped entire City Data UI in <code>tags$main(role="main")</code>. Restructured into three labeled <code>tags$section()</code> blocks: City selection controls, City tract map, and City summary statistics. Mirrors the National Data landmark structure.
+            <br><span class="completed-note">✓ Completed — ADA_PARC.Rmd</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">12. Disambiguate Generate/Download buttons with <code>aria-label</code></div>
+          <div class="item-detail">
+            <span class="item-scope">Scorecards</span>
+            Added descriptive <code>aria-label</code> to all four Scorecards tab buttons: "Generate State Scorecard", "Download State Scorecard HTML", "Generate Category Scorecard", "Download Category Scorecard HTML".
+            <br><span class="completed-note">✓ Completed — ADA_PARC.Rmd</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">13. Restore list semantics on Home page regions list</div>
+          <div class="item-detail">
+            <span class="item-scope">Home</span>
+            Added <code>role="list"</code> to the regions <code>&lt;ul&gt;</code> to restore list announcement in VoiceOver/Safari, which strips list semantics when <code>list-style: none</code> is applied via CSS.
+            <br><span class="completed-note">✓ Completed — ADA_PARC.Rmd</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">14. Add <code>&lt;caption&gt;</code> to About tab source table</div>
+          <div class="item-detail">
+            <span class="item-scope">Scorecards &gt; About</span>
+            Added a <code>&lt;caption&gt;</code> element to the indicator/source table rendered by <code>build_source_table()</code>. Screen readers now announce the table purpose before navigation begins.
+            <br><span class="completed-note">✓ Completed — ADA_PARC.Rmd</span>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MODERATE (best practice / AAA)
+  ════════════════════════════════════════════════════════ -->
+  <div class="priority-section">
+    <h2>Design &amp; UX Improvements <span class="badge moderate">Best Practice</span></h2>
+    <ul class="checklist">
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">15. Add <code>prefers-reduced-motion</code> to loading animation</div>
+          <div class="item-detail">
+            <span class="item-scope">cssloaders.html</span>
+            Added <code>@media (prefers-reduced-motion: reduce)</code> block that disables the three-bar CSS keyframe animation and shows a static semi-transparent indicator instead.
+            <br><span class="completed-note">✓ Completed — www/cssloaders.html</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">16. Add explicit <code>:focus-visible</code> styles</div>
+          <div class="item-detail">
+            <span class="item-scope">www/styles.css</span>
+            Added a global <code>:focus-visible</code> rule (<code>3px solid #0d3b8e</code> outline, 2px offset) plus higher-specificity rules for interactive elements including a soft blue box-shadow. Navbar links get a white outline against the dark background.
+            <br><span class="completed-note">✓ Completed — www/styles.css</span>
+          </div>
+        </div>
+      </li>
+
+      <li>
+        <div class="check-box pending"></div>
+        <div class="item-text">
+          <div class="item-title">17. Add text alternative for Fact Sheet PDFs</div>
+          <div class="item-detail">
+            <span class="item-scope">Fact Sheets</span>
+            Consider adding a brief text summary or a <code>&lt;details&gt;/&lt;summary&gt;</code> element below the PDF iframe as a longer-term enhancement for screen reader users who cannot access embedded PDFs.
+            <br><span class="pending-note">⟳ Deferred — longer-term enhancement</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="done">
+        <div class="check-box complete">✓</div>
+        <div class="item-text">
+          <div class="item-title">18. Fix category scorecard heading hierarchy</div>
+          <div class="item-detail">
+            <span class="item-scope">category_scorecard.qmd</span>
+            Audited <code>category_scorecard.qmd</code> — already using proper <code>&lt;h2&gt;</code> headings throughout, with <code>fig-alt</code> on all charts, a skip-to-content link, <code>tab_caption()</code> on the GT table, and <code>aria-label</code> on performer card regions. No changes needed.
+            <br><span class="completed-note">✓ Already complete — no changes needed</span>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+
+  <div class="legend">
+    <strong>Scope tags</strong> indicate which file(s) or tab(s) each fix applies to. &nbsp;|&nbsp; <strong>17 of 18 items complete.</strong> The one remaining item (17 — PDF text alternative) is a longer-term design enhancement and does not represent a WCAG Level A or AA failure.
+  </div>
+
+</div>
+</body>
+</html>

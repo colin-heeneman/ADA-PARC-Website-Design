@@ -94,7 +94,11 @@ render_national_map <- function(selected, palette_selected = "YlOrRd") {
     head(1) %>%
     {. == "comp"}
   
-  palette <- brewer.pal(4, palette_selected)
+  palette <- if (is.function(palette_selected)) {
+    palette_selected(4)
+  } else {
+    brewer.pal(4, palette_selected)
+  }
   
   if (!is_comp) {
     legend_title <- paste0(
@@ -120,20 +124,31 @@ render_national_map <- function(selected, palette_selected = "YlOrRd") {
           breaks        = buckets,
           include.lowest = TRUE,
           labels        = labels
-        )
+        ),
+        .fmt_val = dplyr::case_when(
+          is.na(estimate) ~ "No data",
+          grepl("pct_|_pct", selected, ignore.case = TRUE) ~
+            scales::percent(estimate / 100, accuracy = 0.1),
+          TRUE ~
+            scales::comma(estimate, accuracy = 1)
+        ),
+        .tooltip = paste0(NAME, " (", ABBR, ")\n", .fmt_val),
+        .data_id = as.character(GEOID)
       )
-    
+
     ggplot(data = us_states_with_data) +
-      geom_sf(aes(fill = estimate_cat)) +
+      ggiraph::geom_sf_interactive(
+        aes(fill = estimate_cat, tooltip = .tooltip, data_id = .data_id)
+      ) +
       scale_fill_manual(values = palette, name = legend_title) +
       guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +  # 2x2 legend
       theme_void() +
       theme(
         legend.position  = "bottom",
         legend.direction = "horizontal",
-        legend.title     = element_text(size = 14),
+        legend.title     = element_text(size = 14, family = "Garamond"),
         legend.box       = "horizontal",
-        legend.text      = element_text(size = 14)
+        legend.text      = element_text(size = 14, family = "Garamond")
       )
     
   } else {
@@ -171,53 +186,72 @@ render_national_map <- function(selected, palette_selected = "YlOrRd") {
           breaks         = breaks,
           include.lowest = TRUE,
           labels         = labels
-        )
+        ),
+        .fmt_val1 = dplyr::case_when(
+          is.na(estimate) ~ "No data",
+          grepl("pct_|_pct", selected, ignore.case = TRUE) ~
+            scales::percent(estimate / 100, accuracy = 0.1),
+          TRUE ~ scales::comma(estimate, accuracy = 1)
+        ),
+        .fmt_val2 = dplyr::case_when(
+          is.na(estimate_2) ~ "No data",
+          grepl("pct_|_pct", comp_var, ignore.case = TRUE) ~
+            scales::percent(estimate_2 / 100, accuracy = 0.1),
+          TRUE ~ scales::comma(estimate_2, accuracy = 1)
+        ),
+        .tooltip1 = paste0(NAME, " (", ABBR, ")\n", .fmt_val1),
+        .tooltip2 = paste0(NAME, " (", ABBR, ")\n", .fmt_val2),
+        .data_id  = as.character(GEOID)
       )
-    
+
     # Use a meaningful legend title (still hidden visually by element_blank())
     legend_title <- paste0(
       dict_vars$var_pretty[which(dict_vars$var_readable == selected)][1]
     )
-    
+
     shared_scale <- scale_fill_manual(
       values = palette,
       drop   = FALSE,
       name   = legend_title
     )
-    
+
     map1 <- ggplot(data = us_states_with_data) +
-      geom_sf(aes(fill = estimate_cat)) +
+      ggiraph::geom_sf_interactive(
+        aes(fill = estimate_cat, tooltip = .tooltip1, data_id = .data_id)
+      ) +
       shared_scale +
       guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +  # 2x2 legend
       theme_void() +
       theme(
         legend.position = "bottom",
         legend.title    = element_blank(),
-        legend.text     = element_text(size = 13),
+        legend.text     = element_text(size = 13, family = "Garamond"),
         legend.box      = "horizontal"
       ) +
       ggtitle("People with Disabilities")
-    
+
     map2 <- ggplot(data = us_states_with_data) +
-      geom_sf(aes(fill = estimate_2_cat)) +
+      ggiraph::geom_sf_interactive(
+        aes(fill = estimate_2_cat, tooltip = .tooltip2, data_id = .data_id)
+      ) +
       shared_scale +
       guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +  # 2x2 legend
       theme_void() +
       theme(
         legend.position = "bottom",
         legend.title    = element_blank(),
-        legend.text     = element_text(size = 13),
+        legend.text     = element_text(size = 13, family = "Garamond"),
         legend.box      = "horizontal"
       ) +
       ggtitle("People without Disabilities")
-    
+
     legend <- cowplot::get_legend(
       map1 +
         theme(
           legend.position  = "bottom",
           legend.direction = "horizontal",
           legend.title     = element_blank(),
-          legend.text      = element_text(size = 20),
+          legend.text      = element_text(size = 20, family = "Garamond"),
           legend.box       = "horizontal"
         )
     )

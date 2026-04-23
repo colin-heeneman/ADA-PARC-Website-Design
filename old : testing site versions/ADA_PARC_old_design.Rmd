@@ -1,0 +1,1547 @@
+---
+title: "ADA-PARC"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    theme: yeti
+    includes:
+      in_header: www/cssloaders.html
+    css: www/styles.css
+runtime: shiny
+resource_files:
+- www/participant_logos.png
+- scripts/functions.R
+- data/dict_vars.csv
+- data/final/city_place_full.Rds
+- data/final/dict_location_crosswalk.Rds
+- data/final/tract_data.Rds
+- data/final/tracts_sf.Rds
+- data/final/national_data.Rds
+- data/final/tracts_data.Rds
+- www/Status_for_Disabled_image.png
+- www/adaparclogo.png
+- www/ScorecardReport.pdf
+- www/factsheets
+- www/styles.css
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+
+### ----- Packages ----- 
+
+library(tidyverse)
+library(patchwork)
+library(sf)
+library(leaflet)
+library(leaflet.extras)
+library(htmltools)
+library(shiny)
+library(shinycssloaders)
+library(shinyWidgets)
+library(flexdashboard)
+library(colourpicker)
+library(scales)
+library(tableHTML)
+library(hrbrthemes)
+library(ggthemes)
+library(extrafont)
+library(sf)
+library(tigris)
+library(RColorBrewer)
+library(cowplot)
+library(readxl)
+library(kableExtra)
+library(shinythemes)
+library(DT)
+library(reactable)
+library(reactR)
+
+
+
+
+options(scipen = 999999,
+        tigris_use_cache = TRUE,
+        shiny.reactlog = TRUE)
+knitr::opts_chunk$set(fig.cap = TRUE)
+
+#################################
+#################################
+# Load data:
+#################################
+#################################
+city_place_full <- readRDS(here::here("data", "final", "city_place_full.Rds")) 
+
+dict_location_crosswalk <- readRDS(here::here("data", "final", "dict_location_crosswalk.Rds")) 
+tracts_data <- readRDS(here::here("data", "final", "tracts_data.Rds")) 
+
+national_data <- readRDS(here::here("data", "final", "national_data.Rds")) 
+
+tracts_sf <- readRDS(here::here("data", "final", "tracts_sf.Rds"))
+
+
+# Read in variable dictionary manually
+dict_vars <- read_csv(here::here("data", "dict_vars.csv"))
+
+east_coast_states_to_relocate <- c("RI", "DE", "DC", "MD")
+
+us_states <- readRDS(here::here("data", "final", "us_states.Rds"))
+
+#us_states <- states(cb = TRUE, resolution = "20m") %>%
+  #shift_geometry() %>%
+  #sf::st_cast("MULTIPOLYGON") %>% 
+  #select(GEOID, ABBR = STUSPS, NAME, geometry)
+
+us_states <- us_states %>% 
+  left_join(
+    us_states %>%
+      sf::st_drop_geometry() %>%
+      bind_cols(
+        us_states %>%
+          sf::st_centroid() %>%
+          sf::st_coordinates() %>% 
+          as_tibble()
+      )
+  ) %>% 
+  mutate(
+    x_lab = case_when(
+      ABBR %in% east_coast_states_to_relocate ~ 2300000,
+      ABBR == "FL" ~ X + 80000,
+      ABBR == "LA" ~ X - 60000,
+      .default = X
+    ),
+    y_lab = case_when(
+      ABBR == "DC" ~ Y - 180000,
+      ABBR == "DE" ~ Y + 100000,
+      ABBR == "NH" ~ Y - 40000,
+      ABBR == "VT" ~ Y + 40000,
+      ABBR == "MD" ~ Y - 40000,
+      ABBR == "LA" ~ Y + 40000,
+      .default = Y
+    )
+  ) %>% 
+  left_join(national_data)
+
+### ----- Functions import -----
+
+source(here::here("scripts", "functions.R"), local = TRUE)
+
+```
+
+# Home
+
+```{r home}
+ui <- fluidPage(
+  theme = shinytheme("yeti"),
+  tags$head(
+    tags$style(HTML("
+      body, html {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        overflow-y: scroll;
+      }
+      .main-content {
+        padding: 20px;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+      }
+      .welcome-text {
+        font-size: 32px;
+        font-weight: bold;
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .section-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-top: 25px;
+      }
+      .section-subtitle {
+        font-size: 14px;
+        font-style: italic;
+        color: #2c3e50;
+        margin-bottom: 10px;
+      }
+      .section-content, .list-content, .footer {
+        font-size: 14px;
+        color: #2c3e50;
+        line-height: 1.6;
+      }
+      .list-content {
+        margin-left: 25px;
+        margin-bottom: 10px;
+      }
+      .inline-list {
+        font-size: 13px;
+        color: #2c3e50;
+        display: inline-block;
+        width: 45%;
+        margin-right: 10px;
+      }
+      .italicized {
+        font-style: italic;
+        color: #2c3e50;
+      }
+      .footer {
+        font-size: 12px;
+        text-align: center;
+        border-top: 1px solid #ddd;
+        padding: 10px;
+      }
+      img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 10px auto 20px auto;
+      }
+      .email-button {
+        display: inline-block;
+        padding: 10px 15px;
+        font-size: 14px;
+        font-weight: bold;
+        color: white;
+        background-color: #2c3e50;
+        border-radius: 5px;
+        text-align: center;
+        text-decoration: none;
+        margin-top: 10px;
+      }
+      .email-button:hover {
+        background-color: #34495e;
+        text-decoration: none;
+      }
+    "))
+  ),
+  
+  div(class = "main-content",
+      div(class = "welcome-text", "Welcome to ADA-PARC!"),
+      
+      # Add the ADA-PARC logo image here
+      img(src = "https://i.imgur.com/q6kwni7.png", alt = "ADA-PARC Logo"),
+      
+      # How to Navigate Section
+      div(class = "section-title", "How to Navigate this Website"),
+      div(class = "section-subtitle", "For more information, see the Help section."),
+      tags$ul(
+        class = "list-content",
+        tags$li("National Data: examine the status of people with disabilities at the national and state level."),
+        tags$li("City Data: investigate people with disabilities statistics at the municipal level."),
+        tags$li("Scorecard: view our state by state report cards for each category."),
+        tags$li("Help: for more information and to set color palettes for national/city data.")
+      ),
+      
+      # What is the ADA Section
+      div(class = "section-title", "What is the ADA?"),
+      div(class = "section-content", 
+          "The Americans with Disabilities Act (ADA), established in 1990, is a landmark civil rights law that prohibits discrimination against individuals with disabilities in all areas of public life.",
+          " Since the ADA, organizations across public and private sectors have worked to improve the quality of life for individuals with disabilities in the U.S. ADA-PARC emphasizes key components of Census and HUD data to shed light on the lived experiences and outcomes for people with disabilities."
+      ),
+      
+      # Did You Know Section
+      div(class = "section-title", "Did You Know?"),
+      div(class = "section-content", "Nationally, between the ages of 18 to 64, 1 in 4 individuals with a disability live below the poverty line."),
+      
+      # About ADA-PARC Section
+      div(class = "section-title", "About the ADA-PARC"),
+      div(class = "section-subtitle italicized", "The ADA-PARC is a collaborative research project of ten Americans with Disabilities Act (ADA) Regional Centers."),
+      
+      # ADA-PARC Regions in Multi-column Layout
+      div(class = "list-content", 
+          tags$ul(
+            class = "list-content",
+            tags$li(class = "inline-list", "Region 1 New England ADA Center"),
+            tags$li(class = "inline-list", "Region 2 Northeast ADA Center"),
+            tags$li(class = "inline-list", "Region 3 Mid-Atlantic ADA Center"),
+            tags$li(class = "inline-list", "Region 4 Southeast ADA Center"),
+            tags$li(class = "inline-list", "Region 5 Great Lakes ADA Center"),
+            tags$li(class = "inline-list", "Region 6 Southwest ADA Center"),
+            tags$li(class = "inline-list", "Region 7 Great Plains ADA Center"),
+            tags$li(class = "inline-list", "Region 8 Rocky Mountain ADA Center"),
+            tags$li(class = "inline-list", "Region 9 Pacific ADA Center"),
+            tags$li(class = "inline-list", "Region 10 Northwest ADA Center")
+          )
+      ),
+      
+      # Collaborating Institutions
+      div(class = "section-subtitle italicized", 
+          "Other collaborating institutions include: The ADA Knowledge Translation Center, TIRR Memorial Hermann, and universities such as Syracuse University and the University of Illinois at Chicago."
+      ),
+      
+      # Work of the ADA-PARC Section
+      div(class = "section-title", "Work of the ADA-PARC"),
+      div(class = "section-content", 
+          "The ADA-PARC has research teams focused on Community Living, Community Participation & Work/Economic Participation measures and uses Regional Steering Committees in each of the ten participating regions to gather, review, and choose appropriate data to achieve the project's purposes. The data are mainly from national data sources that have enough statistical power to be relevant on the local level.",
+          " The intent of this effort is to use this information to inform: 1. ADA Center technical assistance and resource dissemination, and 2. Community level stakeholders to increase participation opportunities in their communities."
+      ),
+      
+      # Purpose of Website Section
+      div(class = "section-title", "Purpose of Website"),
+      div(class = "section-content", 
+          "The ADA-PARC website is a collection of public data sets that can help shed light on the status of people with disabilities in local communities. The data includes national, state, county, and city data.",
+          " In addition to Demographic data describing the population, the three main areas of data to illuminate the status of disability in an area are: Community Living, Community Participation and Work & Economics.",
+          " Each of the three areas presents data in map form as well as in tabular form. A summary of what is important about the data is presented on each page.",
+          " The data source is described along with the calculation to arrive at the values used in the tables and maps. Data is first presented by state, and then if available, at county and city level."
+      ),
+      
+      # Grant Identifying Information Section
+      div(class = "section-title", "Grant Identifying Information"),
+      div(class = "section-content", 
+          "The ADA Participation Action Consortium is funded by the National Institute on Disability, Independent Living, and Rehabilitation Research (NIDILRR) (90DP0026 and 90DPAD0001).",
+          " NIDILRR is a Center within the Administration for Community Living (ACL), Department of Health and Human Services (HHS). The contents of this website do not necessarily represent the policy of NIDILRR, ACL, HHS, and you should not assume endorsement by the Federal Government."
+      ),
+      
+      # Questions Section
+      div(class = "section-title", "Questions?"),
+      a(href = "mailto:joyhammel@uic.edu", class = "email-button", "Email Joy Hammel"),
+      div(class = "section-content", "Director of Graduate Studies UIC College of Applied Health Sciences"),
+      
+      div(class = "footer",
+          "Application authors: Ethan Jantz, Sean Connelly, Jane Huber, Colin Heeneman, and Randy D. Colón",
+          tags$br(),
+          tags$a(href = "https://voorheescenter.uic.edu/", "UIC Voorhees Center")
+      )
+  )
+)
+
+server <- function(input, output) {}
+
+shinyApp(ui = ui, server = server)
+
+```
+
+# National Data
+
+```{r National Data}
+library(shiny)
+library(dplyr)
+library(tibble)
+library(shinycssloaders)
+library(DT)
+
+ui <- fluidPage(
+  tags$head(
+    tags$style(HTML("
+      /* TABLE CONTAINER */
+      .table-container {
+        height: auto;
+        max-height: none;
+        min-height: 500px;
+        overflow-y: visible;
+        margin-bottom: 40px;
+      }
+      .table-container .dataTables_wrapper .dataTables_scrollBody {
+        max-height: 500px;
+        overflow-y: auto !important;
+      }
+
+      /* Add space between map legend and table controls */
+      .table-container .dataTables_wrapper {
+        margin-top: 1rem;
+        clear: both;
+      }
+
+      /* NATIONAL TABLE STYLING */
+      .table_national {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .table_national th {
+        position: sticky;
+        top: 0;
+        background-color: #E2E2E0;
+        color: #000000;
+        z-index: 1;
+        white-space: normal;      /* allow wrapping */
+        word-wrap: break-word;    /* wrap long words */
+        padding-top: 10px;
+        padding-bottom: 10px;
+        line-height: 1.2;
+      }
+
+      /* Center all cells except first (State) */
+      .table_national td {
+        text-align: center;
+      }
+      .table_national td:first-child {
+        text-align: left;
+      }
+
+      /* Remove extra space under h1 */
+      h1 {
+        margin-bottom: 0.25rem;
+      }
+
+      /* Italic intro text under National Data */
+      .national-intro {
+        font-style: italic;
+        margin-top: 0.25rem;
+        margin-bottom: 0.75rem;
+      }
+
+      /* Italic map summary text */
+      .map-summary {
+        font-style: italic;
+      }
+
+      /* Length + search controls: left-aligned with some spacing */
+      div.dataTables_wrapper div.dataTables_length,
+      div.dataTables_wrapper div.dataTables_filter {
+        float: left;
+        text-align: left;
+        margin-right: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+      div.dataTables_wrapper div.dataTables_filter label {
+        white-space: nowrap;
+      }
+    "))
+  ),
+
+  tags$main(
+    role = "main",
+    h1("National Data"),
+    tags$p(
+      class = "national-intro",
+      "To explore the data first select a category and then a topic. You can navigate the boxes below using the mouse or keyboard."
+    ),
+    tags$section(
+      role = "region",
+      `aria-labelledby` = "sidebar",
+      tags$aside(
+        class = "sidebar",
+        selectInput(
+          inputId = "national_category_selector",
+          label   = "Select a category",
+          choices = c(
+            "Demographics",
+            "Community Living",
+            "Community Participation",
+            "Work/Economic"
+          ),
+          selected = "Demographics"
+        ),
+        selectInput(
+          inputId = "national_variable_selector",
+          label   = "Select a topic",
+          choices = NULL
+        ),
+        uiOutput("national_map_summary") %>% withSpinner()
+      )
+    ),
+    tags$section(
+      `aria-labelledby` = "section-national-title",
+      uiOutput("national_map_title") %>% withSpinner()
+    ),
+    tags$section(
+      `aria-labelledby` = "section-state-by-state-map-of-selected-topic",
+      div(
+        role       = "img",
+        `aria-label` = "Map of the United States showing selected data by state. Use the topic dropdown to change the variable displayed.",
+        plotOutput("national_ggmap", width = "100%", height = "400px") %>% withSpinner()
+      )
+    ),
+    tags$section(
+      `aria-labelledby` = "section-table-of-selected-topic",
+      div(
+        class = "table-container",
+        div(
+          style = "overflow-x: auto; width: 100%;",
+          uiOutput("national_table") %>% withSpinner()
+        )
+      )
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  # Flag to control rendering
+  ready_to_render <- reactiveVal(FALSE)
+
+  # Preload variable choices immediately based on default category
+  observe({
+    freezeReactiveValue(input, "national_variable_selector")
+    choices <- dict_vars %>%
+      filter(is_demographics == TRUE, !is.na(national_dropdown_label)) %>%
+      select(national_dropdown_label, var_readable) %>%
+      deframe() %>%
+      names()
+
+    default <- if ("People with Disabilities" %in% choices) {
+      "People with Disabilities"
+    } else {
+      choices[1]
+    }
+
+    updateSelectInput(
+      session,
+      "national_variable_selector",
+      choices  = choices,
+      selected = default
+    )
+  })
+
+  # When both selectors have values, allow rendering
+  observe({
+    if (!is.null(input$national_category_selector) &&
+        !is.null(input$national_variable_selector)) {
+      ready_to_render(TRUE)
+    }
+  })
+
+  national_category_selected <- reactive({
+    switch(
+      input$national_category_selector,
+      "Demographics"            = "is_demographics",
+      "Community Participation" = "is_community_participation",
+      "Community Living"        = "is_community_living",
+      "Work/Economic"           = "is_work_economic"
+    )
+  })
+
+  national_variable_choices <- reactive({
+    tibble::deframe(
+      dict_vars %>%
+        filter(
+          !!sym(national_category_selected()) == TRUE,
+          !is.na(national_dropdown_label)
+        ) %>%
+        select(national_dropdown_label, var_readable)
+    )
+  })
+
+  observeEvent(national_variable_choices(), {
+    choices <- names(national_variable_choices())
+    default <- if ("People with Disabilities" %in% choices) {
+      "People with Disabilities"
+    } else {
+      choices[1]
+    }
+    updateSelectInput(
+      session,
+      "national_variable_selector",
+      choices  = choices,
+      selected = default
+    )
+  })
+
+  national_variable_selected <- reactive({
+    req(national_category_selected())
+    choices <- national_variable_choices()
+    req(input$national_variable_selector %in% names(choices))
+    choices[[input$national_variable_selector]]
+  })
+
+  output$national_map_summary <- renderUI({
+    req(ready_to_render())
+    req(national_variable_selected())
+    hud_data <- c("pwd_housing_choice_voucher_pct", "pwd_pubhousing_pct")
+    source_text <- if (national_variable_selected() %in% hud_data) {
+      "2022 United States Department of Housing and Urban Development"
+    } else {
+      "2020-2024 American Community Survey five-year estimates"
+    }
+    full_text <- paste0(".<br><br>Source: ", source_text)
+    HTML(
+      sprintf(
+        '<span class="map-summary">%s%s</span>',
+        altText(national_data, national_variable_selected()),
+        full_text
+      )
+    )
+  })
+
+  output$national_map_title <- renderUI({
+    req(ready_to_render())
+    req(national_variable_selected())
+    title <- dict_vars %>%
+      filter(var_readable == national_variable_selected()) %>%
+      head(1) %>%
+      pull(national_dropdown_label) %>%
+      sub(".*:", "", .) %>%
+      trimws()
+    h4(title)
+  })
+
+  output$national_ggmap <- renderPlot({
+    req(ready_to_render())
+    req(national_variable_selected())
+    render_national_map(
+      national_variable_selected(),
+      access_map_palette_selected()
+    )
+  })
+
+  output$national_table <- renderUI({
+    req(ready_to_render())
+    req(national_variable_selected())
+    DT::dataTableOutput("sortable_table", width = "100%")
+  })
+
+  output$sortable_table <- DT::renderDataTable({
+    req(ready_to_render())
+    req(national_variable_selected())
+
+    national_vars_in_topic <- dict_vars %>%
+      filter(
+        (!!sym(national_category_selected())) == TRUE,
+        var_topic == (dict_vars %>%
+                        filter(
+                          (!!sym(national_category_selected())) == TRUE &
+                            var_readable == national_variable_selected()
+                        ) %>%
+                        pull(var_topic)),
+        display == TRUE
+      ) %>%
+      select(var_pretty, var_readable)
+
+    national_data_table_friendly <- national_data %>%
+      arrange(GEOID) %>%
+      mutate("State" = NAME) %>%
+      select(any_of(c("State", national_vars_in_topic %>% pull(var_readable)))) %>%
+      mutate(
+        # 1) Percent columns (0–100 doubles)
+        across(
+          c(starts_with("pct_"), ends_with("_pct")),
+          ~ scales::percent(.x, accuracy = 0.1, scale = 1)
+        ),
+      
+        # 2) All other numeric columns -> comma
+        across(
+          where(is.numeric) & !starts_with("pct_") & !ends_with("_pct"),
+          ~ scales::comma(.x, accuracy = 1)
+        )
+      ) %>%
+      rename(!!!national_vars_in_topic %>% deframe())
+
+    all_columns      <- colnames(national_data_table_friendly)
+    sortable_columns <- which(grepl("State|%", all_columns))
+    
+    # DataTables uses 0-based column indices; 0 is the State column
+    non_state_columns <- setdiff(seq_along(all_columns) - 1, 0)
+
+    DT::datatable(
+      national_data_table_friendly,
+      options = list(
+        pageLength = -1,  # show all rows by default
+        lengthMenu = list(
+          c(10, 25, 50, -1),
+          c("10", "25", "50", "All")
+        ),
+        scrollX    = TRUE,
+        scrollY    = "500px",
+        autoWidth  = TRUE,
+        responsive = TRUE,
+        columnDefs = list(
+          # Make some columns unsortable
+          list(
+            targets   = setdiff(seq_along(all_columns) - 1, sortable_columns - 1),
+            orderable = FALSE
+          ),
+          # Center all non-State columns consistently
+          list(
+            targets   = non_state_columns,
+            className = 'dt-center'
+          )
+        ),
+        dom = "lftip"   # length, filter (search), table, info, paging
+      ),
+      rownames = FALSE,
+      width    = "100%",
+      class    = "display nowrap compact table_national"
+    )
+  }, server = FALSE)
+}
+
+shinyApp(ui, server)
+```
+
+# City Data
+
+```{r}
+library(shiny)
+library(leaflet)
+library(dplyr)
+library(stringr)
+library(scales)
+library(shinycssloaders)
+
+# ----------------------------
+# State choices
+# ----------------------------
+state_choices <- tibble::tibble(NAME = state.name, ABB = state.abb) %>%
+  add_row(NAME = c("District of Columbia", "Puerto Rico"), ABB = c("DC", "PR")) %>%
+  tibble::deframe()
+
+# ----------------------------
+# Helpers (ALL pct cols are dbl on 0–100 scale)
+# ----------------------------
+fmt_pct_1dp <- function(x) {
+  x <- as.numeric(x)
+  ifelse(is.na(x), "NA", scales::percent(x / 100, accuracy = 0.1))
+}
+
+fmt_num <- function(x) {
+  x <- as.numeric(x)
+  ifelse(is.na(x), "NA", scales::comma(x, accuracy = 1))
+}
+
+create_number_percent_string <- function(num, pct) {
+  paste0(fmt_num(num), " (", fmt_pct_1dp(pct), ")")
+}
+
+# Join-proof tract GEOID normalization (NO percent conversion)
+normalize_tract_geoid <- function(x) {
+  x <- as.character(x)
+  x <- gsub("[^0-9]", "", x)                   # digits only
+  ifelse(nchar(x) >= 11, substr(x, nchar(x) - 10, nchar(x)), x)  # last 11 digits
+}
+
+# ----------------------------
+# UI
+# ----------------------------
+ui <- fluidPage(
+  titlePanel("City Data"),
+
+  mainPanel(
+    fluidRow(
+      column(6,
+             selectInput(
+               "state_selector", "Select a state",
+               choices = names(state_choices),
+               selected = "Illinois"
+             )),
+      column(6, uiOutput("city_selector_ui"))
+    ),
+
+    fluidRow(
+      column(
+        12,
+        tags$p(
+          "Not Applicable or NA values may display for cities where data is unavailable, mostly in cities with a population less than 30,000.",
+          style = "font-style: italic; color: #000000;"
+        )
+      )
+    ),
+
+    fluidRow(
+      column(12, withSpinner(uiOutput("city_map_title"))),
+      # if you still ever see blank tiles, uncomment the height:
+      column(12, withSpinner(leafletOutput("snapshotmap", height = 550)))    ),
+
+    fluidRow(
+      column(12, withSpinner(uiOutput("city_summary")))
+    )
+  )
+)
+
+# ----------------------------
+# Server
+# ----------------------------
+server <- function(input, output, session) {
+  
+  observe({
+  req(city_selected(), city_tract_sf(), city_tract())
+
+  sf_ids_raw  <- city_tract_sf()$tract_GEOID
+  tab_ids_raw <- city_tract()$GEOID
+
+  sf_norm  <- normalize_tract_geoid(sf_ids_raw)
+  tab_norm <- normalize_tract_geoid(tab_ids_raw)
+
+  message("---- TRACT JOIN DIAGNOSTICS ----")
+  message("city_selected(): ", city_selected())
+
+  message("SF rows: ", nrow(city_tract_sf()))
+  message("TAB rows: ", nrow(city_tract()))
+
+  message("SF tract_GEOID sample: ", paste(head(sf_ids_raw, 5), collapse = ", "))
+  message("TAB GEOID sample: ", paste(head(tab_ids_raw, 5), collapse = ", "))
+
+  message("SF norm sample: ", paste(head(sf_norm, 5), collapse = ", "))
+  message("TAB norm sample: ", paste(head(tab_norm, 5), collapse = ", "))
+
+  message("SF norm nchar (min/max): ",
+          min(nchar(sf_norm), na.rm = TRUE), "/", max(nchar(sf_norm), na.rm = TRUE))
+  message("TAB norm nchar (min/max): ",
+          min(nchar(tab_norm), na.rm = TRUE), "/", max(nchar(tab_norm), na.rm = TRUE))
+
+  match_rate <- mean(sf_norm %in% tab_norm, na.rm = TRUE)
+  message("Match rate (SF in TAB): ", round(match_rate, 4))
+
+  # show a few SF IDs that are missing from TAB (normalized)
+  missing <- setdiff(unique(sf_norm), unique(tab_norm))
+  message("Missing (first 10): ", paste(head(missing, 10), collapse = ", "))
+
+  # confirm your mapping column exists and has non-NA numeric values
+  message("pct_cni_total_dis_place class in tracts_data subset: ",
+          paste(class(city_tract()$pct_cni_total_dis_place), collapse = "/"))
+  message("pct_cni_total_dis_place NA share: ",
+          round(mean(is.na(city_tract()$pct_cni_total_dis_place)), 4))
+  message("--------------------------------")
+})
+
+  # --- State selection ---
+  state_selected <- reactive({
+    req(input$state_selector)
+    state_abbr <- state_choices[[input$state_selector]]
+    req(!is.null(state_abbr))
+    state_abbr
+  })
+
+  # --- City choices for selected state ---
+  city_choices <- reactive({
+    req(state_selected())
+    choices <- dict_location_crosswalk %>%
+      filter(state == state_selected(), !str_detect(place_NAME, " CDP")) %>%
+      select(place_NAME, place_GEOID) %>%
+      distinct(place_NAME, place_GEOID)
+    req(nrow(choices) > 0)
+    tibble::deframe(choices) %>% sort()
+  })
+
+  output$city_selector_ui <- renderUI({
+    selectInput("city_selector", "Select a city",
+                choices = names(city_choices()),
+                selected = "Chicago")
+  })
+
+  observeEvent(input$state_selector, {
+    updateSelectInput(session, "city_selector",
+                      choices = names(city_choices()),
+                      selected = "Chicago")
+  })
+
+  # --- City selected GEOID ---
+  city_selected <- reactive({
+    req(input$city_selector, city_choices())
+    selected_city <- city_choices()[input$city_selector]
+    req(!is.null(selected_city))
+    selected_city
+  })
+
+  # --- Place-level data for the selected city ---
+  city_place <- reactive({
+    req(city_selected())
+    city_data <- city_place_full %>% filter(GEOID == city_selected())
+    req(nrow(city_data) > 0)
+    city_data
+  })
+
+  # --- Tract SF and tract data for selected city ---
+  city_tract_sf <- reactive({
+    req(city_selected())
+    tract_ids <- dict_location_crosswalk %>%
+      filter(place_GEOID %in% city_selected()) %>%
+      pull(tract_GEOID)
+    req(length(tract_ids) > 0)
+    tracts_sf %>% filter(tract_GEOID %in% tract_ids)
+  })
+
+  city_tract <- reactive({
+    req(city_selected())
+    tract_ids <- dict_location_crosswalk %>%
+      filter(place_GEOID %in% city_selected()) %>%
+      pull(tract_GEOID)
+    req(length(tract_ids) > 0)
+    tracts_data %>% filter(GEOID %in% tract_ids)
+  })
+
+  # --- City map title ---
+  output$city_map_title <- renderUI({
+    req(city_place())
+    title <- city_place() %>%
+      mutate(NAME = str_replace_all(NAME, " (city|village|municipality|town), ", ", ")) %>%
+      pull(NAME)
+    h4(title)
+  })
+
+  # ----------------------------
+  # MAP: palette + leaflet render
+  #
+  # Place these EXACTLY here: after city_tract()/city_tract_sf() reactives exist,
+  # and before output$city_summary.
+  # ----------------------------
+
+  pal_city <- reactive({
+    req(city_tract())
+    v <- city_tract()$pct_cni_total_dis_place
+    req(is.numeric(v))
+
+    map_palette <- access_map_palette_selected()
+
+    if (all(is.na(v))) {
+      # safe fallback palette so polygons still draw with na.color
+      return(colorNumeric(palette = map_palette, domain = c(0, 100), na.color = "#DDDDDD"))
+    }
+
+    if (sum(!is.na(v)) < 4) {
+      colorNumeric(palette = map_palette, domain = v, na.color = "#DDDDDD")
+    } else {
+      colorQuantile(palette = map_palette, domain = v, n = 4, na.color = "#DDDDDD")
+    }
+  })
+
+  output$snapshotmap <- renderLeaflet({
+    req(city_tract_sf(), city_tract())
+
+    sf_df <- city_tract_sf() %>%
+      mutate(tract_id_norm = normalize_tract_geoid(tract_GEOID))
+
+    tab_df <- city_tract() %>%
+      transmute(
+        tract_id_norm = normalize_tract_geoid(GEOID),
+        pct_cni_total_dis_place = pct_cni_total_dis_place   # already dbl 0–100
+      )
+
+    data <- left_join(sf_df, tab_df, by = "tract_id_norm")
+    has_any_data <- any(!is.na(data$pct_cni_total_dis_place))
+
+    m <- leaflet(data) %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      addResetMapButton() %>%
+      addPolygons(
+        stroke = TRUE, color = "#444444", weight = 1, smoothFactor = 0,
+        fillColor = ~pal_city()(pct_cni_total_dis_place),
+        fillOpacity = 0.75,
+        layerId = ~tract_GEOID
+      ) %>%
+      addSearchOSM(
+        options = searchOptions(
+          autoCollapse = FALSE, minLength = 3, position = "topleft",
+          zoom = 15, autoResize = FALSE, hideMarkerOnCollapse = TRUE
+        )
+      )
+
+    if (has_any_data) {
+      m <- m %>%
+        addLegend(
+          position = "topright",
+          pal = pal_city(),
+          values = ~pct_cni_total_dis_place,
+          labFormat = function(type, cuts, p) {
+            cuts <- as.numeric(cuts)
+            if (length(cuts) <= 1) return("")
+            paste0(
+              format(round(cuts[-length(cuts)], 1), nsmall = 1),
+              " \u2013 ",
+              format(round(cuts[-1], 1), nsmall = 1)
+            )
+          },
+          title = "% With Disability"
+        )
+    } else {
+      m <- m %>%
+        addControl(
+          html = paste0(
+            "<div style='background: rgba(255,255,255,0.92); padding: 6px 8px; border-radius: 4px;'>",
+            "<b>% With Disability</b><br/>No tract values joined (tract GEOID mismatch).",
+            "</div>"
+          ),
+          position = "topright"
+        )
+    }
+
+    m
+  })
+
+  # ----------------------------
+  # City Summary Output
+  # ----------------------------
+  output$city_summary <- renderUI({
+    req(city_place())
+
+    city_summary_text <- paste0(
+      "<h3>People with Disabilities - Summary Tables</h3>",
+      "Based on ACS 2024 5-Year Estimates, <b>", fmt_num(city_place()$pop_cni_dis_total_place),
+      "</b> of the city's <b>", fmt_num(city_place()$pop_cni_total_all),
+      "</b> residents (<b>", fmt_pct_1dp(city_place()$pct_cni_total_dis_place), "</b>) are people with disabilities.<br><br>"
+    )
+
+    race_ethnicity <- city_place() %>%
+      transmute(
+        White = create_number_percent_string(pop_cni_whitenonhisp_dis, pct_cni_whitenonhisp_dis),
+        `Black/African American` = create_number_percent_string(pop_cni_black_dis, pct_cni_black_dis),
+        `Hispanic/Latino` = create_number_percent_string(pop_cni_hisp_dis, pct_cni_hisp_dis),
+        Asian = create_number_percent_string(pop_cni_asian_dis, pct_cni_asian_dis),
+        `Some other race(s) identified` = create_number_percent_string(pop_cni_raceother_dis, pct_cni_raceother_dis)
+      ) %>%
+      tidyr::pivot_longer(everything(), names_to = "Race/Ethnicity", values_to = "Value (%)") %>%
+      mutate(Bullets = paste0("<li>", `Race/Ethnicity`, " &mdash; ", `Value (%)`, "</li>")) %>%
+      pull(Bullets) %>%
+      str_c(collapse = "")
+
+    sex <- city_place() %>%
+      transmute(
+        Male = create_number_percent_string(pop_cni_male_dis, pct_cni_male_dis),
+        Female = create_number_percent_string(pop_cni_female_dis, pct_cni_female_dis)
+      ) %>%
+      tidyr::pivot_longer(everything(), names_to = "Sex", values_to = "Value (%)") %>%
+      mutate(Bullets = paste0("<li>", `Sex`, " &mdash; ", `Value (%)`, "</li>")) %>%
+      pull(Bullets) %>%
+      str_c(collapse = "")
+
+    disability_types <- city_place() %>%
+      transmute(
+        Hearing = create_number_percent_string(pop_cni_total_hearing_dis, pct_cni_total_hearing_dis),
+        Vision = create_number_percent_string(pop_cni_total_vision_dis, pct_cni_total_vision_dis),
+        Cognitive = create_number_percent_string(pop_cni_total_cognitive_dis, pct_cni_total_cognitive_dis),
+        `Ambulatory (difficulty walking or climbing stairs)` = create_number_percent_string(pop_cni_total_mobility_dis, pct_cni_total_mobility_dis),
+        `Self Care (difficulty bathing or dressing)` = create_number_percent_string(pop_cni_selfcare_dis, pct_cni_selfcare_dis),
+        `Independent Living (difficulty doing errands alone)` = create_number_percent_string(pop_cni_indepliving_dis, pct_cni_indepliving_dis)
+      ) %>%
+      tidyr::pivot_longer(everything(), names_to = "Type of Disability", values_to = "Value (%)") %>%
+      mutate(Bullets = paste0("<li>", `Type of Disability`, " &mdash; ", `Value (%)`, "</li>")) %>%
+      pull(Bullets) %>%
+      str_c(collapse = "")
+
+    employment <- city_place() %>%
+      transmute(
+        `Living below poverty (as of 2024, yearly income below $14,891 for individual or $29,60 for family of four)` =
+          create_number_percent_string(pop_cni_18to64_poverty_dis, pct_cni_18to64_poverty_dis),
+        `Employed (part or full time)` =
+          create_number_percent_string(pop_cni_16plus_employed_dis, pct_cni_16plus_employed_dis),
+        `Out of the labor force (not working and not actively seeking employment)` =
+          create_number_percent_string(pop_cni_16plus_notlabor_dis, pct_cni_16plus_notlabor_dis)
+      ) %>%
+      tidyr::pivot_longer(everything(), names_to = "Indicator", values_to = "Value (%)") %>%
+      mutate(Bullets = paste0("<li>", Indicator, " &mdash; ", `Value (%)`, "</li>")) %>%
+      pull(Bullets) %>%
+      str_c(collapse = "")
+
+    education <- city_place() %>%
+      transmute(
+        `Highest education is less than high school (PWD)`  = pct_cni_25plus_noGED_dis,
+        `Highest education is high school equivalent (PWD)`  = pct_cni_25plus_GED_dis,
+        `Highest education is bachelor's degree plus (PWD)`  = pct_cni_25plus_bachelors_dis,
+      ) %>%
+      tidyr::pivot_longer(everything(), names_to = "Indicator", values_to = "Pct") %>%
+      mutate(
+        `Value (%)` = fmt_pct_1dp(Pct),
+        Bullets = paste0("<li>", Indicator, " &mdash; ", `Value (%)`, "</li>")
+      ) %>%
+      pull(Bullets) %>%
+      str_c(collapse = "")
+
+    city_summary_tables <- paste0(
+      '<div class="row">',
+      '<div class="col-md-12"><h4 style="color: maroon; font-weight: bold;">Disability Demographics</h4>',
+      '<p style="font-style: italic; color: #000000;">Percentages displayed in the "Disability Demographics" section refer to the % of the given demographic population of selected city which have a disability.</p>',
+      '<div class="col-md-12"><b>Race / Ethnicity</b><ul>', race_ethnicity, '</ul></div>',
+      '<div class="col-md-12"><b>Sex</b><ul>', sex, '</ul></div>',
+      '</div>',
+      '<div class="col-md-12"><h4 style="color: maroon; font-weight: bold;">Disability Types</h4><ul>', disability_types, '</ul></div>',
+      '<div class="col-md-12"><h4 style="color: maroon; font-weight: bold;">ADA-PARC Key Indicators</h4>',
+      '<div class="col-md-12"><b>Economic</b><ul>', employment, '</ul></div>',
+      '<div class="col-md-12"><b>Education</b><ul>', education, '</ul></div>',
+      '</div>',
+      '</div>'
+    )
+
+    HTML(paste0(city_summary_text, city_summary_tables))
+  })
+}
+
+# Run the app
+shinyApp(ui, server)
+```
+
+# Scorecards
+
+```{r tableau scorecards}
+library(shiny)
+
+# Define UI
+ui <- fluidPage(
+  # Application title
+  titlePanel("Scorecard Dashboard"),
+
+  # Custom CSS to ensure Tableau visualizations take full width
+  tags$head(
+    tags$style(HTML("
+      .tableauPlaceholder {
+        width: 100% !important;
+      }
+      .tableauViz {
+        width: 100% !important;
+        height: 850px !important;
+      }
+    "))
+  ),
+
+  # Selector and body text
+  fluidRow(
+    column(
+      12,
+      selectInput(
+        inputId = "scorecard_choice",
+        label = "Select a Scorecard:",
+        choices = list(
+          "Community Participation" = "participation",
+          "Community Living"        = "living",
+          "Work Economic"           = "work_economic"
+        ),
+        selected = "participation"
+      ),
+
+      HTML("<p style='margin-top: 20px; font-size: 16px;'>
+        <strong>Scorecards are constructed using data from the U.S. Census 2024 ACS-5.</strong>
+        Scores are displayed in two ways: Firstly, a 0–100 score where 100 means FAR BETTER than the median state and 0 means FAR WORSE than the median state.
+        Secondly, quartiles are displayed to show discrepancies in outcomes for people with disabilities across states.
+        <strong>Q1</strong> are the worst scores, representing poor opportunity for people with disabilities,
+        <strong>Q2</strong> is below average,
+        <strong>Q3</strong> is above average, and
+        <strong>Q4</strong> are the best scores, representing great opportunity for people with disabilities.
+        For more information on scorecards, navigate to the 'Help' section and find 'Understanding ADA-PARC Scorecards.'
+      </p>")
+    )
+  ),
+
+  # Dashboard display
+  fluidRow(
+    column(12, uiOutput("scorecard_ui"))
+  )
+)
+
+# Define server logic
+server <- function(input, output, session) {
+
+  output$scorecard_ui <- renderUI({
+
+    # Community Participation (CP) — 2024 embed
+    if (input$scorecard_choice == "participation") {
+
+      HTML("
+        <div class='tableauPlaceholder' id='viz1773681931473' style='position: relative'>
+          <noscript>
+            <a href='#'>
+              <img alt=' ' src='https://public.tableau.com/static/images/Co/CommunityParticipation2024ACS-5ADA-PARC/CommunityParticipationOverall/1_rss.png' style='border: none' />
+            </a>
+          </noscript>
+          <object class='tableauViz' style='display:none;'>
+            <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+            <param name='embed_code_version' value='3' />
+            <param name='site_root' value='' />
+            <param name='name' value='CommunityParticipation2024ACS-5ADA-PARC/CommunityParticipationOverall' />
+            <param name='tabs' value='yes' />
+            <param name='toolbar' value='yes' />
+            <param name='static_image' value='https://public.tableau.com/static/images/Co/CommunityParticipation2024ACS-5ADA-PARC/CommunityParticipationOverall/1.png' />
+            <param name='animate_transition' value='yes' />
+            <param name='display_static_image' value='yes' />
+            <param name='display_spinner' value='yes' />
+            <param name='display_overlay' value='yes' />
+            <param name='display_count' value='yes' />
+            <param name='language' value='en-US' />
+          </object>
+        </div>
+
+        <script type='text/javascript'>
+          var divElement = document.getElementById('viz1773681931473');
+          var vizElement = divElement.getElementsByTagName('object')[0];
+          vizElement.style.width  = '100%';
+          vizElement.style.height = '850px';
+
+          var scriptElement = document.createElement('script');
+          scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+          vizElement.parentNode.insertBefore(scriptElement, vizElement);
+        </script>
+      ")
+
+    # Community Living (CL) — 2024 embed
+    } else if (input$scorecard_choice == "living") {
+
+      HTML("
+        <div class='tableauPlaceholder' id='viz1773681915237' style='position: relative'>
+          <noscript>
+            <a href='#'>
+              <img alt=' ' src='https://public.tableau.com/static/images/Co/CommunityLiving2024ACS-5ADA-PARC/CommunityLivingOverall/1_rss.png' style='border: none' />
+            </a>
+          </noscript>
+          <object class='tableauViz' style='display:none;'>
+            <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+            <param name='embed_code_version' value='3' />
+            <param name='site_root' value='' />
+            <param name='name' value='CommunityLiving2024ACS-5ADA-PARC/CommunityLivingOverall' />
+            <param name='tabs' value='yes' />
+            <param name='toolbar' value='yes' />
+            <param name='static_image' value='https://public.tableau.com/static/images/Co/CommunityLiving2024ACS-5ADA-PARC/CommunityLivingOverall/1.png' />
+            <param name='animate_transition' value='yes' />
+            <param name='display_static_image' value='yes' />
+            <param name='display_spinner' value='yes' />
+            <param name='display_overlay' value='yes' />
+            <param name='display_count' value='yes' />
+            <param name='language' value='en-US' />
+          </object>
+        </div>
+
+        <script type='text/javascript'>
+          var divElement = document.getElementById('viz1773681915237');
+          var vizElement = divElement.getElementsByTagName('object')[0];
+          vizElement.style.width  = '100%';
+          vizElement.style.height = '850px';
+
+          var scriptElement = document.createElement('script');
+          scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+          vizElement.parentNode.insertBefore(scriptElement, vizElement);
+        </script>
+      ")
+
+    # Work Economic (WE) — 2024 embed
+    } else if (input$scorecard_choice == "work_economic") {
+
+      HTML("
+        <div class='tableauPlaceholder' id='viz1773683116001' style='position: relative'>
+          <noscript>
+            <a href='#'>
+              <img alt=' ' src='https://public.tableau.com/static/images/Wo/WorkEconomic2024ACS-5ADA-PARC/WorkEconomicOverall/1_rss.png' style='border: none' />
+            </a>
+          </noscript>
+          <object class='tableauViz' style='display:none;'>
+            <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+            <param name='embed_code_version' value='3' />
+            <param name='site_root' value='' />
+            <param name='name' value='WorkEconomic2024ACS-5ADA-PARC/WorkEconomicOverall' />
+            <param name='tabs' value='yes' />
+            <param name='toolbar' value='yes' />
+            <param name='static_image' value='https://public.tableau.com/static/images/Wo/WorkEconomic2024ACS-5ADA-PARC/WorkEconomicOverall/1.png' />
+            <param name='animate_transition' value='yes' />
+            <param name='display_static_image' value='yes' />
+            <param name='display_spinner' value='yes' />
+            <param name='display_overlay' value='yes' />
+            <param name='display_count' value='yes' />
+            <param name='language' value='en-US' />
+          </object>
+        </div>
+
+        <script type='text/javascript'>
+          var divElement = document.getElementById('viz1773683116001');
+          var vizElement = divElement.getElementsByTagName('object')[0];
+          vizElement.style.width  = '100%';
+          vizElement.style.height = '850px';
+
+          var scriptElement = document.createElement('script');
+          scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+          vizElement.parentNode.insertBefore(scriptElement, vizElement);
+        </script>
+      ")
+    }
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
+
+# Fact Sheets
+
+```{r fact_sheets_full_embed, echo=FALSE, message=FALSE, warning=FALSE}
+library(shiny)
+library(htmltools)
+
+# --- Config on disk
+pdf_dir <- "www/factsheets"  # your real folder on disk (case-sensitive)
+
+# --- Validate the folder exists locally
+if (!dir.exists(pdf_dir)) {
+  stop("Folder not found: ", pdf_dir,
+       "\nCreate it and put PDFs inside (or fix the path).")
+}
+
+# --- Discover PDFs (filenames can have spaces)
+pdfs <- list.files(pdf_dir, pattern = "\\.pdf$", ignore.case = TRUE)
+if (!length(pdfs)) {
+  stop("No PDFs found in ", pdf_dir)
+}
+
+# --- Serve this folder at a stable URL prefix, independent of 'www/'
+#     This sidesteps Rmd resource bundling issues.
+#     The URL base will be '/facts' no matter what.
+shiny::addResourcePath("facts", normalizePath(pdf_dir, mustWork = TRUE))
+
+# --- UI (full-page embed)
+ui <- fluidPage(
+  tags$head(
+    tags$style(HTML("
+      html, body { height: 100%; }
+      .topbar { padding: 10px 0; border-bottom: 1px solid #eee; }
+      #pdf_container { position: relative; height: calc(100vh - 90px); }
+      #pdf_frame { position: absolute; inset:0; width:100%; height:100%; border:none; }
+      .status { margin-left: 10px; color: #999; }
+    "))
+  ),
+  div(class="topbar container-fluid",
+      fluidRow(
+        column(6,
+               selectInput("choice", NULL,
+                 choices = setNames(pdfs, sub("\\.pdf$", "", pdfs, ignore.case = TRUE)),
+                 selected = pdfs[1], width = "100%")
+        ),
+        column(6,
+               div(class="pull-right",
+                   tags$a(id="open_new", class="btn btn-link", target="_blank", rel="noopener", "Open in new tab"),
+                   downloadButton("dl", "Download"),
+                   span(id="status", class="status")
+               )
+        )
+      )
+  ),
+  div(id="pdf_container", tags$iframe(id="pdf_frame", src=""))
+)
+
+server <- function(input, output, session){
+
+  # Build URL for the selected file under the explicit '/facts' path
+  file_url <- reactive({
+    req(input$choice)
+    paste0("facts/", URLencode(input$choice, reserved = TRUE))
+  })
+
+  file_disk <- reactive({
+    req(input$choice)
+    file.path(pdf_dir, input$choice)
+  })
+
+  # Wire iframe + link + status
+  observe({
+    url <- file_url()
+    # iframe
+    session$sendCustomMessage("setPdfSrc", list(src = url))
+    # open-in-new-tab
+    session$sendCustomMessage("setOpenHref", list(href = url))
+    # status text (shows disk path for quick sanity check)
+    txt <- paste("Serving:", file_disk())
+    session$sendCustomMessage("setStatus", list(text = txt))
+  })
+
+  # Download handler (from disk)
+  output$dl <- downloadHandler(
+    filename = function() input$choice,
+    content  = function(file) { file.copy(file_disk(), file, overwrite = TRUE) },
+    contentType = "application/pdf"
+  )
+
+  # Minimal JS glue
+  session$sendCustomMessage("init", list())
+}
+
+# Inject tiny JS helpers
+ui <- tagList(
+  ui,
+  tags$script(HTML("
+    Shiny.addCustomMessageHandler('setPdfSrc', function(x){
+      var f = document.getElementById('pdf_frame'); if (f) f.src = x.src;
+    });
+    Shiny.addCustomMessageHandler('setOpenHref', function(x){
+      var a = document.getElementById('open_new'); if (a) a.href = x.href;
+    });
+    Shiny.addCustomMessageHandler('setStatus', function(x){
+      var s = document.getElementById('status'); if (s) s.textContent = x.text;
+    });
+  "))
+)
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
+
+# Help
+
+```{r accessibility-page-body}
+library(shiny)
+library(htmltools)
+
+# -----------------------------
+# Robust PDF setup (same pattern as fact sheets)
+# -----------------------------
+pdf_dir  <- "www"
+pdf_file <- "ScorecardReport.pdf"
+pdf_disk <- file.path(pdf_dir, pdf_file)
+
+if (!file.exists(pdf_disk)) {
+  stop("Help PDF not found at: ", pdf_disk)
+}
+
+# Serve www/ via an explicit, stable path
+shiny::addResourcePath("helpdocs", normalizePath(pdf_dir, mustWork = TRUE))
+
+# -----------------------------
+# EXISTING HELP CONTENT (unchanged)
+# -----------------------------
+
+# Heading and Subheading
+tags$h1(
+  "Help",
+  style = "font-weight: bold; font-size: 28px; margin-bottom: 10px;"
+)
+
+# Message with Contact Button
+tags$p(
+  style = "color: black; font-size: 16px; margin-bottom: 10px;",
+  "You have reached the page for additional information on getting the most out of our website. If you have questions beyond this scope, feel free to contact us!"
+)
+
+tags$a(
+  href  = "mailto:joyhammel@uic.edu",
+  class = "email-button",
+  style = "font-weight: bold; font-size: 18px; display: inline-block; margin-top: 5px;",
+  "Contact Us"
+)
+
+# Updated Map Palette Choices
+access_map_palette_choices <- list(
+  "Purple Gradient"       = "Purples",
+  "Yellow-Orange-Red"     = "YlOrRd",
+  "Grayscale Gradient"    = "Greys",
+  "Teal-Blue Gradient"    = "GnBu",
+  "Green-Yellow Gradient" = "YlGn",
+  "Brown-Blue Diverging"  = "BrBG"
+)
+
+# Select Input for Map Palette
+selectInput(
+  inputId = "access_map_palette",
+  label   = h5("Select Map Color Palette:"),
+  choices = names(access_map_palette_choices),
+  selected = "Yellow-Orange-Red"
+)
+
+# Reactive Palette Selection (unchanged)
+access_map_palette_selected <- reactive({
+  access_map_palette_choices[[input$access_map_palette]]
+})
+
+# -----------------------------
+# Scorecard info (ONLY PDF EMBED CHANGED)
+# -----------------------------
+tags$div(
+  style = "text-align: left;",
+
+  tags$p(
+    style = "font-weight: bold; font-size: 18px; margin-bottom: 10px;",
+    "Understanding ADA-PARC Scorecards"
+  ),
+
+  # Optional helper link (non-breaking addition)
+  tags$a(
+    href   = "helpdocs/ScorecardReport.pdf",
+    target = "_blank",
+    rel    = "noopener",
+    class  = "btn btn-link",
+    "Open in new tab"
+  ),
+
+  # Robust PDF embed (matches fact sheet architecture)
+  tags$iframe(
+    style = "height: 750px; width: 100%; border: none; overflow-y: scroll;",
+    src   = "helpdocs/ScorecardReport.pdf"
+  )
+)
+```
+
+<!-- Custom Javascript  -->
+
+```{=html}
+<script>
+$("body").on("shown.bs.tab", "a[data-toggle='tab']", function(e) {
+Shiny.setInputValue("active_tab", $(e.target).parent().index());
+})
+</script>
+```
+<!-- CSS for dashboard  -->
+
+```{=html}
+<style type="text/css">
+
+/* #################### */
+/* Fonts */
+/* #################### */
+
+/* Headers */
+h2,h3,h4,h5 { 
+font-weight: bold;
+}
+
+/* Section title color */
+h3 { 
+color: black;
+}
+
+/* #################### */
+/* Coloring */
+/* #################### */
+
+/* Leaflet border */
+.leaflet .legend i{
+border-left:1px solid #000000;
+border-right:1px solid #000000;
+border-top:1px solid #000000;
+border-bottom:1px solid #000000;
+}
+
+/* Leaflet background */
+.leaflet-container {
+background: #ddd;
+}
+
+/* Section dividers */
+.section-divider { 
+background-color: #CCCCCC;
+color: #000000;
+}
+
+/* Selector widget Active Option */
+.item {
+background: white !important;
+color: black !important;
+}
+.selectize-dropdown-content .active {
+background: #EFEFEF !important;
+color: black !important;
+border-left:1px solid #000000;
+border-right:1px solid #000000;
+border-top:1px solid #000000;
+border-bottom:1px solid #000000;
+}
+
+/* Kable caption colors (darken to meet contrast requirements) */
+caption {
+color: black;
+font-weight: bold;
+}
+
+
+/* #################### */
+/* Containers */
+/* #################### */
+
+/* Set max length for dropdowns */
+.selectize-dropdown-content {
+padding: 10px;
+}
+
+/* Allow dropdowns to be visible for short containers */
+#access_ggplot_theme+ div>.selectize-dropdown, #access_map_palette+ div>.selectize-dropdown {
+position: static;
+}
+
+/* Have dropdowns display on top of Leaflet */
+.selectize-dropdown {
+z-index: 10000;
+overflow-y: auto;
+}
+
+/* Scroll overflow for tables */
+.table-wrapper {
+overflow-x: scroll;
+overflow-y: scroll;
+}
+
+</style>
+```
