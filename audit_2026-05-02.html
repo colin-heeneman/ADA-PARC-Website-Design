@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADA-PARC Website Audit - May 2, 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --maroon: #7B1A1A;
+    --maroon-dark: #5a1010;
+    --gold: #C9A227;
+    --gold-light: #f5ecd4;
+    --navy: #1c2b3a;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --border: #e4e8ef;
+    --green: #1a6b3c;
+    --green-bg: #eef7f1;
+    --amber: #92530a;
+    --amber-bg: #fef8ec;
+    --red: #991b1b;
+    --red-bg: #fef2f2;
+    --blue-info: #1e40af;
+    --blue-bg: #eff6ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'EB Garamond', Garamond, Georgia, serif;
+    color: var(--navy);
+    background: var(--bg);
+    font-size: 17px;
+    line-height: 1.65;
+  }
+
+  .page-wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 2rem 1.4rem 4rem;
+  }
+
+  /* Banner */
+  .audit-banner {
+    background: linear-gradient(140deg, #2a0000 0%, var(--maroon) 100%);
+    color: white;
+    padding: 2.8rem 3rem 2.4rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+  .audit-banner .eyebrow {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: var(--gold);
+  }
+  .audit-banner h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    line-height: 1.05;
+    margin-bottom: 0.4rem;
+    color: white;
+  }
+  .audit-banner .subtitle {
+    font-size: 1.05rem;
+    max-width: 600px;
+    margin-bottom: 1.4rem;
+  }
+
+  /* Stat pills */
+  .stat-row {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+  .stat-box {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    text-align: center;
+    min-width: 110px;
+  }
+  .stat-box .val {
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .stat-box .lbl {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-top: 0.2rem;
+  }
+
+  /* Section card */
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 2rem 2.4rem 1.8rem;
+    margin-bottom: 1.6rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .card h2 {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--maroon);
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.01em;
+  }
+  .card .section-sub {
+    font-size: 0.9rem;
+    color: var(--navy);
+    margin-bottom: 1.2rem;
+  }
+
+  /* Individual items */
+  .item {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .item:last-child { border-bottom: none; }
+
+  .item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.35rem;
+  }
+  .item-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.3;
+  }
+
+  /* Severity tags */
+  .tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .tag.resolved { background: var(--green-bg); color: var(--green); }
+  .tag.high     { background: var(--red-bg); color: var(--red); }
+  .tag.medium   { background: var(--amber-bg); color: var(--amber); }
+  .tag.low      { background: var(--blue-bg); color: var(--blue-info); }
+  .tag.design   { background: var(--gold-light); color: var(--maroon); }
+
+  .item p {
+    margin: 0.3rem 0;
+    font-size: 0.95rem;
+  }
+
+  .item code, .inline-code {
+    font-family: 'Courier New', monospace;
+    font-size: 0.88em;
+    background: #f0f2f6;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .file-ref {
+    font-size: 0.82rem;
+    color: #6b7280;
+    font-style: italic;
+    margin-top: 0.25rem;
+  }
+
+  /* Resolved section */
+  .resolved-list {
+    list-style: none;
+    padding: 0;
+  }
+  .resolved-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f2f6;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .resolved-list li:last-child { border-bottom: none; }
+  .check {
+    color: var(--green);
+    font-weight: 700;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+  }
+
+  /* Prompt block */
+  .prompt-block {
+    background: #f8f5f0;
+    border-left: 4px solid var(--gold);
+    padding: 1rem 1.4rem;
+    border-radius: 0 8px 8px 0;
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  .prompt-block .prompt-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--maroon);
+    margin-bottom: 0.3rem;
+  }
+
+  /* Footer */
+  .footer {
+    font-size: 0.88rem;
+    color: var(--navy);
+    border-top: 1px solid var(--border);
+    padding-top: 1.2rem;
+    margin-top: 2rem;
+    line-height: 1.65;
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .page-wrap { padding: 1rem 0.75rem 2.5rem; }
+    .audit-banner { padding: 1.6rem 1.2rem; }
+    .audit-banner h1 { font-size: 2rem; }
+    .card { padding: 1.25rem 1rem 1rem; }
+    .stat-row { flex-direction: column; gap: 0.5rem; }
+    .stat-box { min-width: unset; width: 100%; }
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; font-size: 14px; }
+    .page-wrap { padding: 0; }
+    .card { box-shadow: none; border: 1px solid var(--border); break-inside: avoid; page-break-inside: avoid; }
+    .audit-banner { background: var(--maroon) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Banner -->
+  <div class="audit-banner" role="banner">
+    <div class="eyebrow">ADA-PARC Website Design</div>
+    <h1>Site Audit v2</h1>
+    <p class="subtitle">Full codebase review, updated from the April 28 audit. Confirms resolved issues, identifies remaining work, and proposes development and design improvements.</p>
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="val">6</div>
+        <div class="lbl">Resolved</div>
+      </div>
+      <div class="stat-box">
+        <div class="val">3</div>
+        <div class="lbl">Remaining Issues</div>
+      </div>
+      <div class="stat-box">
+        <div class="val">14</div>
+        <div class="lbl">Opportunities</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resolved -->
+  <div class="card">
+    <h2>Resolved Since April 28</h2>
+    <p class="section-sub">All bugs and hygiene items from the prior audit have been addressed.</p>
+    <ul class="resolved-list">
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Poverty label typo</strong> -- <code>$29,60</code> corrected to <code>$29,678</code> on the City Data summary card (line 1644).</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Dead resource_files entry</strong> -- <code>tract_data.Rds</code> corrected to <code>tracts_data.Rds</code> (line 18).</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>CSS font-size double-definition</strong> -- duplicate <code>3rem</code> declaration removed from <code>.help-card-title</code>.</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Orphaned legacy files deleted</strong> -- <code>stylesDec2025.css</code>, <code>functionsDec2025.R</code>, <code>functions_old.R</code> removed.</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Debug observe() block removed</strong> -- the 40-line TRACT JOIN DIAGNOSTICS block with 11 <code>message()</code> calls is gone.</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>EB Garamond font centralized</strong> -- single canonical <code>@import</code> in <code>www/styles.css</code> with universal <code>*</code> selector override. Duplicate <code>@import</code> and inline <code>body { font-family }</code> declarations removed from all Shiny inline style blocks.</span></li>
+    </ul>
+  </div>
+
+  <!-- Remaining Issues -->
+  <div class="card">
+    <h2>Remaining Issues</h2>
+    <p class="section-sub">Active problems in the source code that should be addressed.</p>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag medium">Medium</span>
+        <span class="item-title">Blue accent color in Scorecard tab breaks canon palette</span>
+      </div>
+      <p>The Scorecard tab uses <code>#0d3b8e</code> (blue) for the revision badge, Generate button, tab active state, and tab hover color. The site's canon palette is maroon/gold/black. This also extends to the focus ring in <code>www/styles.css</code> (lines 126, 139, 141) which uses the same blue.</p>
+      <p class="file-ref">ADA_PARC.Rmd lines 2120, 2125, 2135, 2136 | www/styles.css lines 126, 139, 141</p>
+      <div class="prompt-block">
+        <div class="prompt-label">Fix prompt</div>
+        In ADA_PARC.Rmd, replace all four instances of <code>#0d3b8e</code> (lines 2120, 2125, 2135, 2136) with <code>#7B1A1A</code> (maroon). In www/styles.css, replace the focus ring color <code>#0d3b8e</code> on lines 126 and 139 with <code>#7B1A1A</code>, and update the box-shadow rgba on line 141 from <code>rgba(13, 59, 142, 0.2)</code> to <code>rgba(123, 26, 26, 0.2)</code>.
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag low">Low</span>
+        <span class="item-title">Duplicate resource_files entry</span>
+      </div>
+      <p><code>data/final/tracts_data.Rds</code> appears on both line 18 and line 21 of the YAML header. Harmless, but untidy.</p>
+      <p class="file-ref">ADA_PARC.Rmd lines 18, 21</p>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag low">Low</span>
+        <span class="item-title">National Data table only sorts percentage columns</span>
+      </div>
+      <p>The sortable columns logic on line 1117 uses <code>grepl("State|%", all_columns)</code>, which excludes numeric count columns like Total Population or Number Employed. Users cannot rank states by raw counts.</p>
+      <p class="file-ref">ADA_PARC.Rmd line 1117</p>
+    </div>
+  </div>
+
+  <!-- Combined: Development Opportunities & Design Improvements -->
+  <div class="card">
+    <h2>Development and Design Opportunities</h2>
+    <p class="section-sub">Feature gaps, UX improvements, and aesthetic/accessibility enhancements merged into a single prioritized list. Items from the original audit's "Content/UX Gaps" and "Ideas for New Development" sections are retained and expanded with new design and accessibility suggestions.</p>
+
+    <!-- HIGH priority -->
+    <div class="item">
+      <div class="item-header">
+        <span class="tag high">High</span>
+        <span class="item-title">City Data map: add variable selector</span>
+      </div>
+      <p>The tract-level choropleth is hardcoded to overall disability rate (<code>pct_cni_total_dis_place</code>, line 1486). Unlike the National Data tab, which has full category and topic navigation, City Data gives users no way to explore different metrics. Adding a <code>selectInput</code> mirroring the National Data approach would make this the most analytically powerful tab on the site.</p>
+      <p class="file-ref">ADA_PARC.Rmd lines 1486-1504</p>
+      <div class="prompt-block">
+        <div class="prompt-label">Implementation prompt</div>
+        Add a selectInput dropdown to the City Data tab (above the leaflet map) that lets users choose which variable to display on the tract choropleth. Use the same category/topic structure as National Data. Update the reactive expression at line 1486 to use the selected variable instead of the hardcoded <code>pct_cni_total_dis_place</code>. Update the legend, tooltip, and aria-label to reflect the selected variable name.
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag high">High</span>
+        <span class="item-title">National Data table: add download/export button</span>
+      </div>
+      <p>The National Data table (DT::dataTable) has no CSV or Excel export. This is a significant gap for a data transparency site. The Scorecard tab already has download infrastructure that could be replicated.</p>
+      <p class="file-ref">ADA_PARC.Rmd lines 1074-1152</p>
+      <div class="prompt-block">
+        <div class="prompt-label">Implementation prompt</div>
+        Add a downloadButton beneath the National Data table (styled consistently with the existing scorecard download buttons). Wire a downloadHandler in the server that exports the currently filtered/sorted table as CSV. Use the pattern from the scorecard download code at lines 2181-2209.
+      </div>
+    </div>
+
+    <!-- MEDIUM priority -->
+    <div class="item">
+      <div class="item-header">
+        <span class="tag medium">Medium</span>
+        <span class="item-title">City Data summary card: add Community Living and Community Participation indicators</span>
+      </div>
+      <p>The "ADA-PARC Key Indicators" card (lines 1670-1699) only covers Economic (poverty, employment, labor force) and Education (HS diploma, HS equivalent, bachelor's). Community Living and Community Participation are entirely absent, undermining the site's three-pillar framework.</p>
+      <p class="file-ref">ADA_PARC.Rmd lines 1670-1699</p>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag medium">Medium</span>
+        <span class="item-title">Expand Fact Sheets to cover all three domains</span>
+      </div>
+      <p>Current Fact Sheets are skewed toward Community Living (Housing, HCBS Spending, Nursing Home Rates) with only one Economic sheet (Poverty Rates). No Community Participation fact sheets exist. Adding sheets for Employment, Technology Access, Health Insurance, and Transportation would round out coverage and reinforce the site's analytical completeness.</p>
+      <p class="file-ref">ADA_PARC.Rmd lines 2467-2496</p>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag medium">Medium</span>
+        <span class="item-title">City Data: add state/national benchmarks to summary card</span>
+      </div>
+      <p>The summary card shows raw city-level statistics with no context. Adding state and national averages alongside each metric would help users immediately understand whether their city is above or below typical values, without needing to cross-reference the National Data tab.</p>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag design">Design</span>
+        <span class="item-title">Refactor 281-line Home page inline CSS into styles.css</span>
+      </div>
+      <p>The Home page injects a large <code>tags$style(HTML(...))</code> block (lines 155-435) directly into the Rmd. Moving these rules into <code>www/styles.css</code> would centralize all styling, make future design changes easier, and reduce the Rmd's visual clutter. Component-specific class names are already well-scoped (e.g., <code>.nav-card</code>, <code>.welcome-text</code>) so the migration is low-risk.</p>
+      <p class="file-ref">ADA_PARC.Rmd lines 155-435</p>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag design">Design</span>
+        <span class="item-title">Consolidate color tokens into CSS custom properties</span>
+      </div>
+      <p>The site uses overlapping but inconsistent color values across files. <code>www/styles.css</code> defines some tokens (<code>--navy</code>, <code>--border</code>), but the scorecards, Home page, and inline style blocks each hardcode their own hex values. A unified set of CSS variables (maroon, gold, navy, plus semantic tokens for accent, success, warning) defined once in <code>styles.css</code> and referenced everywhere would prevent palette drift and make future rebranding trivial.</p>
+      <p>Current examples of inconsistency: Home page maroon is <code>#7B1A1A</code>, scorecard maroon is <code>#800000</code>, category banner gradient starts at <code>#2a0000</code>. All are "maroon" but none match exactly.</p>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag design">Design</span>
+        <span class="item-title">Add subtle card hover effects and transitions</span>
+      </div>
+      <p>The Home page navigation cards, Fact Sheet cards, and Help cards are static rectangles. Adding a gentle <code>transform: translateY(-2px)</code> and <code>box-shadow</code> elevation on hover (with a 150ms ease transition) would provide visual feedback, signal interactivity, and bring the design closer to modern card-based interfaces. This is a small CSS change with high perceived-polish return.</p>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag design">Design</span>
+        <span class="item-title">Improve table row hover feedback</span>
+      </div>
+      <p>National Data and City Data tables have zebra striping but no hover highlight. A subtle <code>tr:hover { background-color: var(--gold-light); }</code> (a very light gold, around <code>#faf5e6</code>) would help users track their eye across wide rows, improve readability, and reinforce the gold accent palette.</p>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag design">Design</span>
+        <span class="item-title">Add smooth scroll behavior and scroll-margin for anchored sections</span>
+      </div>
+      <p>When navigating between tabs or jumping to sections, the transition is instantaneous. Adding <code>html { scroll-behavior: smooth; }</code> and <code>scroll-margin-top</code> on section headings would create a more polished feel, especially on the Home page and Help tab where users move between content blocks.</p>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag design">Design</span>
+        <span class="item-title">Enhance responsive typography with clamp()</span>
+      </div>
+      <p>Current font sizing uses fixed <code>rem</code> values with media query overrides at 640px. CSS <code>clamp()</code> (e.g., <code>font-size: clamp(2rem, 4vw, 2.8rem)</code> for h1) would provide fluid scaling across all viewport widths, eliminating the jarring size jump at breakpoints. This is especially beneficial for tablet users who fall between the current mobile and desktop sizes.</p>
+    </div>
+
+    <!-- LOW / accessibility -->
+    <div class="item">
+      <div class="item-header">
+        <span class="tag design">Accessibility</span>
+        <span class="item-title">Add skip-to-content link</span>
+      </div>
+      <p>Screen reader and keyboard users must tab through the entire navbar before reaching page content. A visually hidden "Skip to main content" link as the first focusable element (becoming visible on focus) is a WCAG 2.4.1 requirement and a quick win. The site already has <code>role="main"</code> landmarks to target.</p>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag design">Accessibility</span>
+        <span class="item-title">Add lang="en" to the rendered HTML document</span>
+      </div>
+      <p>Flexdashboard's Rmd-to-HTML pipeline does not automatically add <code>lang="en"</code> to the <code>&lt;html&gt;</code> element. This is a WCAG Level A requirement (Success Criterion 3.1.1). It can be addressed by adding a small JavaScript snippet in <code>www/cssloaders.html</code> that sets <code>document.documentElement.lang = "en"</code> on load.</p>
+      <p class="file-ref">www/cssloaders.html</p>
+      <div class="prompt-block">
+        <div class="prompt-label">Fix prompt</div>
+        Add <code>document.addEventListener('DOMContentLoaded', function() { document.documentElement.lang = 'en'; });</code> to the existing <code>&lt;script&gt;</code> block in <code>www/cssloaders.html</code>.
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-header">
+        <span class="tag design">Accessibility</span>
+        <span class="item-title">Add visible keyboard navigation hints to interactive cards</span>
+      </div>
+      <p>Home page navigation cards and Fact Sheet cards use JavaScript click handlers. While keyboard users can activate them via Enter/Space (the underlying buttons have <code>role="button"</code> and <code>tabindex</code>), there is no visual affordance indicating keyboard operability. Adding a brief "Press Enter to navigate" aria-describedby or a subtle focus-state label would improve discoverability for keyboard-only users.</p>
+    </div>
+  </div>
+
+  <!-- What's Already Strong -->
+  <div class="card">
+    <h2>What's Already Strong</h2>
+    <p class="section-sub">Infrastructure and design decisions that are working well and should be preserved.</p>
+    <ul class="resolved-list">
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Accessibility foundation</strong> -- ARIA labels on all interactive elements, <code>role="main"</code> landmarks, <code>aria-live="polite"</code> regions for dynamic content, and focus-visible outlines are already in place across all tabs.</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Responsive design</strong> -- mobile breakpoints at 640px with stacking layouts, reduced padding, and appropriate font scaling for the Home page, scorecards, and navigation cards.</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Print styles</strong> -- both the main stylesheet and scorecard CSS include <code>@media print</code> blocks with color-adjust, break-inside avoidance, and cleaned-up box shadows.</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Reduced-motion respect</strong> -- the spinner animation in <code>cssloaders.html</code> includes a <code>prefers-reduced-motion</code> media query that halts animation for users who prefer it.</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Data architecture</strong> -- clean separation of data loading (setup chunk), helper functions (<code>scripts/functions.R</code>), and rendering logic. Reactive expressions are well-documented with comments.</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Scorecard infrastructure</strong> -- the Quarto-rendered state and category scorecards with parameterized rendering, download buttons, and error handling via try/catch is production-quality.</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Canon font enforcement</strong> -- as of May 2, 2026, EB Garamond is loaded once via <code>@import</code> in <code>www/styles.css</code> and applied universally via a <code>*</code> selector with <code>!important</code>, covering all elements including dynamically injected Shiny widgets.</span></li>
+      <li><span class="check" aria-hidden="true">&#10003;</span> <span><strong>Map accessibility</strong> -- leaflet maps use <code>role="img"</code> with dynamic <code>aria-label</code> that updates based on selected variables, providing screen reader users with meaningful context.</span></li>
+    </ul>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p><strong>Audit date:</strong> May 2, 2026 | <strong>Supersedes:</strong> audit_2026-04-28.html | <strong>Scope:</strong> Full codebase (ADA_PARC.Rmd, scripts/functions.R, www/styles.css, scorecard/*.css, scorecard/*.qmd, www/cssloaders.html)</p>
+    <p style="margin-top:0.5rem;">This audit was produced by reviewing the complete source code. Items in the "Resolved" section were verified by checking the current file contents against the bugs reported on April 28. The "Development and Design Opportunities" section merges the original audit's "Content and UX Gaps" and "Ideas for New Development" sections, retains all previously identified items, and adds new aesthetic and accessibility suggestions.</p>
+  </div>
+
+</div>
+</body>
+</html>

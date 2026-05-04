@@ -15,7 +15,7 @@ resource_files:
 - data/dict_vars.csv
 - data/final/city_place_full.Rds
 - data/final/dict_location_crosswalk.Rds
-- data/final/tract_data.Rds
+- data/final/tracts_data.Rds
 - data/final/tracts_sf.Rds
 - data/final/national_data.Rds
 - data/final/tracts_data.Rds
@@ -29,6 +29,7 @@ resource_files:
 - scorecard/category_scorecard.qmd
 - scorecard/scorecard_state.css
 - scorecard/scorecard_v3.css
+- scorecard/font-loader.html
 - scorecard/dictionary
 - scorecard/scorecard_data
 editor_options: 
@@ -71,6 +72,46 @@ library(reactR)
 
 
 extrafont::loadfonts(quiet = TRUE)
+
+# ── Register EB Garamond with R's graphics device ────────────────────────
+# CSS alone cannot reach text rendered into ggplot SVG/PNG output. We
+# register EB Garamond with R's font registry so any
+# `family = "EB Garamond"` ggplot/ggiraph call renders correctly.
+#
+# Two-tier strategy (both defensive, both no-op cleanly if unavailable):
+#   1. systemfonts::register_variant — aliases "EB Garamond" to an
+#      installed serif so R has metrics for layout. ggiraph still emits
+#      font-family="EB Garamond" in the SVG and the browser pairs it
+#      with the Google Fonts webfont loaded via www/cssloaders.html.
+#   2. showtext (optional) — if installed, also pull the real Google
+#      Font so static raster output looks correct.
+local({
+  if (requireNamespace("systemfonts", quietly = TRUE)) {
+    have_eb <- "EB Garamond" %in% systemfonts::system_fonts()$family
+    if (!have_eb) {
+      candidates <- c("Garamond", "EB Garamond", "Georgia", "Times New Roman", "serif")
+      installed  <- systemfonts::system_fonts()$family
+      fallback   <- candidates[candidates %in% installed][1]
+      if (!is.na(fallback)) {
+        try(systemfonts::register_variant(
+          name   = "EB Garamond",
+          family = fallback
+        ), silent = TRUE)
+      }
+    }
+  }
+  if (requireNamespace("showtext", quietly = TRUE) &&
+      requireNamespace("sysfonts", quietly = TRUE)) {
+    if (!"EB Garamond" %in% sysfonts::font_families()) {
+      try(sysfonts::font_add_google("EB Garamond", "EB Garamond"),
+          silent = TRUE)
+    }
+    try({
+      showtext::showtext_auto()
+      showtext::showtext_opts(dpi = 96)
+    }, silent = TRUE)
+  }
+})
 
 options(scipen = 999999,
         tigris_use_cache = TRUE,
@@ -143,18 +184,30 @@ source(here::here("scripts", "functions.R"), local = TRUE)
 # Home
 
 ```{r home}
+# Embed logo as base64 data URI so the src resolves independently of Shiny's
+# session URL context (relative paths like "adaparclogo.png" can 404 when the
+# browser resolves them against /session/ID/... rather than the app root).
+logo_uri <- base64enc::dataURI(
+  file = here::here("www", "adaparclogo.png"),
+  mime = "image/png"
+)
+
 ui <- fluidPage(
   tags$head(
     tags$style(HTML("
-      @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap');
-      *, *::before, *::after { box-sizing: border-box; }
+      /* EB Garamond: declared here because shinyApp() sub-apps run in an
+         isolated context where the parent flexdashboard www/styles.css
+         does not reliably cascade into the rendered content. */
+      *, *::before, *::after {
+        box-sizing: border-box;
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+      }
       body, html {
         height: 100%;
         margin: 0;
         padding: 0;
         overflow-x: hidden;
         overflow-y: scroll;
-        font-family: 'EB Garamond', Garamond, Georgia, serif;
         background: #f5f7fa;
       }
       .main-content {
@@ -433,7 +486,7 @@ ui <- fluidPage(
       # Hero
       div(class = "home-hero",
         div(class = "home-logo-wrap",
-          tags$img(src = "adaparclogo.png", alt = "ADA-PARC Logo")
+          tags$img(src = logo_uri, alt = "ADA-PARC Logo")
         ),
         div(class = "welcome-text", "Welcome to ADA-PARC"),
         div(class = "welcome-sub", "Tracking disability participation across the United States")
@@ -1394,47 +1447,6 @@ ui <- fluidPage(
 # ----------------------------
 server <- function(input, output, session) {
   
-  observe({
-  req(city_selected(), city_tract_sf(), city_tract())
-
-  sf_ids_raw  <- city_tract_sf()$tract_GEOID
-  tab_ids_raw <- city_tract()$GEOID
-
-  sf_norm  <- normalize_tract_geoid(sf_ids_raw)
-  tab_norm <- normalize_tract_geoid(tab_ids_raw)
-
-  message("---- TRACT JOIN DIAGNOSTICS ----")
-  message("city_selected(): ", city_selected())
-
-  message("SF rows: ", nrow(city_tract_sf()))
-  message("TAB rows: ", nrow(city_tract()))
-
-  message("SF tract_GEOID sample: ", paste(head(sf_ids_raw, 5), collapse = ", "))
-  message("TAB GEOID sample: ", paste(head(tab_ids_raw, 5), collapse = ", "))
-
-  message("SF norm sample: ", paste(head(sf_norm, 5), collapse = ", "))
-  message("TAB norm sample: ", paste(head(tab_norm, 5), collapse = ", "))
-
-  message("SF norm nchar (min/max): ",
-          min(nchar(sf_norm), na.rm = TRUE), "/", max(nchar(sf_norm), na.rm = TRUE))
-  message("TAB norm nchar (min/max): ",
-          min(nchar(tab_norm), na.rm = TRUE), "/", max(nchar(tab_norm), na.rm = TRUE))
-
-  match_rate <- mean(sf_norm %in% tab_norm, na.rm = TRUE)
-  message("Match rate (SF in TAB): ", round(match_rate, 4))
-
-  # show a few SF IDs that are missing from TAB (normalized)
-  missing <- setdiff(unique(sf_norm), unique(tab_norm))
-  message("Missing (first 10): ", paste(head(missing, 10), collapse = ", "))
-
-  # confirm your mapping column exists and has non-NA numeric values
-  message("pct_cni_total_dis_place class in tracts_data subset: ",
-          paste(class(city_tract()$pct_cni_total_dis_place), collapse = "/"))
-  message("pct_cni_total_dis_place NA share: ",
-          round(mean(is.na(city_tract()$pct_cni_total_dis_place)), 4))
-  message("--------------------------------")
-})
-
   # --- State selection ---
   state_selected <- reactive({
     req(input$state_selector)
@@ -1675,7 +1687,7 @@ server <- function(input, output, session) {
 
     employment <- city_place() %>%
       transmute(
-        `Living below poverty (as of 2024, yearly income below $14,891 for individual or $29,60 for family of four)` =
+        `Living below poverty (as of 2024, yearly income below $14,891 for individual or $29,678 for family of four)` =
           create_number_percent_string(pop_cni_18to64_poverty_dis, pct_cni_18to64_poverty_dis),
         `Employed (part or full time)` =
           create_number_percent_string(pop_cni_16plus_employed_dis, pct_cni_16plus_employed_dis),
@@ -1831,8 +1843,12 @@ index_hierarchy <- list(
       list(
         id         = "index_rel_community_resource",
         label      = "Community Resources",
-        indicators = c("rel_score_hcbs_ratio", "rel_score_hcbs_per_individual",
-                       "rel_score_hcv_hoh", "rel_score_pubhousing_hoh")
+        indicators = c("rel_score_hcbs_ratio", "rel_score_hcbs_per_individual")
+      ),
+      list(
+        id         = "index_rel_housing_access",
+        label      = "Housing Access",
+        indicators = c("rel_score_pct_cni_hoh_hcv_dis", "rel_score_pct_cni_hoh_pubhousing_dis")
       )
     )
   ),
@@ -1911,8 +1927,9 @@ ind_src <- c(
   # CL — Community Resources
   rel_score_hcbs_ratio           = "KFF / CMS-64 (FY2024)",
   rel_score_hcbs_per_individual  = "KFF / CMS-64 (FY2024)",
-  rel_score_hcv_hoh              = "HUD POSH (2023)",
-  rel_score_pubhousing_hoh       = "HUD POSH (2023)",
+  # CL — Housing Access
+  rel_score_pct_cni_hoh_hcv_dis       = "HUD POSH (2025)",
+  rel_score_pct_cni_hoh_pubhousing_dis = "HUD POSH (2025)",
   # CP — Technology Access
   rel_score_computer             = "ACS PUMS",
   rel_score_smartphone           = "ACS PUMS",
@@ -2137,10 +2154,12 @@ reference_panel <- build_reference_panel(index_hierarchy, indicator_dict)
 # CSS
 # ══════════════════════════════════════════════════════════════════════════════
 app_css <- "
-  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&display=swap');
+  /* EB Garamond: declared here because shinyApp() sub-apps run in an
+     isolated context where the parent flexdashboard www/styles.css
+     does not reliably cascade into the rendered content. */
+  *, *::before, *::after { font-family: 'EB Garamond', Garamond, Georgia, serif !important; }
 
   body {
-    font-family: 'EB Garamond', Georgia, serif;
     background: #f0f2f6;
     color: #1c2b3a;
   }
@@ -2488,8 +2507,10 @@ shinyApp(ui = ui, server = server)
 library(shiny)
 library(htmltools)
 
-# Serve the factsheets/ directory so HTML files are reachable in the browser
-shiny::addResourcePath("factsheets", normalizePath("factsheets", mustWork = TRUE))
+# factsheets/ HTML files live in www/factsheets/ (always included in deployment bundle).
+# Explicitly register the path so it is reliably served in all contexts — local dev,
+# flexdashboard embedded shinyApp(), and Posit Connect.
+shiny::addResourcePath("factsheets", normalizePath("www/factsheets", mustWork = FALSE))
 
 # Fact sheet metadata — title, subtitle, description, and filename
 fact_sheets <- list(
@@ -2525,93 +2546,95 @@ fact_sheets <- list(
 
 ui <- fluidPage(
   tags$head(
-    tags$link(rel = "preconnect", href = "https://fonts.googleapis.com"),
-    tags$link(
-      rel  = "stylesheet",
-      href = "https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap"
-    ),
     tags$style(HTML("
+      /* EB Garamond: declared here because shinyApp() sub-apps run in an
+         isolated context where the parent flexdashboard www/styles.css
+         does not reliably cascade into the rendered content. */
+      *, *::before, *::after { font-family: 'EB Garamond', Garamond, Georgia, serif !important; }
       body {
-        font-family: 'EB Garamond', Garamond, Georgia, serif;
         background: #f9f7f4;
         margin: 0;
       }
       .fs-page {
-        max-width: 960px;
+        max-width: 1080px;
         margin: 0 auto;
-        padding: 1.75rem 1.25rem 2.5rem;
+        padding: 2.25rem 1.75rem 3rem;
       }
       .fs-heading {
-        font-size: 1.7rem;
+        font-size: 2.1rem;
         font-weight: 700;
         color: #6b0f0f;
-        margin: 0 0 0.3rem;
-        border-left: 4px solid #c8a743;
-        padding-left: 0.65rem;
+        margin: 0 0 0.4rem;
+        border-left: 5px solid #c8a743;
+        padding-left: 0.75rem;
       }
       .fs-subheading {
-        font-size: 1.05rem;
+        font-size: 1.2rem;
         color: #444;
-        margin: 0 0 1.75rem 0;
-        padding-left: 0.65rem;
-        line-height: 1.55;
+        margin: 0 0 2rem 0;
+        padding-left: 0.75rem;
+        line-height: 1.6;
       }
       .fs-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.25rem;
-        margin-bottom: 2rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.75rem;
+        margin-bottom: 2.25rem;
+      }
+      @media (max-width: 620px) {
+        .fs-grid { grid-template-columns: 1fr; }
       }
       .fs-card {
         background: #fff;
         border: 1px solid #e0dbd2;
-        border-top: 4px solid #6b0f0f;
-        border-radius: 4px;
-        padding: 1.4rem 1.3rem 1.2rem;
+        border-top: 5px solid #6b0f0f;
+        border-radius: 5px;
+        padding: 1.9rem 1.75rem 1.6rem;
         display: flex;
         flex-direction: column;
-        box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
         transition: box-shadow 0.15s;
+        min-height: 220px;
       }
       .fs-card:hover {
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.12);
       }
       .fs-card-subtitle {
-        font-size: 0.95rem;
+        font-size: 1rem;
         font-weight: 700;
         color: #6b0f0f;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        margin: 0 0 0.35rem;
+        margin: 0 0 0.45rem;
       }
       .fs-card-title {
-        font-size: 1.2rem;
+        font-size: 1.45rem;
         font-weight: 700;
         color: #1c1c1c;
-        margin: 0 0 0.6rem;
+        margin: 0 0 0.75rem;
       }
       .fs-card-desc {
-        font-size: 1.05rem;
+        font-size: 1.15rem;
         color: #444;
-        line-height: 1.6;
+        line-height: 1.65;
         flex-grow: 1;
-        margin-bottom: 1.1rem;
+        margin-bottom: 1.35rem;
       }
       .fs-btn-row {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.65rem;
         flex-wrap: wrap;
       }
       .fs-btn-view {
         flex: 1;
-        min-width: 70px;
+        min-width: 80px;
         background: #6b0f0f;
         color: #fff !important;
         border: none;
-        border-radius: 3px;
-        padding: 0.45rem 0.7rem;
+        border-radius: 4px;
+        padding: 0.6rem 1rem;
         font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 1rem;
+        font-size: 1.1rem;
         font-weight: 600;
         cursor: pointer;
         text-align: center;
@@ -2633,14 +2656,14 @@ ui <- fluidPage(
       }
       .fs-btn-dl {
         flex: 1;
-        min-width: 70px;
+        min-width: 80px;
         background: #fff;
         color: #6b0f0f !important;
         border: 1.5px solid #6b0f0f;
-        border-radius: 3px;
-        padding: 0.45rem 0.7rem;
+        border-radius: 4px;
+        padding: 0.6rem 1rem;
         font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 1rem;
+        font-size: 1.1rem;
         font-weight: 600;
         cursor: pointer;
         text-align: center;
@@ -2666,11 +2689,11 @@ ui <- fluidPage(
       .fs-preview-bar {
         background: #1c1c1c;
         color: #fff;
-        padding: 0.55rem 1rem;
+        padding: 0.7rem 1.25rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 1rem;
+        font-size: 1.1rem;
         gap: 1rem;
       }
       .fs-preview-bar span {
@@ -2694,12 +2717,12 @@ ui <- fluidPage(
         display: none;
       }
       .fs-empty {
-        height: 220px;
+        height: 260px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #595959;
-        font-size: 1.05rem;
+        font-size: 1.15rem;
         background: #fafaf8;
         font-style: italic;
       }
@@ -2844,13 +2867,12 @@ tags$style(HTML("
 
   .help-card-title {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 3rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #591313;
     margin: 0 0 0.6rem 0;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    font-size: 1.25rem;
   }
 
   .help-card p {

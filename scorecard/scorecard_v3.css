@@ -1,5 +1,23 @@
-/* ── Google Fonts: EB Garamond ──────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700;800&display=swap');
+/* ── Font note ───────────────────────────────────────────────────────────── */
+/* EB Garamond is loaded via font-loader.html (include-in-header in the      */
+/* QMD YAML). DO NOT add @import url() here: pandoc's self-contained mode    */
+/* expands @import inline and silently drops the CSS rules that follow it,   */
+/* which would kill the universal font-family override below.                */
+
+/* ── UNIVERSAL font override ──────────────────────────────────────────── */
+*:not(.glyphicon):not(.fa):not(.fas):not(.far):not(.fab):not(.fal),
+*::before,
+*::after {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
+
+/* ── SVG text override (ggplot, ggiraph, gt charts, etc.) ─────────────── */
+svg text,
+svg tspan,
+text,
+tspan {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
 
 /* ── Base ───────────────────────────────────────────────────────────────── */
 body {

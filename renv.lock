@@ -103,7 +103,7 @@
     },
     "Rcpp": {
       "Package": "Rcpp",
-      "Version": "1.1.1-1",
+      "Version": "1.1.1-1.1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -111,7 +111,7 @@
         "methods",
         "utils"
       ],
-      "Hash": "4f5d86d141cc7ee9b4ff399b466c6c10"
+      "Hash": "8842cfd023a523ec9e011b9e4aab50ef"
     },
     "RcppTOML": {
       "Package": "RcppTOML",
@@ -197,20 +197,6 @@
         "R"
       ],
       "Hash": "ad123ab90aa2fc795512f61ff6939c4a"
-    },
-    "biscale": {
-      "Package": "biscale",
-      "Version": "1.0.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "classInt",
-        "ggplot2",
-        "stats",
-        "utils"
-      ],
-      "Hash": "43427f94ce2cfcb1cebc5b06dedd0460"
     },
     "bit": {
       "Package": "bit",
@@ -798,23 +784,6 @@
       ],
       "Hash": "15e9634c0fcd294799e9b2e929ed1b86"
     },
-    "gghighlight": {
-      "Package": "gghighlight",
-      "Version": "0.4.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "dplyr",
-        "ggplot2",
-        "ggrepel",
-        "lifecycle",
-        "purrr",
-        "rlang",
-        "tibble"
-      ],
-      "Hash": "a8f51a6b707d802a73bcb8920e368a06"
-    },
     "ggiraph": {
       "Package": "ggiraph",
       "Version": "0.9.6",
@@ -860,37 +829,6 @@
         "withr"
       ],
       "Hash": "24744d322a00a520db329287bf02ce42"
-    },
-    "ggrepel": {
-      "Package": "ggrepel",
-      "Version": "0.9.6",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "Rcpp",
-        "ggplot2",
-        "grid",
-        "rlang",
-        "scales",
-        "withr"
-      ],
-      "Hash": "3d4156850acc1161f2f24bc61c9217c1"
-    },
-    "ggtext": {
-      "Package": "ggtext",
-      "Version": "0.1.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "ggplot2",
-        "grid",
-        "gridtext",
-        "rlang",
-        "scales"
-      ],
-      "Hash": "c5ba8f5056487403a299b91984be86ca"
     },
     "ggthemes": {
       "Package": "ggthemes",
@@ -974,26 +912,6 @@
         "withr"
       ],
       "Hash": "d6db1667059d027da730decdc214b959"
-    },
-    "gridtext": {
-      "Package": "gridtext",
-      "Version": "0.1.5",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "Rcpp",
-        "curl",
-        "grDevices",
-        "grid",
-        "jpeg",
-        "markdown",
-        "png",
-        "rlang",
-        "stringr",
-        "xml2"
-      ],
-      "Hash": "05e4f5fffb1eecfeaac9ea0b7f255fef"
     },
     "gt": {
       "Package": "gt",
@@ -1205,28 +1123,6 @@
         "utils"
       ],
       "Hash": "0080607b4a1a7b28979aecef976d8bc2"
-    },
-    "janitor": {
-      "Package": "janitor",
-      "Version": "2.2.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "dplyr",
-        "hms",
-        "lifecycle",
-        "lubridate",
-        "magrittr",
-        "purrr",
-        "rlang",
-        "snakecase",
-        "stringi",
-        "stringr",
-        "tidyr",
-        "tidyselect"
-      ],
-      "Hash": "64f308bf1fbf5f856cdf4b4c7c0ce51b"
     },
     "jpeg": {
       "Package": "jpeg",
@@ -1531,18 +1427,6 @@
       ],
       "Hash": "4f50122dc256b1b6996a4703fecea821"
     },
-    "mongolite": {
-      "Package": "mongolite",
-      "Version": "3.0.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "jsonlite",
-        "mime",
-        "openssl"
-      ],
-      "Hash": "d79d3bf0969f212da1f22cff2fee0a02"
-    },
     "openssl": {
       "Package": "openssl",
       "Version": "2.3.2",
@@ -1552,23 +1436,6 @@
         "askpass"
       ],
       "Hash": "bc54d87ebf858b28de18df4bca6528d3"
-    },
-    "openxlsx": {
-      "Package": "openxlsx",
-      "Version": "4.2.8",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "Rcpp",
-        "grDevices",
-        "methods",
-        "stats",
-        "stringi",
-        "utils",
-        "zip"
-      ],
-      "Hash": "0dae94b258dc5abc4713eacdbbebcb51"
     },
     "packrat": {
       "Package": "packrat",
@@ -2198,18 +2065,6 @@
       ],
       "Hash": "30f0ebc41feba25691073626ff5e2cf4"
     },
-    "snakecase": {
-      "Package": "snakecase",
-      "Version": "0.11.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "stringi",
-        "stringr"
-      ],
-      "Hash": "58767e44739b76965332e8a4fe3f91f1"
-    },
     "snowflakeauth": {
       "Package": "snowflakeauth",
       "Version": "0.1.2",
@@ -2549,24 +2404,6 @@
       ],
       "Hash": "119d19da480e873f72241ff6962ffd83"
     },
-    "urbnmapr": {
-      "Package": "urbnmapr",
-      "Version": "0.0.0.9002",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "urbnmapr",
-      "RemoteUsername": "UrbanInstitute",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "ef9f4488d6bc916a07746aafe5755e9fb9da19eb",
-      "Requirements": [
-        "R",
-        "mapproj",
-        "sf",
-        "tibble"
-      ],
-      "Hash": "70d8c25883c03cf776a748e20ac20ff2"
-    },
     "utf8": {
       "Package": "utf8",
       "Version": "1.2.4",
@@ -2729,13 +2566,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "51dab85c6c98e50a18d7551e9d49f76c"
-    },
-    "zip": {
-      "Package": "zip",
-      "Version": "2.3.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "2f2ac1424654714391fe94dd69e196a9"
     }
   }
 }

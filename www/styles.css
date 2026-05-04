@@ -1,9 +1,32 @@
 /* ================================
-   ADA-PARC Table Styling
-   Updated: aligned with scorecard redesign aesthetic
+   ADA-PARC Global Styles
+   Loaded via YAML: css: www/styles.css
+   CANONICAL SOURCE for: EB Garamond font, design tokens, base typography
+   Do not re-declare font-family or @import EB Garamond in inline style blocks.
    ================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700;800&display=swap');
+/* ── Font (single canonical load) ──────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+/* ── UNIVERSAL font override ──────────────────────────────────────────── */
+/* One rule to cover every element, pseudo-element, and dynamically       */
+/* injected widget. Excludes icon-font glyphs (glyphicon / FA).           */
+*:not(.glyphicon):not(.fa):not(.fas):not(.far):not(.fab):not(.fal),
+*::before,
+*::after {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
+
+/* ── SVG text override ─────────────────────────────────────────────────── */
+/* ggplot, ggiraph, plotly, and similar libraries can emit explicit        */
+/* font-family attributes on <text>/<tspan> elements. Belt-and-suspenders  */
+/* rule with high specificity to ensure those still resolve to EB Garamond.*/
+svg text,
+svg tspan,
+text,
+tspan {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
 :root {
@@ -26,30 +49,17 @@ body {
   line-height: 1.6;
 }
 
-/* Override Yeti / Bootstrap sans-serif on all common text elements */
+/* Form controls and select input sizing */
 p, span, div, li, a, label, input, select, textarea, button,
 .shiny-input-container, .form-control, .control-label,
 .selectize-input, .selectize-dropdown, .selectize-dropdown-content,
 .selectize-input input {
-  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
   font-size: 20px;
 }
 
-/* Form controls and select input sizing */
 .form-control, .control-label,
 .selectize-input, .selectize-dropdown, .selectize-dropdown-content {
   font-size: 20px !important;
-}
-
-/* Navbar links explicitly */
-.navbar .navbar-nav > li > a,
-.navbar-nav li a {
-  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-}
-
-/* Buttons */
-.btn {
-  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
 }
 
 /* ================================
@@ -199,9 +209,8 @@ table th:focus {
   border-color: var(--navy) !important;
 }
 
-/* Navbar brand — EB Garamond for coherence with scorecard headings */
+/* Navbar brand */
 .navbar .navbar-brand {
-  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
   font-weight: 700;
   font-size: 1.3rem;
   letter-spacing: -0.01em;
@@ -265,7 +274,6 @@ table th:focus {
    ============================================ */
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
   color: var(--navy);
   letter-spacing: -0.01em;
 }
@@ -298,7 +306,6 @@ h3 {
 .section > h2,
 .section > h3 {
   color: var(--navy);
-  font-family: 'EB Garamond', Garamond, Georgia, serif;
 }
 
 /* Preserve list styling */

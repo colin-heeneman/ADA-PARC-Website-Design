@@ -1,0 +1,2769 @@
+<?xml version='1.0' encoding='utf-8' ?>
+
+<!-- build 20241.24.0618.0924                               -->
+<workbook original-version='18.1' source-build='2024.1.4 (20241.24.0618.0924)' source-platform='mac' version='18.1' xml:base='https://public.tableau.com' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <document-format-change-manifest>
+    <_.fcp.AccessibleZoneTabOrder.true...AccessibleZoneTabOrder />
+    <_.fcp.AnimationOnByDefault.true...AnimationOnByDefault />
+    <AutoCreateAndUpdateDSDPhoneLayouts />
+    <IntuitiveSorting />
+    <IntuitiveSorting_SP2 />
+    <MapboxVectorStylesAndLayers />
+    <_.fcp.MarkAnimation.true...MarkAnimation />
+    <_.fcp.ObjectModelEncapsulateLegacy.true...ObjectModelEncapsulateLegacy />
+    <_.fcp.ObjectModelExtractV2.true...ObjectModelExtractV2 />
+    <_.fcp.ObjectModelTableType.true...ObjectModelTableType />
+    <_.fcp.SchemaViewerObjectModel.true...SchemaViewerObjectModel />
+    <SetMembershipControl />
+    <SheetIdentifierTracking />
+    <SortTagCleanup />
+    <_.fcp.VConnDownstreamExtractsWithWarnings.true...VConnDownstreamExtractsWithWarnings />
+    <WindowsPersistSimpleIdentifiers />
+    <WorksheetBackgroundTransparency />
+  </document-format-change-manifest>
+  <repository-location id='CommunityLiving2023ADA-PARC' path='/workbooks' revision='1.3' />
+  <preferences>
+    <preference name='ui.encoding.shelf.height' value='24' />
+    <preference name='ui.shelf.height' value='26' />
+  </preferences>
+  <_.fcp.AnimationOnByDefault.false...style>
+    <_.fcp.AnimationOnByDefault.false..._.fcp.MarkAnimation.true...style-rule element='animation'>
+      <_.fcp.AnimationOnByDefault.false...format attr='animation-on' value='ao-on' />
+    </_.fcp.AnimationOnByDefault.false..._.fcp.MarkAnimation.true...style-rule>
+  </_.fcp.AnimationOnByDefault.false...style>
+  <datasources>
+    <datasource caption='Sheet 1 - Rounded_Values_for_Sp (community_living_between_2022_excel)' inline='true' name='federated.1hqkwtg1lu6uyv128bhk205x45yt' version='18.1'>
+      <connection class='federated'>
+        <named-connections>
+          <named-connection caption='CL2023_scorecard' name='excel-direct.0cwtz2z1c5u2iw19ssjk4006s1jc'>
+            <connection class='excel-direct' cleaning='yes' compat='no' dataRefreshTime='' filename='/Users/heener/Documents/GitHub/ADA-PARC-Website-Design/scorecard/scorecard_data/2023/CL2023_scorecard.xlsx' interpretationMode='1' password='' server='' validate='no' workgroup-auth-mode='as-is' />
+          </named-connection>
+          <named-connection caption='index_scores_wide_tableau_excel' name='excel-direct.0l2vlwb0517ofa18lc49x1dkl8lv'>
+            <connection class='excel-direct' cleaning='yes' compat='no' dataRefreshTime='' filename='/Users/heener/Documents/GitHub/ADAPARCDataPipeline/scorecard/scorecard_data/final/index_scores_wide_tableau_excel.xlsx' interpretationMode='1' password='' server='' validate='no' workgroup-auth-mode='as-is' />
+          </named-connection>
+        </named-connections>
+        <_.fcp.ObjectModelEncapsulateLegacy.false...relation connection='excel-direct.0l2vlwb0517ofa18lc49x1dkl8lv' name='Sheet 1 - index_scores_wide_tab' table='[&apos;Sheet 1 - index_scores_wide_tab$&apos;]' type='table'>
+          <columns gridOrigin='A1:AC55:no:A1:AC55:1' header='yes' lost='0' outcome='1' processed='1418'>
+            <column datatype='integer' name='GEOID' ordinal='0' />
+            <column datatype='string' name='NAME' ordinal='1' />
+            <column datatype='string' name='ABBR' ordinal='2' />
+            <column datatype='integer' name='year' ordinal='3' />
+            <column datatype='real' name='index_eq_community_living' ordinal='4' />
+            <column datatype='real' name='index_eq_communal_living' ordinal='5' />
+            <column datatype='real' name='index_eq_institutional_living' ordinal='6' />
+            <column datatype='real' name='index_eq_community_participation' ordinal='7' />
+            <column datatype='real' name='index_eq_commute' ordinal='8' />
+            <column datatype='real' name='index_eq_education' ordinal='9' />
+            <column datatype='real' name='index_eq_insurance' ordinal='10' />
+            <column datatype='real' name='index_eq_tech' ordinal='11' />
+            <column datatype='real' name='index_eq_work_economic' ordinal='12' />
+            <column datatype='real' name='index_eq_labor' ordinal='13' />
+            <column datatype='real' name='index_eq_poverty' ordinal='14' />
+            <column datatype='real' name='index_eq_adaparc' ordinal='15' />
+            <column datatype='real' name='index_rel_community_living' ordinal='16' />
+            <column datatype='real' name='index_rel_communal_living' ordinal='17' />
+            <column datatype='real' name='index_rel_institutional_living' ordinal='18' />
+            <column datatype='real' name='index_rel_community_participation' ordinal='19' />
+            <column datatype='real' name='index_rel_commute' ordinal='20' />
+            <column datatype='real' name='index_rel_education' ordinal='21' />
+            <column datatype='real' name='index_rel_insurance' ordinal='22' />
+            <column datatype='real' name='index_rel_tech' ordinal='23' />
+            <column datatype='real' name='index_rel_work_economic' ordinal='24' />
+            <column datatype='real' name='index_rel_labor' ordinal='25' />
+            <column datatype='real' name='index_rel_poverty' ordinal='26' />
+            <column datatype='real' name='index_rel_adaparc' ordinal='27' />
+            <column datatype='real' name='index_adaparc' ordinal='28' />
+          </columns>
+        </_.fcp.ObjectModelEncapsulateLegacy.false...relation>
+        <_.fcp.ObjectModelEncapsulateLegacy.true...relation connection='excel-direct.0l2vlwb0517ofa18lc49x1dkl8lv' name='Sheet 1 - index_scores_wide_tab' table='[&apos;Sheet 1 - index_scores_wide_tab$&apos;]' type='table'>
+          <columns gridOrigin='A1:AC55:no:A1:AC55:1' header='yes' lost='0' outcome='1' processed='1418'>
+            <column datatype='integer' name='GEOID' ordinal='0' />
+            <column datatype='string' name='NAME' ordinal='1' />
+            <column datatype='string' name='ABBR' ordinal='2' />
+            <column datatype='integer' name='year' ordinal='3' />
+            <column datatype='real' name='index_eq_community_living' ordinal='4' />
+            <column datatype='real' name='index_eq_communal_living' ordinal='5' />
+            <column datatype='real' name='index_eq_institutional_living' ordinal='6' />
+            <column datatype='real' name='index_eq_community_participation' ordinal='7' />
+            <column datatype='real' name='index_eq_commute' ordinal='8' />
+            <column datatype='real' name='index_eq_education' ordinal='9' />
+            <column datatype='real' name='index_eq_insurance' ordinal='10' />
+            <column datatype='real' name='index_eq_tech' ordinal='11' />
+            <column datatype='real' name='index_eq_work_economic' ordinal='12' />
+            <column datatype='real' name='index_eq_labor' ordinal='13' />
+            <column datatype='real' name='index_eq_poverty' ordinal='14' />
+            <column datatype='real' name='index_eq_adaparc' ordinal='15' />
+            <column datatype='real' name='index_rel_community_living' ordinal='16' />
+            <column datatype='real' name='index_rel_communal_living' ordinal='17' />
+            <column datatype='real' name='index_rel_institutional_living' ordinal='18' />
+            <column datatype='real' name='index_rel_community_participation' ordinal='19' />
+            <column datatype='real' name='index_rel_commute' ordinal='20' />
+            <column datatype='real' name='index_rel_education' ordinal='21' />
+            <column datatype='real' name='index_rel_insurance' ordinal='22' />
+            <column datatype='real' name='index_rel_tech' ordinal='23' />
+            <column datatype='real' name='index_rel_work_economic' ordinal='24' />
+            <column datatype='real' name='index_rel_labor' ordinal='25' />
+            <column datatype='real' name='index_rel_poverty' ordinal='26' />
+            <column datatype='real' name='index_rel_adaparc' ordinal='27' />
+            <column datatype='real' name='index_adaparc' ordinal='28' />
+          </columns>
+        </_.fcp.ObjectModelEncapsulateLegacy.true...relation>
+        <metadata-records>
+          <metadata-record class='capability'>
+            <remote-name />
+            <remote-type>0</remote-type>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias />
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='integer' name='context'>0</attribute>
+              <attribute datatype='string' name='gridOrigin'>&quot;A1:AC55:no:A1:AC55:1&quot;</attribute>
+              <attribute datatype='integer' name='lost'>0</attribute>
+              <attribute datatype='integer' name='outcome'>1</attribute>
+              <attribute datatype='integer' name='processed'>1418</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>GEOID</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[GEOID]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>GEOID</remote-alias>
+            <ordinal>0</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;I8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>NAME</remote-name>
+            <remote-type>130</remote-type>
+            <local-name>[NAME]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>NAME</remote-alias>
+            <ordinal>1</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='1' name='LEN_RUS_S2' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;WSTR&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>ABBR</remote-name>
+            <remote-type>130</remote-type>
+            <local-name>[ABBR]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>ABBR</remote-alias>
+            <ordinal>2</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <collation flag='1' name='LEN_RUS_S2' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;WSTR&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>year</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[year]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>year</remote-alias>
+            <ordinal>3</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;I8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_community_living</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_community_living]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_community_living</remote-alias>
+            <ordinal>4</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_communal_living</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_communal_living]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_communal_living</remote-alias>
+            <ordinal>5</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_institutional_living</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_institutional_living]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_institutional_living</remote-alias>
+            <ordinal>6</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_community_participation</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_community_participation]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_community_participation</remote-alias>
+            <ordinal>7</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_commute</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_commute]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_commute</remote-alias>
+            <ordinal>8</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_education</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_education]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_education</remote-alias>
+            <ordinal>9</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_insurance</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_insurance]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_insurance</remote-alias>
+            <ordinal>10</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_tech</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_tech]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_tech</remote-alias>
+            <ordinal>11</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_work_economic</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_work_economic]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_work_economic</remote-alias>
+            <ordinal>12</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_labor</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_labor]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_labor</remote-alias>
+            <ordinal>13</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_poverty</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_poverty]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_poverty</remote-alias>
+            <ordinal>14</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_eq_adaparc</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_eq_adaparc]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_eq_adaparc</remote-alias>
+            <ordinal>15</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_community_living</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_community_living]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_community_living</remote-alias>
+            <ordinal>16</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_communal_living</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_communal_living]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_communal_living</remote-alias>
+            <ordinal>17</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_institutional_living</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_institutional_living]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_institutional_living</remote-alias>
+            <ordinal>18</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_community_participation</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_community_participation]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_community_participation</remote-alias>
+            <ordinal>19</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_commute</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_commute]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_commute</remote-alias>
+            <ordinal>20</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_education</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_education]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_education</remote-alias>
+            <ordinal>21</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_insurance</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_insurance]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_insurance</remote-alias>
+            <ordinal>22</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_tech</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_tech]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_tech</remote-alias>
+            <ordinal>23</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_work_economic</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_work_economic]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_work_economic</remote-alias>
+            <ordinal>24</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_labor</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_labor]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_labor</remote-alias>
+            <ordinal>25</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_poverty</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_poverty]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_poverty</remote-alias>
+            <ordinal>26</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_rel_adaparc</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_rel_adaparc]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_rel_adaparc</remote-alias>
+            <ordinal>27</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>index_adaparc</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[index_adaparc]</local-name>
+            <parent-name>[Sheet 1 - index_scores_wide_tab]</parent-name>
+            <remote-alias>index_adaparc</remote-alias>
+            <ordinal>28</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>15</precision>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;R8&quot;</attribute>
+            </attributes>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+        </metadata-records>
+      </connection>
+      <aliases enabled='yes' />
+      <column caption='Living in Community Quartile' datatype='string' name='[Calculation_6820349809039835136]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='IF { FIXED : PERCENTILE([index_rel_communal_living], 0.25) } &gt;= [index_rel_communal_living] THEN&#10;    &quot;Q1&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_communal_living], 0.5) } &gt;= [index_rel_communal_living] THEN&#10;    &quot;Q2&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_communal_living], 0.75) } &gt;= [index_rel_communal_living] THEN&#10;    &quot;Q3&quot;&#10;ELSE&#10;    &quot;Q4&quot;&#10;END' />
+      </column>
+      <column caption='Institutional Living Quartile' datatype='string' name='[Community Living General Quartiles (copy)_6820349809042931713]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='IF { FIXED : PERCENTILE([index_rel_institutional_living], 0.25) } &gt;= [index_rel_institutional_living] THEN&#10;    &quot;Q1&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_institutional_living], 0.5) } &gt;= [index_rel_institutional_living] THEN&#10;    &quot;Q2&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_institutional_living], 0.75) } &gt;= [index_rel_institutional_living] THEN&#10;    &quot;Q3&quot;&#10;ELSE&#10;    &quot;Q4&quot;&#10;END' />
+      </column>
+      <column datatype='real' hidden='true' name='[Community Resources]' role='measure' type='quantitative' />
+      <column caption='State' datatype='string' name='[NAME]' role='dimension' semantic-role='[State].[Name]' type='nominal' />
+      <_.fcp.ObjectModelTableType.true...column caption='Sheet 1 - index_scores_wide_tab' datatype='table' name='[__tableau_internal_object_id__].[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]' role='measure' type='quantitative' />
+      <column caption='Communal Living Index' datatype='real' name='[index_rel_communal_living]' role='measure' type='quantitative' />
+      <column caption='Institutional Living Index' datatype='real' name='[index_rel_institutional_living]' role='measure' type='quantitative' />
+      <column-instance column='[Calculation_6820349809039835136]' derivation='None' name='[none:Calculation_6820349809039835136:nk]' pivot='key' type='nominal' />
+      <column-instance column='[Community Living General Quartiles (copy)_6820349809042931713]' derivation='None' name='[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' pivot='key' type='nominal' />
+      <extract _.fcp.ObjectModelExtractV2.true...object-id='' _.fcp.VConnDownstreamExtractsWithWarnings.true...user-specific='false' count='-1' enabled='true' units='records'>
+        <connection access_mode='readonly' authentication='auth-none' author-locale='en_US' class='hyper' dbname='/Users/heener/Documents/My Tableau Repository/Datasources/2024.1/en_US-US/community_living_extract_2022.hyper' default-settings='yes' schema='Extract' sslmode='' tablename='Extract' update-time='01/14/2026 04:14:00 PM' username='tableau_internal_user'>
+          <_.fcp.ObjectModelEncapsulateLegacy.false...relation name='Extract' table='[Extract].[Extract]' type='table' />
+          <_.fcp.ObjectModelEncapsulateLegacy.true...relation name='Extract' table='[Extract].[Extract]' type='table' />
+          <refresh>
+            <refresh-event add-from-file-path='Sheet 1 - Rounded_Values_for_Sp (community_living_between_2022_excel)' increment-value='%null%' refresh-type='create' rows-inserted='53' timestamp-start='2026-01-14 16:14:00.735' />
+          </refresh>
+          <metadata-records>
+            <metadata-record class='column'>
+              <remote-name>GEOID</remote-name>
+              <remote-type>20</remote-type>
+              <local-name>[GEOID]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>GEOID</remote-alias>
+              <ordinal>0</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>NAME</remote-name>
+              <remote-type>129</remote-type>
+              <local-name>[NAME]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>NAME</remote-alias>
+              <ordinal>1</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>string</local-type>
+              <aggregation>Count</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <collation flag='1' name='LEN_RUS_S2' />
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>ABBR</remote-name>
+              <remote-type>129</remote-type>
+              <local-name>[ABBR]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>ABBR</remote-alias>
+              <ordinal>2</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>string</local-type>
+              <aggregation>Count</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <collation flag='1' name='LEN_RUS_S2' />
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>year</remote-name>
+              <remote-type>20</remote-type>
+              <local-name>[year]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>year</remote-alias>
+              <ordinal>3</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>1</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_community_living</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_community_living]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_community_living</remote-alias>
+              <ordinal>4</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_communal_living</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_communal_living]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_communal_living</remote-alias>
+              <ordinal>5</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_institutional_living</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_institutional_living]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_institutional_living</remote-alias>
+              <ordinal>6</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_community_participation</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_community_participation]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_community_participation</remote-alias>
+              <ordinal>7</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_commute</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_commute]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_commute</remote-alias>
+              <ordinal>8</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_education</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_education]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_education</remote-alias>
+              <ordinal>9</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_insurance</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_insurance]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_insurance</remote-alias>
+              <ordinal>10</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_tech</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_tech]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_tech</remote-alias>
+              <ordinal>11</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_work_economic</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_work_economic]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_work_economic</remote-alias>
+              <ordinal>12</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_labor</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_labor]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_labor</remote-alias>
+              <ordinal>13</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_poverty</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_poverty]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_poverty</remote-alias>
+              <ordinal>14</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_eq_adaparc</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_eq_adaparc]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_eq_adaparc</remote-alias>
+              <ordinal>15</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_community_living</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_community_living]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_community_living</remote-alias>
+              <ordinal>16</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_communal_living</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_communal_living]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_communal_living</remote-alias>
+              <ordinal>17</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_institutional_living</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_institutional_living]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_institutional_living</remote-alias>
+              <ordinal>18</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_community_participation</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_community_participation]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_community_participation</remote-alias>
+              <ordinal>19</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_commute</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_commute]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_commute</remote-alias>
+              <ordinal>20</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_education</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_education]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_education</remote-alias>
+              <ordinal>21</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_insurance</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_insurance]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_insurance</remote-alias>
+              <ordinal>22</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_tech</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_tech]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_tech</remote-alias>
+              <ordinal>23</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_work_economic</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_work_economic]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_work_economic</remote-alias>
+              <ordinal>24</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_labor</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_labor]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_labor</remote-alias>
+              <ordinal>25</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_poverty</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_poverty]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_poverty</remote-alias>
+              <ordinal>26</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_rel_adaparc</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_rel_adaparc]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_rel_adaparc</remote-alias>
+              <ordinal>27</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>index_adaparc</remote-name>
+              <remote-type>5</remote-type>
+              <local-name>[index_adaparc]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>index_adaparc</remote-alias>
+              <ordinal>28</ordinal>
+              <family>Sheet 1 - index_scores_wide_tab</family>
+              <local-type>real</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>53</approx-count>
+              <contains-null>true</contains-null>
+              <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+            </metadata-record>
+          </metadata-records>
+        </connection>
+      </extract>
+      <layout _.fcp.SchemaViewerObjectModel.false...dim-percentage='0.5' _.fcp.SchemaViewerObjectModel.false...measure-percentage='0.4' dim-ordering='alphabetic' measure-ordering='alphabetic' show-structure='true' />
+      <style>
+        <style-rule element='mark'>
+          <encoding attr='color' field='[none:Calculation_6820349809039835136:nk]' type='palette'>
+            <map to='#762f3d'>
+              <bucket>&quot;Q4&quot;</bucket>
+            </map>
+            <map to='#eb1e2c'>
+              <bucket>&quot;Q3&quot;</bucket>
+            </map>
+            <map to='#f5de98'>
+              <bucket>&quot;Q1&quot;</bucket>
+            </map>
+            <map to='#f9a729'>
+              <bucket>&quot;Q2&quot;</bucket>
+            </map>
+          </encoding>
+          <encoding attr='color' field='[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' type='palette'>
+            <map to='#762f3d'>
+              <bucket>&quot;Q4&quot;</bucket>
+            </map>
+            <map to='#eb1e2c'>
+              <bucket>&quot;Q3&quot;</bucket>
+            </map>
+            <map to='#f59623'>
+              <bucket>&quot;Q2&quot;</bucket>
+            </map>
+            <map to='#f5de98'>
+              <bucket>&quot;Q1&quot;</bucket>
+            </map>
+          </encoding>
+        </style-rule>
+      </style>
+      <semantic-values>
+        <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
+      </semantic-values>
+      <_.fcp.ObjectModelEncapsulateLegacy.true...object-graph>
+        <objects>
+          <object caption='Sheet 1 - index_scores_wide_tab' id='Sheet 1 - index!scores!wide!tab_829A4E351E6D4016A92D3CB6C786116C'>
+            <properties context=''>
+              <relation connection='excel-direct.0l2vlwb0517ofa18lc49x1dkl8lv' name='Sheet 1 - index_scores_wide_tab' table='[&apos;Sheet 1 - index_scores_wide_tab$&apos;]' type='table'>
+                <columns gridOrigin='A1:AC55:no:A1:AC55:1' header='yes' lost='0' outcome='1' processed='1418'>
+                  <column datatype='integer' name='GEOID' ordinal='0' />
+                  <column datatype='string' name='NAME' ordinal='1' />
+                  <column datatype='string' name='ABBR' ordinal='2' />
+                  <column datatype='integer' name='year' ordinal='3' />
+                  <column datatype='real' name='index_eq_community_living' ordinal='4' />
+                  <column datatype='real' name='index_eq_communal_living' ordinal='5' />
+                  <column datatype='real' name='index_eq_institutional_living' ordinal='6' />
+                  <column datatype='real' name='index_eq_community_participation' ordinal='7' />
+                  <column datatype='real' name='index_eq_commute' ordinal='8' />
+                  <column datatype='real' name='index_eq_education' ordinal='9' />
+                  <column datatype='real' name='index_eq_insurance' ordinal='10' />
+                  <column datatype='real' name='index_eq_tech' ordinal='11' />
+                  <column datatype='real' name='index_eq_work_economic' ordinal='12' />
+                  <column datatype='real' name='index_eq_labor' ordinal='13' />
+                  <column datatype='real' name='index_eq_poverty' ordinal='14' />
+                  <column datatype='real' name='index_eq_adaparc' ordinal='15' />
+                  <column datatype='real' name='index_rel_community_living' ordinal='16' />
+                  <column datatype='real' name='index_rel_communal_living' ordinal='17' />
+                  <column datatype='real' name='index_rel_institutional_living' ordinal='18' />
+                  <column datatype='real' name='index_rel_community_participation' ordinal='19' />
+                  <column datatype='real' name='index_rel_commute' ordinal='20' />
+                  <column datatype='real' name='index_rel_education' ordinal='21' />
+                  <column datatype='real' name='index_rel_insurance' ordinal='22' />
+                  <column datatype='real' name='index_rel_tech' ordinal='23' />
+                  <column datatype='real' name='index_rel_work_economic' ordinal='24' />
+                  <column datatype='real' name='index_rel_labor' ordinal='25' />
+                  <column datatype='real' name='index_rel_poverty' ordinal='26' />
+                  <column datatype='real' name='index_rel_adaparc' ordinal='27' />
+                  <column datatype='real' name='index_adaparc' ordinal='28' />
+                </columns>
+              </relation>
+            </properties>
+            <properties context='extract'>
+              <relation name='Extract' table='[Extract].[Extract]' type='table' />
+            </properties>
+          </object>
+        </objects>
+      </_.fcp.ObjectModelEncapsulateLegacy.true...object-graph>
+    </datasource>
+  </datasources>
+  <mapsources>
+    <mapsource name='Tableau' />
+  </mapsources>
+  <actions>
+    <action caption='Highlight 1 (generated)' name='[Action1_D7312969CD89463986EC187B75DC2CA1]'>
+      <activation auto-clear='true' type='on-select' />
+      <source dashboard='Institutional Living Index' type='sheet' />
+      <command command='tsc:brush'>
+        <param name='field-captions' value='Institutional Living Quartile' />
+        <param name='target' value='Institutional Living Index' />
+      </command>
+    </action>
+    <action caption='Highlight 2 (generated)' name='[Action2_C333DDEE3F6447CCAC87E2D22CE1D0DE]'>
+      <activation auto-clear='true' type='on-select' />
+      <source dashboard='Communal Living Indexd' type='sheet' />
+      <command command='tsc:brush'>
+        <param name='field-captions' value='Living in Community Quartile' />
+        <param name='target' value='Communal Living Indexd' />
+      </command>
+    </action>
+  </actions>
+  <worksheets>
+    <worksheet name='Community Living General Map'>
+      <layout-options>
+        <title>
+          <formatted-text>
+            <run>&lt;Communal Living Map&gt;</run>
+          </formatted-text>
+        </title>
+      </layout-options>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Sheet 1 - Rounded_Values_for_Sp (community_living_between_2022_excel)' name='federated.1hqkwtg1lu6uyv128bhk205x45yt' />
+          </datasources>
+          <mapsources>
+            <mapsource name='Tableau' />
+          </mapsources>
+          <datasource-dependencies datasource='federated.1hqkwtg1lu6uyv128bhk205x45yt'>
+            <column caption='Living in Community Quartile' datatype='string' name='[Calculation_6820349809039835136]' role='dimension' type='nominal'>
+              <calculation class='tableau' formula='IF { FIXED : PERCENTILE([index_rel_communal_living], 0.25) } &gt;= [index_rel_communal_living] THEN&#10;    &quot;Q1&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_communal_living], 0.5) } &gt;= [index_rel_communal_living] THEN&#10;    &quot;Q2&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_communal_living], 0.75) } &gt;= [index_rel_communal_living] THEN&#10;    &quot;Q3&quot;&#10;ELSE&#10;    &quot;Q4&quot;&#10;END' />
+            </column>
+            <column caption='State' datatype='string' name='[NAME]' role='dimension' semantic-role='[State].[Name]' type='nominal' />
+            <column caption='Communal Living Index' datatype='real' name='[index_rel_communal_living]' role='measure' type='quantitative' />
+            <column-instance column='[Calculation_6820349809039835136]' derivation='None' name='[none:Calculation_6820349809039835136:nk]' pivot='key' type='nominal' />
+            <column-instance column='[NAME]' derivation='None' name='[none:NAME:nk]' pivot='key' type='nominal' />
+            <column-instance column='[index_rel_communal_living]' derivation='Sum' name='[sum:index_rel_communal_living:qk]' pivot='key' type='quantitative' />
+          </datasource-dependencies>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='axis'>
+            <encoding attr='space' class='0' field='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[Longitude (generated)]' field-type='quantitative' max='33169814.114704743' min='25456007.630490966' projection='EPSG:3857' range-type='fixed' scope='cols' type='space' />
+            <encoding attr='space' class='0' field='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[Latitude (generated)]' field-type='quantitative' max='7298263.2085121926' min='1615678.5391168972' projection='EPSG:3857' range-type='fixed' scope='rows' type='space' />
+          </style-rule>
+          <style-rule element='map-layer'>
+            <format attr='enabled' id='admin-0-label-5th-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-4th-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-3rd-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-2nd-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-1st-tier' value='false' />
+            <format attr='enabled' id='b01002_001e' value='false' />
+            <format attr='enabled' id='b01002_002e' value='false' />
+            <format attr='enabled' id='b01002_003e' value='false' />
+            <format attr='enabled' id='dp02_0001e' value='false' />
+            <format attr='enabled' id='dp02_0015e' value='false' />
+            <format attr='enabled' id='dp03_0027e_plus_dp03_0029e' value='false' />
+            <format attr='enabled' id='dp03_0028e' value='false' />
+            <format attr='enabled' id='dp03_0030e_plus_dp03_0031e' value='false' />
+            <format attr='enabled' id='dp03_0062e' value='false' />
+            <format attr='enabled' id='dp03_0088e' value='false' />
+            <format attr='enabled' id='dp04_0001e' value='false' />
+            <format attr='enabled' id='dp04_0046e' value='false' />
+            <format attr='enabled' id='dp04_0047e' value='false' />
+            <format attr='enabled' id='dp04_0089e' value='false' />
+            <format attr='enabled' id='dp05_0001e' value='false' />
+            <format attr='enabled' id='dp05_0002e_div_dp05_0003e' value='false' />
+            <format attr='enabled' id='dp05_0032e' value='false' />
+            <format attr='enabled' id='dp05_0033e' value='false' />
+            <format attr='enabled' id='dp05_0034e' value='false' />
+            <format attr='enabled' id='dp05_0039e' value='false' />
+            <format attr='enabled' id='dp05_0047e' value='false' />
+            <format attr='enabled' id='dp05_0053e' value='false' />
+            <format attr='enabled' id='dp05_0066e' value='false' />
+            <format attr='enabled' id='dp05_0077e' value='false' />
+            <format attr='enabled' id='background' value='false' />
+            <format attr='enabled' id='barrier_line-land-polygon' value='false' />
+            <format attr='enabled' id='barrier_line-land-line' value='false' />
+            <format attr='enabled' id='national_park-stroke' value='false' />
+            <format attr='enabled' id='national_park' value='false' />
+            <format attr='enabled' id='parks-stroke' value='false' />
+            <format attr='enabled' id='pitch' value='false' />
+            <format attr='enabled' id='industrial' value='false' />
+            <format attr='enabled' id='built-up-area' value='false' />
+            <format attr='enabled' id='water' value='false' />
+            <format attr='enabled' id='waterway-river-canal' value='false' />
+            <format attr='enabled' id='aeroway-polygon' value='false' />
+            <format attr='enabled' id='aeroway-runway' value='false' />
+            <format attr='enabled' id='aeroway-taxiway' value='false' />
+            <format attr='enabled' id='Coastline' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-bg' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-dispute' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-bg-sub' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-supress-bg' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-sm-parents-bg' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-md-parents-bg' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-lg-parents-bg' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-dispute-sub' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-sub' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-supress' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-sm-parents' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-md-parents' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-lg-parents' value='true' />
+            <format attr='enabled' id='light-admin1-water-lines-usa-tableau' value='true' />
+            <format attr='enabled' id='light-9-dash-line-casing' value='true' />
+            <format attr='enabled' id='light-9-dash-line' value='true' />
+            <format attr='enabled' id='admin-1-label-9th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-8th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-7th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-6th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-5th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-4th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-3rd-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-2nd-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-1st-tier' value='false' />
+            <format attr='enabled' id='us-admin-1-label-abbr-3rd-tier' value='false' />
+            <format attr='enabled' id='us-admin-1-label-abbr-2nd-tier' value='false' />
+            <format attr='enabled' id='us-admin-1-label-abbr-1st-tier' value='false' />
+          </style-rule>
+          <style-rule element='map'>
+            <format attr='washout' value='0.28999999165534973' />
+            <format attr='map-style' value='normal' />
+          </style-rule>
+          <style-rule element='map-data-layer'>
+            <format attr='palette' value='tableau-map-blue-green-light' />
+            <format attr='geo-area-type' value='State' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Multipolygon' />
+            <encodings>
+              <lod column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:NAME:nk]' />
+              <color column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Calculation_6820349809039835136:nk]' />
+              <lod column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[sum:index_rel_communal_living:qk]' />
+              <geometry column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[Geometry (generated)]' />
+            </encodings>
+          </pane>
+        </panes>
+        <rows>[federated.1hqkwtg1lu6uyv128bhk205x45yt].[Latitude (generated)]</rows>
+        <cols>[federated.1hqkwtg1lu6uyv128bhk205x45yt].[Longitude (generated)]</cols>
+      </table>
+      <simple-id uuid='{146B0371-7636-425E-8B9E-9F0305680710}' />
+    </worksheet>
+    <worksheet name='Community Living General Table'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Sheet 1 - Rounded_Values_for_Sp (community_living_between_2022_excel)' name='federated.1hqkwtg1lu6uyv128bhk205x45yt' />
+          </datasources>
+          <mapsources>
+            <mapsource name='Tableau' />
+          </mapsources>
+          <datasource-dependencies datasource='federated.1hqkwtg1lu6uyv128bhk205x45yt'>
+            <column caption='Living in Community Quartile' datatype='string' name='[Calculation_6820349809039835136]' role='dimension' type='nominal'>
+              <calculation class='tableau' formula='IF { FIXED : PERCENTILE([index_rel_communal_living], 0.25) } &gt;= [index_rel_communal_living] THEN&#10;    &quot;Q1&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_communal_living], 0.5) } &gt;= [index_rel_communal_living] THEN&#10;    &quot;Q2&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_communal_living], 0.75) } &gt;= [index_rel_communal_living] THEN&#10;    &quot;Q3&quot;&#10;ELSE&#10;    &quot;Q4&quot;&#10;END' />
+            </column>
+            <column caption='State' datatype='string' name='[NAME]' role='dimension' semantic-role='[State].[Name]' type='nominal' />
+            <column caption='Communal Living Index' datatype='real' name='[index_rel_communal_living]' role='measure' type='quantitative' />
+            <column-instance column='[Calculation_6820349809039835136]' derivation='None' name='[none:Calculation_6820349809039835136:nk]' pivot='key' type='nominal' />
+            <column-instance column='[NAME]' derivation='None' name='[none:NAME:nk]' pivot='key' type='nominal' />
+            <column-instance column='[index_rel_communal_living]' derivation='Sum' name='[sum:index_rel_communal_living:qk]' pivot='key' type='quantitative' />
+          </datasource-dependencies>
+          <computed-sort column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:NAME:nk]' direction='DESC' using='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[sum:index_rel_communal_living:qk]' />
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='width' value='309' />
+          </style-rule>
+          <style-rule element='header'>
+            <format attr='width' field='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Calculation_6820349809039835136:nk]' value='220' />
+            <format attr='width' field='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:NAME:nk]' value='228' />
+          </style-rule>
+          <style-rule element='map-layer'>
+            <format attr='enabled' id='admin-0-label-5th-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-4th-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-3rd-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-2nd-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-1st-tier' value='false' />
+            <format attr='enabled' id='b01002_001e' value='false' />
+            <format attr='enabled' id='b01002_002e' value='false' />
+            <format attr='enabled' id='b01002_003e' value='false' />
+            <format attr='enabled' id='dp02_0001e' value='false' />
+            <format attr='enabled' id='dp02_0015e' value='false' />
+            <format attr='enabled' id='dp03_0027e_plus_dp03_0029e' value='false' />
+            <format attr='enabled' id='dp03_0028e' value='false' />
+            <format attr='enabled' id='dp03_0030e_plus_dp03_0031e' value='false' />
+            <format attr='enabled' id='dp03_0062e' value='false' />
+            <format attr='enabled' id='dp03_0088e' value='false' />
+            <format attr='enabled' id='dp04_0001e' value='false' />
+            <format attr='enabled' id='dp04_0046e' value='false' />
+            <format attr='enabled' id='dp04_0047e' value='false' />
+            <format attr='enabled' id='dp04_0089e' value='false' />
+            <format attr='enabled' id='dp05_0001e' value='false' />
+            <format attr='enabled' id='dp05_0002e_div_dp05_0003e' value='false' />
+            <format attr='enabled' id='dp05_0032e' value='false' />
+            <format attr='enabled' id='dp05_0033e' value='false' />
+            <format attr='enabled' id='dp05_0034e' value='false' />
+            <format attr='enabled' id='dp05_0039e' value='false' />
+            <format attr='enabled' id='dp05_0047e' value='false' />
+            <format attr='enabled' id='dp05_0053e' value='false' />
+            <format attr='enabled' id='dp05_0066e' value='false' />
+            <format attr='enabled' id='dp05_0077e' value='false' />
+            <format attr='enabled' id='background' value='false' />
+            <format attr='enabled' id='barrier_line-land-polygon' value='false' />
+            <format attr='enabled' id='barrier_line-land-line' value='false' />
+            <format attr='enabled' id='national_park-stroke' value='false' />
+            <format attr='enabled' id='national_park' value='false' />
+            <format attr='enabled' id='parks-stroke' value='false' />
+            <format attr='enabled' id='pitch' value='false' />
+            <format attr='enabled' id='industrial' value='false' />
+            <format attr='enabled' id='built-up-area' value='false' />
+            <format attr='enabled' id='water' value='false' />
+            <format attr='enabled' id='waterway-river-canal' value='false' />
+            <format attr='enabled' id='aeroway-polygon' value='false' />
+            <format attr='enabled' id='aeroway-runway' value='false' />
+            <format attr='enabled' id='aeroway-taxiway' value='false' />
+            <format attr='enabled' id='Coastline' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-bg' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-dispute' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-bg-sub' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-supress-bg' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-sm-parents-bg' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-md-parents-bg' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-lg-parents-bg' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-dispute-sub' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-sub' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-supress' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-sm-parents' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-md-parents' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-lg-parents' value='true' />
+            <format attr='enabled' id='light-admin1-water-lines-usa-tableau' value='true' />
+            <format attr='enabled' id='light-9-dash-line-casing' value='true' />
+            <format attr='enabled' id='light-9-dash-line' value='true' />
+            <format attr='enabled' id='admin-1-label-9th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-8th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-7th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-6th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-5th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-4th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-3rd-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-2nd-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-1st-tier' value='false' />
+            <format attr='enabled' id='us-admin-1-label-abbr-3rd-tier' value='false' />
+            <format attr='enabled' id='us-admin-1-label-abbr-2nd-tier' value='false' />
+            <format attr='enabled' id='us-admin-1-label-abbr-1st-tier' value='false' />
+          </style-rule>
+          <style-rule element='map'>
+            <format attr='washout' value='0.28999999165534973' />
+            <format attr='map-style' value='normal' />
+          </style-rule>
+          <style-rule element='map-data-layer'>
+            <format attr='palette' value='tableau-map-blue-green-light' />
+            <format attr='geo-area-type' value='State' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Circle' />
+            <encodings>
+              <text column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[sum:index_rel_communal_living:qk]' />
+              <color column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Calculation_6820349809039835136:nk]' />
+            </encodings>
+            <style>
+              <style-rule element='mark'>
+                <format attr='has-stroke' value='false' />
+                <format attr='mark-labels-cull' value='true' />
+                <format attr='mark-labels-line-first' value='true' />
+                <format attr='mark-labels-line-last' value='true' />
+                <format attr='mark-labels-range-min' value='true' />
+                <format attr='mark-labels-range-max' value='true' />
+                <format attr='mark-labels-mode' value='all' />
+                <format attr='mark-labels-range-scope' value='pane' />
+                <format attr='mark-labels-range-field' value='' />
+                <format attr='mark-labels-show' value='true' />
+              </style-rule>
+              <style-rule element='pane'>
+                <format attr='minwidth' value='-1' />
+                <format attr='maxwidth' value='-1' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows>([federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:NAME:nk] / [federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Calculation_6820349809039835136:nk])</rows>
+        <cols />
+      </table>
+      <simple-id uuid='{EA3B789A-BD92-45AF-9D85-47B2F9035F00}' />
+    </worksheet>
+    <worksheet name='Housing Support Map'>
+      <layout-options>
+        <title>
+          <formatted-text>
+            <run>&lt;Institutional Living Map&gt;</run>
+          </formatted-text>
+        </title>
+      </layout-options>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Sheet 1 - Rounded_Values_for_Sp (community_living_between_2022_excel)' name='federated.1hqkwtg1lu6uyv128bhk205x45yt' />
+          </datasources>
+          <mapsources>
+            <mapsource name='Tableau' />
+          </mapsources>
+          <datasource-dependencies datasource='federated.1hqkwtg1lu6uyv128bhk205x45yt'>
+            <column caption='Institutional Living Quartile' datatype='string' name='[Community Living General Quartiles (copy)_6820349809042931713]' role='dimension' type='nominal'>
+              <calculation class='tableau' formula='IF { FIXED : PERCENTILE([index_rel_institutional_living], 0.25) } &gt;= [index_rel_institutional_living] THEN&#10;    &quot;Q1&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_institutional_living], 0.5) } &gt;= [index_rel_institutional_living] THEN&#10;    &quot;Q2&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_institutional_living], 0.75) } &gt;= [index_rel_institutional_living] THEN&#10;    &quot;Q3&quot;&#10;ELSE&#10;    &quot;Q4&quot;&#10;END' />
+            </column>
+            <column caption='State' datatype='string' name='[NAME]' role='dimension' semantic-role='[State].[Name]' type='nominal' />
+            <column caption='Institutional Living Index' datatype='real' name='[index_rel_institutional_living]' role='measure' type='quantitative' />
+            <column-instance column='[Community Living General Quartiles (copy)_6820349809042931713]' derivation='None' name='[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' pivot='key' type='nominal' />
+            <column-instance column='[NAME]' derivation='None' name='[none:NAME:nk]' pivot='key' type='nominal' />
+            <column-instance column='[index_rel_institutional_living]' derivation='Sum' name='[sum:index_rel_institutional_living:qk]' pivot='key' type='quantitative' />
+          </datasource-dependencies>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='axis'>
+            <encoding attr='space' class='0' field='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[Longitude (generated)]' field-type='quantitative' max='33181980.424200196' min='25695078.977797601' projection='EPSG:3857' range-type='fixed' scope='cols' type='space' />
+            <encoding attr='space' class='0' field='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[Latitude (generated)]' field-type='quantitative' max='7296004.7062651571' min='1780575.784413334' projection='EPSG:3857' range-type='fixed' scope='rows' type='space' />
+          </style-rule>
+          <style-rule element='map-layer'>
+            <format attr='enabled' id='admin-0-label-5th-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-4th-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-3rd-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-2nd-tier' value='false' />
+            <format attr='enabled' id='admin-0-label-1st-tier' value='false' />
+            <format attr='enabled' id='b01002_001e' value='false' />
+            <format attr='enabled' id='b01002_002e' value='false' />
+            <format attr='enabled' id='b01002_003e' value='false' />
+            <format attr='enabled' id='dp02_0001e' value='false' />
+            <format attr='enabled' id='dp02_0015e' value='false' />
+            <format attr='enabled' id='dp03_0027e_plus_dp03_0029e' value='false' />
+            <format attr='enabled' id='dp03_0028e' value='false' />
+            <format attr='enabled' id='dp03_0030e_plus_dp03_0031e' value='false' />
+            <format attr='enabled' id='dp03_0062e' value='false' />
+            <format attr='enabled' id='dp03_0088e' value='false' />
+            <format attr='enabled' id='dp04_0001e' value='false' />
+            <format attr='enabled' id='dp04_0046e' value='false' />
+            <format attr='enabled' id='dp04_0047e' value='false' />
+            <format attr='enabled' id='dp04_0089e' value='false' />
+            <format attr='enabled' id='dp05_0001e' value='false' />
+            <format attr='enabled' id='dp05_0002e_div_dp05_0003e' value='false' />
+            <format attr='enabled' id='dp05_0032e' value='false' />
+            <format attr='enabled' id='dp05_0033e' value='false' />
+            <format attr='enabled' id='dp05_0034e' value='false' />
+            <format attr='enabled' id='dp05_0039e' value='false' />
+            <format attr='enabled' id='dp05_0047e' value='false' />
+            <format attr='enabled' id='dp05_0053e' value='false' />
+            <format attr='enabled' id='dp05_0066e' value='false' />
+            <format attr='enabled' id='dp05_0077e' value='false' />
+            <format attr='enabled' id='background' value='false' />
+            <format attr='enabled' id='barrier_line-land-polygon' value='false' />
+            <format attr='enabled' id='barrier_line-land-line' value='false' />
+            <format attr='enabled' id='national_park-stroke' value='false' />
+            <format attr='enabled' id='national_park' value='false' />
+            <format attr='enabled' id='parks-stroke' value='false' />
+            <format attr='enabled' id='pitch' value='false' />
+            <format attr='enabled' id='industrial' value='false' />
+            <format attr='enabled' id='built-up-area' value='false' />
+            <format attr='enabled' id='water' value='false' />
+            <format attr='enabled' id='waterway-river-canal' value='false' />
+            <format attr='enabled' id='aeroway-polygon' value='false' />
+            <format attr='enabled' id='aeroway-runway' value='false' />
+            <format attr='enabled' id='aeroway-taxiway' value='false' />
+            <format attr='enabled' id='Coastline' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-bg' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-dispute' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-bg-sub' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-supress-bg' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-sm-parents-bg' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-md-parents-bg' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-lg-parents-bg' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-dispute-sub' value='true' />
+            <format attr='enabled' id='light-admin-0-boundaries-sub' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-supress' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-sm-parents' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-md-parents' value='true' />
+            <format attr='enabled' id='light-admin-1-boundaries-lg-parents' value='true' />
+            <format attr='enabled' id='light-admin1-water-lines-usa-tableau' value='true' />
+            <format attr='enabled' id='light-9-dash-line-casing' value='true' />
+            <format attr='enabled' id='light-9-dash-line' value='true' />
+            <format attr='enabled' id='admin-1-label-9th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-8th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-7th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-6th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-5th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-4th-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-3rd-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-2nd-tier' value='false' />
+            <format attr='enabled' id='admin-1-label-1st-tier' value='false' />
+            <format attr='enabled' id='us-admin-1-label-abbr-3rd-tier' value='false' />
+            <format attr='enabled' id='us-admin-1-label-abbr-2nd-tier' value='false' />
+            <format attr='enabled' id='us-admin-1-label-abbr-1st-tier' value='false' />
+          </style-rule>
+          <style-rule element='map'>
+            <format attr='washout' value='0.28999999165534973' />
+            <format attr='map-style' value='normal' />
+          </style-rule>
+          <style-rule element='map-data-layer'>
+            <format attr='palette' value='tableau-map-blue-green-light' />
+            <format attr='geo-area-type' value='State' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Multipolygon' />
+            <encodings>
+              <lod column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:NAME:nk]' />
+              <color column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' />
+              <lod column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[sum:index_rel_institutional_living:qk]' />
+              <geometry column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[Geometry (generated)]' />
+            </encodings>
+          </pane>
+        </panes>
+        <rows>[federated.1hqkwtg1lu6uyv128bhk205x45yt].[Latitude (generated)]</rows>
+        <cols>[federated.1hqkwtg1lu6uyv128bhk205x45yt].[Longitude (generated)]</cols>
+      </table>
+      <simple-id uuid='{E8688481-DB75-458D-A174-01A880C9F81B}' />
+    </worksheet>
+    <worksheet name='Institutional Living Table'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Sheet 1 - Rounded_Values_for_Sp (community_living_between_2022_excel)' name='federated.1hqkwtg1lu6uyv128bhk205x45yt' />
+          </datasources>
+          <datasource-dependencies datasource='federated.1hqkwtg1lu6uyv128bhk205x45yt'>
+            <column caption='Institutional Living Quartile' datatype='string' name='[Community Living General Quartiles (copy)_6820349809042931713]' role='dimension' type='nominal'>
+              <calculation class='tableau' formula='IF { FIXED : PERCENTILE([index_rel_institutional_living], 0.25) } &gt;= [index_rel_institutional_living] THEN&#10;    &quot;Q1&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_institutional_living], 0.5) } &gt;= [index_rel_institutional_living] THEN&#10;    &quot;Q2&quot;&#10;ELSEIF { FIXED : PERCENTILE([index_rel_institutional_living], 0.75) } &gt;= [index_rel_institutional_living] THEN&#10;    &quot;Q3&quot;&#10;ELSE&#10;    &quot;Q4&quot;&#10;END' />
+            </column>
+            <column caption='State' datatype='string' name='[NAME]' role='dimension' semantic-role='[State].[Name]' type='nominal' />
+            <column caption='Institutional Living Index' datatype='real' name='[index_rel_institutional_living]' role='measure' type='quantitative' />
+            <column-instance column='[Community Living General Quartiles (copy)_6820349809042931713]' derivation='None' name='[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' pivot='key' type='nominal' />
+            <column-instance column='[NAME]' derivation='None' name='[none:NAME:nk]' pivot='key' type='nominal' />
+            <column-instance column='[index_rel_institutional_living]' derivation='Sum' name='[sum:index_rel_institutional_living:qk]' pivot='key' type='quantitative' />
+          </datasource-dependencies>
+          <computed-sort column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' direction='DESC' using='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[sum:index_rel_institutional_living:qk]' />
+          <shelf-sorts>
+            <shelf-sort-v2 dimension-to-sort='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:NAME:nk]' direction='DESC' measure-to-sort-by='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[sum:index_rel_institutional_living:qk]' shelf='rows' />
+          </shelf-sorts>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='width' value='289' />
+          </style-rule>
+          <style-rule element='header'>
+            <format attr='width' field='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' value='248' />
+            <format attr='width' field='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:NAME:nk]' value='252' />
+          </style-rule>
+          <style-rule element='field-labels-decoration'>
+            <format attr='vertical-align' value='auto' />
+            <format attr='text-align' value='auto' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Circle' />
+            <encodings>
+              <color column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' />
+              <text column='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[sum:index_rel_institutional_living:qk]' />
+            </encodings>
+            <style>
+              <style-rule element='mark'>
+                <format attr='mark-labels-cull' value='true' />
+                <format attr='mark-labels-line-first' value='true' />
+                <format attr='mark-labels-line-last' value='true' />
+                <format attr='mark-labels-range-min' value='true' />
+                <format attr='mark-labels-range-max' value='true' />
+                <format attr='mark-labels-mode' value='all' />
+                <format attr='mark-labels-range-scope' value='pane' />
+                <format attr='mark-labels-range-field' value='' />
+                <format attr='has-stroke' value='false' />
+                <format attr='mark-labels-show' value='true' />
+              </style-rule>
+              <style-rule element='pane'>
+                <format attr='minwidth' value='-1' />
+                <format attr='maxwidth' value='-1' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows>([federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:NAME:nk] / [federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk])</rows>
+        <cols />
+      </table>
+      <simple-id uuid='{B9CE1E46-4F0B-4E27-8790-B01A7DA279F3}' />
+    </worksheet>
+  </worksheets>
+  <dashboards>
+    <dashboard _.fcp.AccessibleZoneTabOrder.true...enable-sort-zone-taborder='true' name='Communal Living Indexd'>
+      <style />
+      <size maxheight='800' maxwidth='1000' minheight='800' minwidth='1000' />
+      <zones>
+        <zone h='100000' id='4' type-v2='layout-basic' w='100000' x='0' y='0'>
+          <zone h='98000' id='7' param='horz' type-v2='layout-flow' w='98400' x='800' y='1000'>
+            <zone fixed-size='160' h='98000' id='6' is-fixed='true' param='vert' type-v2='layout-flow' w='98400' x='800' y='1000'>
+              <zone fixed-size='158' h='19750' id='9' is-fixed='true' param='horz' type-v2='layout-flow' w='98400' x='800' y='1000' />
+            </zone>
+          </zone>
+          <zone-style>
+            <format attr='border-color' value='#000000' />
+            <format attr='border-style' value='none' />
+            <format attr='border-width' value='0' />
+            <format attr='margin' value='8' />
+          </zone-style>
+        </zone>
+        <zone h='14875' id='8' name='Community Living General Table' pane-specification-id='0' param='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Calculation_6820349809039835136:nk]' type-v2='color' w='17600' x='78700' y='23750' />
+        <zone h='23000' id='3' name='Community Living General Table' show-title='false' w='78000' x='300' y='72750' />
+        <zone h='49250' id='12' name='Community Living General Map' show-title='false' w='78000' x='200' y='23375'>
+          <layout-cache minheight='244' type-h='scalable' type-w='fixed' />
+        </zone>
+        <zone forceUpdate='true' h='37125' id='22' type-v2='text' w='20200' x='78500' y='36375'>
+          <formatted-text>
+            <run bold='true' fontcolor='#1b1b1b' fontsize='10'>Q4 : Top Scores, Greatest Opportunity for Disability Population</run>
+            <run>Æ&#10;&#10;</run>
+            <run bold='true' fontcolor='#1b1b1b' fontsize='10'>Q3: Above Average Scores, Good Opportunity for Disability Population</run>
+            <run>Æ&#10;&#10;</run>
+            <run bold='true' fontcolor='#1b1b1b' fontsize='10'>Q2: Below Average Scores, Less Opportunity for Disability Population</run>
+            <run>Æ&#10;&#10;</run>
+            <run bold='true' fontcolor='#1b1b1b' fontsize='10'>Q1: Bottom Scores, Worst Opportunity for Disability Population</run>
+          </formatted-text>
+        </zone>
+        <zone forceUpdate='true' h='18000' id='11' type-v2='text' w='57600' x='17900' y='7125'>
+          <formatted-text>
+            <run bold='true' fontalignment='1' fontcolor='#000000' fontname='Tableau Bold' fontsize='26'>Communal Living Index</run>
+            <run fontalignment='1'>Æ&#10;</run>
+            <run fontalignment='1' fontcolor='#333333' fontsize='10'>Represents opportunity for individuals with disabilities to live as part of their communities, rather than in an institution.</run>
+          </formatted-text>
+        </zone>
+        <zone forceUpdate='true' h='9375' id='39' type-v2='text' w='15600' x='78600' y='73125'>
+          <formatted-text>
+            <run bold='true' fontcolor='#1b1b1b' italic='true'>Note on Source: </run>
+            <run>Æ&#10;</run>
+            <run bold='true' fontcolor='#1b1b1b' italic='true'>Derived from ACS-5 </run>
+            <run>Æ&#10;</run>
+            <run bold='true' fontcolor='#1b1b1b' italic='true'>2023 Estimates</run>
+          </formatted-text>
+        </zone>
+      </zones>
+      <devicelayouts>
+        <devicelayout auto-generated='true' name='Phone'>
+          <size maxheight='800' minheight='800' sizing-mode='vscroll' />
+          <zones>
+            <zone h='100000' id='45' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='98000' id='44' param='vert' type-v2='layout-flow' w='98400' x='800' y='1000'>
+                <zone forceUpdate='true' h='18000' id='11' type-v2='text' w='57600' x='17900' y='7125'>
+                  <formatted-text>
+                    <run bold='true' fontalignment='1' fontcolor='#000000' fontname='Tableau Bold' fontsize='26'>Communal Living Index</run>
+                    <run fontalignment='1'>Æ&#10;</run>
+                    <run fontalignment='1' fontcolor='#333333' fontsize='10'>Represents opportunity for individuals with disabilities to live as part of their communities, rather than in an institution.</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='280' h='49250' id='12' is-fixed='true' name='Community Living General Map' show-title='false' w='78000' x='200' y='23375'>
+                  <layout-cache minheight='244' type-h='scalable' type-w='fixed' />
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone forceUpdate='true' h='37125' id='22' type-v2='text' w='20200' x='78500' y='36375'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#1b1b1b' fontsize='10'>Q4 : Top Scores, Greatest Opportunity for Disability Population</run>
+                    <run>Æ&#10;&#10;</run>
+                    <run bold='true' fontcolor='#1b1b1b' fontsize='10'>Q3: Above Average Scores, Good Opportunity for Disability Population</run>
+                    <run>Æ&#10;&#10;</run>
+                    <run bold='true' fontcolor='#1b1b1b' fontsize='10'>Q2: Below Average Scores, Less Opportunity for Disability Population</run>
+                    <run>Æ&#10;&#10;</run>
+                    <run bold='true' fontcolor='#1b1b1b' fontsize='10'>Q1: Bottom Scores, Worst Opportunity for Disability Population</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='184' h='23000' id='3' is-fixed='true' name='Community Living General Table' show-title='false' w='78000' x='300' y='72750'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='14875' id='8' name='Community Living General Table' pane-specification-id='0' param='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Calculation_6820349809039835136:nk]' type-v2='color' w='17600' x='78700' y='23750'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone forceUpdate='true' h='9375' id='39' type-v2='text' w='15600' x='78600' y='73125'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#1b1b1b' italic='true'>Note on Source: </run>
+                    <run>Æ&#10;</run>
+                    <run bold='true' fontcolor='#1b1b1b' italic='true'>Derived from ACS-5 </run>
+                    <run>Æ&#10;</run>
+                    <run bold='true' fontcolor='#1b1b1b' italic='true'>2023 Estimates</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+              </zone>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='8' />
+              </zone-style>
+            </zone>
+          </zones>
+        </devicelayout>
+      </devicelayouts>
+      <simple-id uuid='{4AB4E58C-A9F4-406B-8949-A76FA47D43DD}' />
+    </dashboard>
+    <dashboard _.fcp.AccessibleZoneTabOrder.true...enable-sort-zone-taborder='true' name='Institutional Living Index'>
+      <style />
+      <size maxheight='800' maxwidth='1000' minheight='800' minwidth='1000' />
+      <zones>
+        <zone h='100000' id='5' type-v2='layout-basic' w='100000' x='0' y='0'>
+          <zone h='100000' id='8' param='horz' type-v2='layout-flow' w='100000' x='0' y='0'>
+            <zone h='100000' id='6' type-v2='layout-basic' w='100000' x='0' y='0' />
+          </zone>
+        </zone>
+        <zone forceUpdate='true' h='12750' id='3' type-v2='text' w='54200' x='21100' y='7875'>
+          <formatted-text>
+            <run bold='true' fontalignment='1' fontcolor='#000000' fontname='Tableau Bold' fontsize='26'>Institutional Living Index</run>
+            <run fontalignment='1'>Æ&#10;</run>
+            <run fontalignment='1' fontsize='10'>Represents the commonality of individuals with disabilities being institutionalized in a given state.</run>
+          </formatted-text>
+          <zone-style>
+            <format attr='border-color' value='#000000' />
+            <format attr='border-style' value='none' />
+            <format attr='border-width' value='0' />
+            <format attr='margin' value='4' />
+          </zone-style>
+        </zone>
+        <zone h='27000' id='4' name='Institutional Living Table' show-title='false' w='98700' x='1000' y='72375' />
+        <zone h='15500' id='9' leg-item-order='reversed' name='Institutional Living Table' pane-specification-id='0' param='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' type-v2='color' w='18500' x='83100' y='21750' />
+        <zone h='51000' id='10' name='Housing Support Map' show-title='false' w='80800' x='800' y='21375' />
+        <zone forceUpdate='true' h='40500' id='22' type-v2='text' w='16700' x='83000' y='33750'>
+          <formatted-text>
+            <run bold='true' fontcolor='#333333' fontsize='10'>Q4 : Top Scores, Greatest Opportunity for Disability Population</run>
+            <run>Æ&#10;&#10;</run>
+            <run bold='true' fontcolor='#333333' fontsize='10'>Q3: Above Average Scores, Good Opportunity for Disability Population</run>
+            <run>Æ&#10;&#10;</run>
+            <run bold='true' fontcolor='#333333' fontsize='10'>Q2: Below Average Scores, Less Opportunity for Disability Population</run>
+            <run>Æ&#10;&#10;</run>
+            <run bold='true' fontcolor='#333333' fontsize='10'>Q1: Bottom Scores, Worst Opportunity for Disability Population</run>
+          </formatted-text>
+        </zone>
+        <zone forceUpdate='true' h='9375' id='41' type-v2='text' w='15600' x='82400' y='79625'>
+          <formatted-text>
+            <run bold='true' fontcolor='#1b1b1b' italic='true'>Note on Source: </run>
+            <run>Æ&#10;</run>
+            <run bold='true' fontcolor='#1b1b1b' italic='true'>Derived from ACS-5 </run>
+            <run>Æ&#10;</run>
+            <run bold='true' fontcolor='#1b1b1b' italic='true'>2023 Estimates</run>
+          </formatted-text>
+        </zone>
+      </zones>
+      <devicelayouts>
+        <devicelayout auto-generated='true' name='Phone'>
+          <size maxheight='800' minheight='800' sizing-mode='vscroll' />
+          <zones>
+            <zone h='100000' id='43' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='98000' id='42' param='vert' type-v2='layout-flow' w='98400' x='800' y='1000'>
+                <zone forceUpdate='true' h='12750' id='3' type-v2='text' w='54200' x='21100' y='7875'>
+                  <formatted-text>
+                    <run bold='true' fontalignment='1' fontcolor='#000000' fontname='Tableau Bold' fontsize='26'>Institutional Living Index</run>
+                    <run fontalignment='1'>Æ&#10;</run>
+                    <run fontalignment='1' fontsize='10'>Represents the commonality of individuals with disabilities being institutionalized in a given state.</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='280' h='51000' id='10' is-fixed='true' name='Housing Support Map' show-title='false' w='80800' x='800' y='21375'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone forceUpdate='true' h='40500' id='22' type-v2='text' w='16700' x='83000' y='33750'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#333333' fontsize='10'>Q4 : Top Scores, Greatest Opportunity for Disability Population</run>
+                    <run>Æ&#10;&#10;</run>
+                    <run bold='true' fontcolor='#333333' fontsize='10'>Q3: Above Average Scores, Good Opportunity for Disability Population</run>
+                    <run>Æ&#10;&#10;</run>
+                    <run bold='true' fontcolor='#333333' fontsize='10'>Q2: Below Average Scores, Less Opportunity for Disability Population</run>
+                    <run>Æ&#10;&#10;</run>
+                    <run bold='true' fontcolor='#333333' fontsize='10'>Q1: Bottom Scores, Worst Opportunity for Disability Population</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='216' h='27000' id='4' is-fixed='true' name='Institutional Living Table' show-title='false' w='98700' x='1000' y='72375'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='15500' id='9' leg-item-order='reversed' name='Institutional Living Table' pane-specification-id='0' param='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' type-v2='color' w='18500' x='83100' y='21750'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone forceUpdate='true' h='9375' id='41' type-v2='text' w='15600' x='82400' y='79625'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#1b1b1b' italic='true'>Note on Source: </run>
+                    <run>Æ&#10;</run>
+                    <run bold='true' fontcolor='#1b1b1b' italic='true'>Derived from ACS-5 </run>
+                    <run>Æ&#10;</run>
+                    <run bold='true' fontcolor='#1b1b1b' italic='true'>2023 Estimates</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+              </zone>
+            </zone>
+          </zones>
+        </devicelayout>
+      </devicelayouts>
+      <simple-id uuid='{B9747874-3DF1-4567-9BE0-C55F1FD9550A}' />
+    </dashboard>
+  </dashboards>
+  <windows source-height='30'>
+    <window class='dashboard' name='Communal Living Indexd'>
+      <viewpoints>
+        <viewpoint name='Community Living General Map'>
+          <zoom type='entire-view' />
+        </viewpoint>
+        <viewpoint name='Community Living General Table' />
+      </viewpoints>
+      <active id='39' />
+      <simple-id uuid='{46321D4E-92D3-4DD5-84F3-9556CFB572E8}' />
+    </window>
+    <window class='dashboard' maximized='true' name='Institutional Living Index'>
+      <viewpoints>
+        <viewpoint name='Housing Support Map'>
+          <zoom type='entire-view' />
+        </viewpoint>
+        <viewpoint name='Institutional Living Table'>
+          <highlight field='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]'>
+            <bucket-selection />
+          </highlight>
+        </viewpoint>
+      </viewpoints>
+      <active id='41' />
+      <simple-id uuid='{38C47D79-8CFB-4995-A166-CA3500F003A4}' />
+    </window>
+    <window class='worksheet' hidden='true' name='Community Living General Map'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+        <edge name='right'>
+          <strip size='265'>
+            <card AVG='true' KURTOSIS='false' MAX='true' MEDIAN='true' MIN='true' QUART1='false' QUART3='false' SKEWNESS='false' STDEV='false' SUM='true' type='summary' />
+            <card pane-specification-id='0' param='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Calculation_6820349809039835136:nk]' type='color' />
+          </strip>
+        </edge>
+        <edge name='bottom'>
+          <strip size='94'>
+            <card type='caption' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Calculation_6820349809039835136:nk]</field>
+          </color-one-way>
+        </highlight>
+        <default-map-tool-selection tool='1' />
+      </viewpoint>
+      <simple-id uuid='{75A8490F-972B-48C8-9A9B-83E46D3D38AA}' />
+    </window>
+    <window class='worksheet' hidden='true' name='Community Living General Table'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+        <edge name='right'>
+          <strip size='248'>
+            <card AVG='true' KURTOSIS='false' MAX='true' MEDIAN='true' MIN='true' QUART1='false' QUART3='false' SKEWNESS='false' STDEV='false' SUM='true' type='summary' />
+            <card pane-specification-id='0' param='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Calculation_6820349809039835136:nk]' type='color' />
+          </strip>
+        </edge>
+        <edge name='bottom'>
+          <strip size='94'>
+            <card type='caption' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Calculation_6820349809039835136:nk]</field>
+            <field>[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:NAME:nk]</field>
+          </color-one-way>
+        </highlight>
+      </viewpoint>
+      <simple-id uuid='{2EA161EC-2565-43D5-87B3-03921461CE5F}' />
+    </window>
+    <window class='worksheet' hidden='true' name='Housing Support Map'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+        <edge name='right'>
+          <strip size='269'>
+            <card AVG='true' KURTOSIS='false' MAX='true' MEDIAN='true' MIN='true' QUART1='false' QUART3='false' SKEWNESS='false' STDEV='false' SUM='true' type='summary' />
+            <card pane-specification-id='0' param='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' type='color' />
+          </strip>
+        </edge>
+        <edge name='bottom'>
+          <strip size='106'>
+            <card type='caption' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]</field>
+          </color-one-way>
+        </highlight>
+        <default-map-tool-selection tool='1' />
+      </viewpoint>
+      <simple-id uuid='{A8851346-45F5-4157-A8D3-8E59C9C0B661}' />
+    </window>
+    <window class='worksheet' hidden='true' name='Institutional Living Table'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+        <edge name='right'>
+          <strip size='206'>
+            <card AVG='true' KURTOSIS='false' MAX='true' MEDIAN='true' MIN='true' QUART1='false' QUART3='false' SKEWNESS='false' STDEV='false' SUM='true' type='summary' />
+            <card pane-specification-id='0' param='[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]' type='color' />
+          </strip>
+        </edge>
+        <edge name='bottom'>
+          <strip size='94'>
+            <card type='caption' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:Community Living General Quartiles (copy)_6820349809042931713:nk]</field>
+            <field>[federated.1hqkwtg1lu6uyv128bhk205x45yt].[none:NAME:nk]</field>
+          </color-one-way>
+        </highlight>
+      </viewpoint>
+      <simple-id uuid='{D62C4E5B-5BEA-4673-8AEA-FC1556BCC6FE}' />
+    </window>
+  </windows>
+  <thumbnails>
+    <thumbnail height='192' name='Communal Living Indexd' width='192'>
+      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
+      CrCZ4awG8v8D9OR2Z/TkaBIAAAAASUVORK5CYII=
+    </thumbnail>
+    <thumbnail height='192' name='Institutional Living Index' width='192'>
+      iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAACXBIWXMAAA7DAAAOwwHHb6hk
+      AAAgAElEQVR4nOy9eXQc133n+6m1926gATR2AgRJgCS4SKJEydpCW7blPfLY42NPYr8zdpKT
+      yfIm9mSS8SQvlpM5iccnzsvMc5w38Zu8vMnEiV+c5ziLbcmxZDmWZO0ixX0DARA7et+ru6re
+      H80qVje6gQZFggTR33NAArXce6vq97v3t1/BNE2TFlrYohBv9gBaaOFmosUALWxptBighS2N
+      FgO0sKXRYoAWtjRaDNDClkaLAVrY0mgxQAtbGi0GaGFLo8UALWxptBighS2NFgO0sKXRYoAW
+      tjRaDNDClkaLAVrY0mgxQAtbGi0GaGFLo8UALWxptBighS2NFgPcAJTLZZaXlymVStd0fywW
+      I5fLvekxnD17Fk3TVr1mtXFej3GshVQqxcTExA3tYzW0GKAOjh49yh133MHy8nLT9/zmb/4m
+      L7zwAgBnz56lq6uLF154geeee47f+q3fWvXe2mv27NnDH/zBH1zb4K9geXmZsbExzp8/bx/7
+      /d//fT75yU/afzvHWQ9vZhz33HMP3/3ud9e87pvf/CZvfetbr6mP6wH5pvV8CyOTyXD06FFK
+      pRJHjx5FURSmpqYolUq8973vRRAEfvCDHzA7O8uBAwcQBIE/+ZM/QdM0BEFg3759fPWrX2X7
+      9u38wR/8AV/72td48MEHueuuuzh69CgHDhzA7Xbz/PPP85a3vIW/+Zu/qbrmy1/+Mnv37gVg
+      YWGB73znO3R3d/Oud72LbDbLc889x65du3j22Wd56KGH2LZtG6+//jpvvPEGnZ2dPProo3Wf
+      a3Z2toohhoeH+epXv8rw8DBPPvkk9913H8FgkO9///uMj4/b45ienuby5cu4XC5Onz7NBz7w
+      Afx+P8vLy/zwhz9k586dlEolDh06ZLd99OhR4vE4mUxmxXiHhobse8+dO2ffk8/n+da3voUs
+      yzz22GPEYjFef/11HnroIWZnZ1lcXOQtb3nL9f3YZgsr8KMf/cgEzNnZWfMjH/mIKcuyOTIy
+      YgLmt7/9bfNLX/qS2dbWZr773e829+zZY37uc58zVVU1h4eHzU9+8pPm3NycCZjf+973zKGh
+      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
+    </thumbnail>
+  </thumbnails>
+</workbook>

@@ -10,6 +10,7 @@ format:
     page-layout: full
     theme: cosmo
     css: scorecard_v3.css
+    include-in-header: font-loader.html
 execute:
   echo: false
   warning: false
@@ -27,8 +28,44 @@ library(ggplot2)
 library(ggiraph)
 library(gt)
 library(maps)
+library(mapproj)
 library(scales)
 library(htmltools)
+
+# ── Register EB Garamond with R's graphics device ─────────────────────────
+# ggplot/ggiraph need the font registered or text falls back to a generic
+# serif. systemfonts::register_variant aliases EB Garamond to a system
+# serif so R has metrics for layout; the SVG <text> still emits
+# font-family="EB Garamond" and the browser pairs it with the webfont
+# loaded via font-loader.html. showtext is used as a second tier when
+# available so static raster output is also correct.
+local({
+  if (requireNamespace("systemfonts", quietly = TRUE)) {
+    have_eb <- "EB Garamond" %in% systemfonts::system_fonts()$family
+    if (!have_eb) {
+      candidates <- c("Garamond", "EB Garamond", "Georgia", "Times New Roman", "serif")
+      installed  <- systemfonts::system_fonts()$family
+      fallback   <- candidates[candidates %in% installed][1]
+      if (!is.na(fallback)) {
+        try(systemfonts::register_variant(
+          name   = "EB Garamond",
+          family = fallback
+        ), silent = TRUE)
+      }
+    }
+  }
+  if (requireNamespace("showtext", quietly = TRUE) &&
+      requireNamespace("sysfonts", quietly = TRUE)) {
+    if (!"EB Garamond" %in% sysfonts::font_families()) {
+      try(sysfonts::font_add_google("EB Garamond", "EB Garamond"),
+          silent = TRUE)
+    }
+    try({
+      showtext::showtext_auto()
+      showtext::showtext_opts(dpi = 96)
+    }, silent = TRUE)
+  }
+})
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CATEGORY CONFIG
@@ -45,15 +82,18 @@ CATS <- list(
     desc        = "The degree to which people with disabilities (aged 18–64) live in community settings rather than nursing homes, correctional facilities, or other institutions, and whether states invest in community-based housing and support resources.",
     col_overall = "index_rel_community_living",
     col_sub     = c("index_rel_living_arrangements",
-                    "index_rel_community_resource"),
+                    "index_rel_community_resource",
+                    "index_rel_housing_access"),
     score_col   = "CL Score",
-    sub_cols    = c("Living Arrangements", "Community Resource"),
+    sub_cols    = c("Living Arrangements", "Community Resource", "Housing Access"),
     sub_labels  = c("Living Arrangements",
-                    "Community Resource"),
+                    "Community Resource",
+                    "Housing Access"),
     sub_cols_pending = character(0),
     sub_desc    = c(
       "Composite of four living situation indicators for people with disabilities (aged 18\u201364): share living at home (private residence), in non-institutional group quarters, in nursing homes, and in correctional facilities. Higher scores reflect greater community integration.",
-      "Measures state investment in community-based supports: (1) ratio of Medicaid HCBS to institutional spending, (2) HCBS spending per disabled Medicaid enrollee, (3) Housing Choice Voucher households per head-of-household, and (4) Public Housing households per head-of-household."
+      "Measures state investment in community-based supports: (1) ratio of Medicaid HCBS to institutional spending, and (2) HCBS spending per disabled Medicaid enrollee.",
+      "Disability housing access indicators from HUD Picture of Subsidized Households (POSH): percentage of Housing Choice Voucher and Public Housing households where the head of household has a disability. Higher scores indicate greater access to subsidized housing for people with disabilities."
     ),
     # 4-stop palette: amber (low/worst) → dark maroon (high/best)
     # Note: first stop darkened from #f7e49c to #e8c84a for WCAG contrast.
@@ -416,7 +456,7 @@ p_map <- ggplot(us_map_ig, aes(x = long, y = lat, group = group, fill = fill_col
       title.hjust    = 0.5,
       keywidth       = unit(1.8, "cm"),
       keyheight      = unit(0.45, "cm"),
-      label.theme    = element_text(size = 9, color = "#1c2b3a", family = "serif")
+      label.theme    = element_text(size = 9, color = "#1c2b3a", family = "EB Garamond")
     ),
     breaks = cfg$pal,
     labels = legend_labels
@@ -429,13 +469,14 @@ p_map <- ggplot(us_map_ig, aes(x = long, y = lat, group = group, fill = fill_col
   ) +
   coord_map("albers", lat0 = 39, lat1 = 45) +
   labs(x = NULL, y = NULL) +
-  theme_void(base_size = 12) +
+  theme_void(base_size = 12, base_family = "EB Garamond") +
   theme(
-    legend.position = "bottom",
-    legend.title    = element_text(size = 10, face = "bold",
-                                   color = "#1c2b3a", family = "serif"),
-    legend.text     = element_text(size = 9, color = "#1c2b3a",
-                                   family = "serif"),
+    text             = element_text(family = "EB Garamond"),
+    legend.position  = "bottom",
+    legend.title     = element_text(size = 10, face = "bold",
+                                    color = "#1c2b3a", family = "EB Garamond"),
+    legend.text      = element_text(size = 9, color = "#1c2b3a",
+                                    family = "EB Garamond"),
     plot.background  = element_blank(),
     panel.background = element_blank()
   )
@@ -713,21 +754,24 @@ ggplot(region_df, aes(x = avg_score,
              linetype = "dashed", color = "#1c2b3a", linewidth = 0.75) +
   geom_text(aes(label = sprintf("%.1f", avg_score)),
             hjust = -0.25, size = 3.8, color = "#1c2b3a",
-            family = "serif", fontface = "bold") +
+            family = "EB Garamond", fontface = "bold") +
   annotate("text", x = nat_overall + 0.8, y = 0.55,
            label = paste0("US avg  ", f(nat_overall)),
            hjust = 0, size = 3, color = "#1c2b3a",
-           fontface = "bold", family = "serif") +
+           fontface = "bold", family = "EB Garamond") +
   scale_x_continuous(limits = c(0, 100),
                      breaks = c(0, 25, 50, 75, 100),
                      expand = c(0.01, 0)) +
   labs(x = "Average Score (0\u2013100)", y = NULL) +
-  theme_minimal(base_size = 12) +
+  theme_minimal(base_size = 12, base_family = "EB Garamond") +
   theme(
-    axis.text.y        = element_text(size = 12, family = "serif",
+    text               = element_text(family = "EB Garamond"),
+    axis.text.y        = element_text(size = 12, family = "EB Garamond",
                                       color = "#1c2b3a"),
-    axis.text.x        = element_text(size = 9, color = "#1c2b3a"),
+    axis.text.x        = element_text(size = 9, color = "#1c2b3a",
+                                      family = "EB Garamond"),
     axis.title.x       = element_text(size = 9, color = "#1c2b3a",
+                                      family = "EB Garamond",
                                       margin = margin(t = 5)),
     panel.grid.major.x = element_line(color = "#eaecf0", linewidth = 0.4),
     panel.grid.major.y = element_blank(),

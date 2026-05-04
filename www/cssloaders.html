@@ -1,3 +1,23 @@
+<!-- EB Garamond: preconnect + direct <link> load (fastest possible path) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+<!-- Universal font override in <head> so it wins regardless of theme CSS load order -->
+<style>
+*:not(.glyphicon):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.material-icons),
+*::before,
+*::after {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
+/* SVG <text>/<tspan> override so any ggplot/ggiraph/leaflet/plotly chart
+   text rendered with an explicit font-family attribute is still forced
+   to EB Garamond. CSS !important beats SVG presentation attributes. */
+svg text, svg tspan, text, tspan {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+}
+</style>
+
 <style>
 .load1 .loader,
 .load1 .loader:before,

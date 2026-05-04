@@ -10,6 +10,7 @@ format:
     page-layout: full
     theme: cosmo
     css: scorecard_state.css
+    include-in-header: font-loader.html
 execute:
   echo: false
   warning: false
@@ -27,6 +28,39 @@ library(tibble)
 library(ggplot2)
 library(htmltools)
 library(gt)
+
+# ── Register EB Garamond with R's graphics device ─────────────────────────
+# systemfonts::register_variant aliases EB Garamond to an installed serif
+# so R has font metrics for layout; ggiraph SVG output still emits
+# font-family="EB Garamond" which the browser pairs with the webfont
+# loaded via font-loader.html. showtext is a second tier when available.
+local({
+  if (requireNamespace("systemfonts", quietly = TRUE)) {
+    have_eb <- "EB Garamond" %in% systemfonts::system_fonts()$family
+    if (!have_eb) {
+      candidates <- c("Garamond", "EB Garamond", "Georgia", "Times New Roman", "serif")
+      installed  <- systemfonts::system_fonts()$family
+      fallback   <- candidates[candidates %in% installed][1]
+      if (!is.na(fallback)) {
+        try(systemfonts::register_variant(
+          name   = "EB Garamond",
+          family = fallback
+        ), silent = TRUE)
+      }
+    }
+  }
+  if (requireNamespace("showtext", quietly = TRUE) &&
+      requireNamespace("sysfonts", quietly = TRUE)) {
+    if (!"EB Garamond" %in% sysfonts::font_families()) {
+      try(sysfonts::font_add_google("EB Garamond", "EB Garamond"),
+          silent = TRUE)
+    }
+    try({
+      showtext::showtext_auto()
+      showtext::showtext_opts(dpi = 96)
+    }, silent = TRUE)
+  }
+})
 
 # ── Data ───────────────────────────────────────────────────────────────────
 raw       <- read_csv("scorecard_data/final/index_scores_wide.csv",
@@ -87,6 +121,7 @@ RNK <- list(
   # CL sub-indices
   living_arrangements = rank_of("index_rel_living_arrangements"),
   community_res       = rank_of("index_rel_community_resource"),
+  housing_access      = rank_of("index_rel_housing_access"),
   # CP sub-indices
   tech                = rank_of("index_rel_tech"),
   education           = rank_of("index_rel_education"),
@@ -308,8 +343,9 @@ make_bar_chart <- function(labels, state_scores, ranks,
       ggplot() +
         annotate("text", x = 0.5, y = 0.5,
                  label = "No sub-index scores available for this domain.",
-                 hjust = 0.5, size = 3.8, color = "#888888", family = "serif") +
-        theme_void()
+                 hjust = 0.5, size = 3.8, color = "#888888",
+                 family = "EB Garamond") +
+        theme_void(base_family = "EB Garamond")
     )
   }
 
@@ -334,24 +370,26 @@ make_bar_chart <- function(labels, state_scores, ranks,
     geom_text(aes(x = state, y = label, label = f(state)),
               hjust = 1.15, size = 3.6,
               color = "white", fontface = "bold",
-              family = "serif") +
+              family = "EB Garamond") +
     geom_text(aes(x = 102, y = label, label = ann_text, color = ann_color),
               hjust = 0, size = 3.35, fontface = "bold",
-              family = "serif") +
+              family = "EB Garamond") +
     scale_color_identity() +
     scale_x_continuous(limits = c(0, 175),
                        breaks = c(0, 25, 50, 75, 100),
                        labels = c("0", "25", "50", "75", "100"),
                        expand = c(0, 0)) +
     labs(x = NULL, y = NULL) +
-    theme_minimal(base_size = 12) +
+    theme_minimal(base_size = 12, base_family = "EB Garamond") +
     theme(
+      text               = element_text(family = "EB Garamond"),
       panel.grid.major.x = element_line(color = "#e8ecf1", linewidth = 0.4),
       panel.grid.major.y = element_blank(),
       panel.grid.minor   = element_blank(),
       axis.text.y        = element_text(size = 11, color = "#2c3e50",
-                                        family = "serif"),
-      axis.text.x        = element_text(size = 8.5, color = "#333333"),
+                                        family = "EB Garamond"),
+      axis.text.x        = element_text(size = 8.5, color = "#333333",
+                                        family = "EB Garamond"),
       plot.background    = element_blank(),
       panel.background   = element_blank(),
       plot.margin        = margin(2, 8, 2, 2)
@@ -417,17 +455,19 @@ HTML(paste0(
 
 ```{r}
 #| label: cl-chart
-#| fig-height: 2.3
+#| fig-height: 2.8
 #| fig-width: 7.4
-#| fig-alt: !expr 'paste0("Bar chart: Community Living sub-index scores for ", state_name, ". Community Resource: ", f(s("index_rel_community_resource")), " (Rank ", RNK$community_res, "). Living Arrangements: ", f(s("index_rel_living_arrangements")), " (Rank ", RNK$living_arrangements, ").")'
+#| fig-alt: !expr 'paste0("Bar chart: Community Living sub-index scores for ", state_name, ". Housing Access: ", f(s("index_rel_housing_access")), " (Rank ", RNK$housing_access, "). Community Resource: ", f(s("index_rel_community_resource")), " (Rank ", RNK$community_res, "). Living Arrangements: ", f(s("index_rel_living_arrangements")), " (Rank ", RNK$living_arrangements, ").")'
 make_bar_chart(
   labels = c(
+    "Housing Access",
     "Community Resource",
     "Living Arrangements"
   ),
-  state_scores = c(s("index_rel_community_resource"),
+  state_scores = c(s("index_rel_housing_access"),
+                   s("index_rel_community_resource"),
                    s("index_rel_living_arrangements")),
-  ranks        = c(RNK$community_res, RNK$living_arrangements),
+  ranks        = c(RNK$housing_access, RNK$community_res, RNK$living_arrangements),
   fill_color   = COL$cl
 )
 ```
@@ -531,6 +571,7 @@ score_cols_tbl <- c(
   "index_rel_community_living",
     "index_rel_living_arrangements",
     "index_rel_community_resource",
+    "index_rel_housing_access",
   "index_rel_community_participation",
     "index_rel_tech",
     "index_rel_education",
@@ -548,6 +589,7 @@ metric_tbl <- c(
   "Community Living",
     "Living Arrangements",
     "Community Resources",
+    "Housing Access",
   "Community Participation",
     "Technology Access",
     "Education Access",
@@ -562,21 +604,21 @@ metric_tbl <- c(
 
 lvl_tbl <- c(
   "overall",
-  "domain","sub","sub",
+  "domain","sub","sub","sub",
   "domain","sub","sub","sub","sub","sub",
   "domain","sub","sub","sub"
 )
 
 dom_tbl <- c(
   "overall",
-  "cl","cl","cl",
+  "cl","cl","cl","cl",
   "cp","cp","cp","cp","cp","cp",
   "we","we","we","we"
 )
 
 rnk_list <- c(
   RNK$overall,
-  RNK$cl,  RNK$living_arrangements, RNK$community_res,
+  RNK$cl,  RNK$living_arrangements, RNK$community_res, RNK$housing_access,
   RNK$cp,  RNK$tech,   RNK$education, RNK$insurance,
            RNK$commute, RNK$safety,
   RNK$we,  RNK$positive_work, RNK$negative_work, RNK$housing_afford

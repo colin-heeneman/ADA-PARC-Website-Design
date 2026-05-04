@@ -1,6 +1,52 @@
 
 # Dashboard functions -----------------------------------------------------
 
+# Font registration --------------------------------------------------------
+# EB Garamond is the canonical site font. ggplot/ggiraph need the font
+# registered with R's graphics device or text falls back to a generic
+# serif/Helvetica and the SVG `font-family` attribute may not be honoured
+# the way we want.
+#
+# Strategy (defensive, runs at source-load time):
+#   1. systemfonts::register_variant — alias "EB Garamond" to any
+#      installed serif so R has metrics to compute layout against.
+#      ggiraph's SVG output still emits font-family="EB Garamond", and
+#      the browser pairs that with the EB Garamond webfont loaded via
+#      the Google Fonts <link> in www/cssloaders.html.
+#   2. showtext (optional) — if available, also register the actual
+#      Google Font so static PNG output renders in EB Garamond too.
+# Wrapped in try() so a missing package never breaks the dashboard.
+local({
+  # 1. systemfonts variant alias (ships as a ggiraph dependency)
+  if (requireNamespace("systemfonts", quietly = TRUE)) {
+    have_eb <- "EB Garamond" %in% systemfonts::system_fonts()$family
+    if (!have_eb) {
+      candidates <- c("Garamond", "EB Garamond", "Georgia", "Times New Roman", "serif")
+      installed  <- systemfonts::system_fonts()$family
+      fallback   <- candidates[candidates %in% installed][1]
+      if (!is.na(fallback)) {
+        try(systemfonts::register_variant(
+          name   = "EB Garamond",
+          family = fallback
+        ), silent = TRUE)
+      }
+    }
+  }
+
+  # 2. showtext (optional; pulls the real webfont for raster output)
+  if (requireNamespace("showtext", quietly = TRUE) &&
+      requireNamespace("sysfonts", quietly = TRUE)) {
+    if (!"EB Garamond" %in% sysfonts::font_families()) {
+      try(sysfonts::font_add_google("EB Garamond", "EB Garamond"),
+          silent = TRUE)
+    }
+    try({
+      showtext::showtext_auto()
+      showtext::showtext_opts(dpi = 96)
+    }, silent = TRUE)
+  }
+})
+
 altTitle <- function(variable) {
   # Title, vars_pretty field for variable
   title <- dict_vars %>%
@@ -142,13 +188,14 @@ render_national_map <- function(selected, palette_selected = "YlOrRd") {
       ) +
       scale_fill_manual(values = palette, name = legend_title) +
       guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +  # 2x2 legend
-      theme_void() +
+      theme_void(base_family = "EB Garamond") +
       theme(
+        text             = element_text(family = "EB Garamond"),
         legend.position  = "bottom",
         legend.direction = "horizontal",
-        legend.title     = element_text(size = 14, family = "Garamond"),
+        legend.title     = element_text(size = 14, family = "EB Garamond"),
         legend.box       = "horizontal",
-        legend.text      = element_text(size = 14, family = "Garamond")
+        legend.text      = element_text(size = 14, family = "EB Garamond")
       )
     
   } else {
@@ -221,12 +268,14 @@ render_national_map <- function(selected, palette_selected = "YlOrRd") {
       ) +
       shared_scale +
       guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +  # 2x2 legend
-      theme_void() +
+      theme_void(base_family = "EB Garamond") +
       theme(
+        text            = element_text(family = "EB Garamond"),
         legend.position = "bottom",
         legend.title    = element_blank(),
-        legend.text     = element_text(size = 13, family = "Garamond"),
-        legend.box      = "horizontal"
+        legend.text     = element_text(size = 13, family = "EB Garamond"),
+        legend.box      = "horizontal",
+        plot.title      = element_text(family = "EB Garamond")
       ) +
       ggtitle("People with Disabilities")
 
@@ -236,22 +285,25 @@ render_national_map <- function(selected, palette_selected = "YlOrRd") {
       ) +
       shared_scale +
       guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +  # 2x2 legend
-      theme_void() +
+      theme_void(base_family = "EB Garamond") +
       theme(
+        text            = element_text(family = "EB Garamond"),
         legend.position = "bottom",
         legend.title    = element_blank(),
-        legend.text     = element_text(size = 13, family = "Garamond"),
-        legend.box      = "horizontal"
+        legend.text     = element_text(size = 13, family = "EB Garamond"),
+        legend.box      = "horizontal",
+        plot.title      = element_text(family = "EB Garamond")
       ) +
       ggtitle("People without Disabilities")
 
     legend <- cowplot::get_legend(
       map1 +
         theme(
+          text             = element_text(family = "EB Garamond"),
           legend.position  = "bottom",
           legend.direction = "horizontal",
           legend.title     = element_blank(),
-          legend.text      = element_text(size = 20, family = "Garamond"),
+          legend.text      = element_text(size = 20, family = "EB Garamond"),
           legend.box       = "horizontal"
         )
     )
