@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Living in Community | ADA-PARC Factsheet</title>
+  <meta name="description" content="ADA-PARC factsheet on the share of people with disabilities living in the community, at home or in non-institutional group quarters, with state-by-state data.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+:root {
+      --navy:        #1c2b3a;
+      --navy-dark:   #152233;
+      --gold-banner: #f5c842;
+      --bg-page:     #f5f7fa;
+      --bg-card:     #ffffff;
+      --border:      #e4e8ef;
+      --text-body:   #1c2b3a;
+      /* ADA-PARC HERITAGE tier palette, adopted 2026-07-28.
+         Excellent = deep maroon (best performance)
+         Poor      = warm gold   (worst performance)
+
+         This is static CSS and cannot call R, so these values MIRROR
+         ADA_PARC_PALETTE in scripts/palettes.R, which is the single source of
+         truth shared with the national map, the city map and both scorecards.
+
+         Do not edit these by hand. Edit scripts/palettes.R, then run
+           python3 scripts/check_palette.py
+         which fails if this file has drifted, then regenerate the fact sheets.
+
+         Each *-text value is the better of near-black and white against its
+         paired background and clears WCAG 2.2 SC 1.4.3 AA. Measured ratios:
+         excellent 15.05:1 | above 6.95:1 | below 6.35:1 | poor 13.15:1. */
+      --tier-excellent-bg:   #560000;
+      --tier-excellent-text: #ffffff;
+      --tier-above-bg:       #a52f1a;
+      --tier-above-text:     #ffffff;
+      --tier-below-bg:       #d88036;
+      --tier-below-text:     #111111;
+      --tier-poor-bg:        #fdd182;
+      --tier-poor-text:      #111111;
+      --tier-na-bg:          #e0e0e0;
+      --tier-na-text:        #444444;
+      /* Backwards-compatible aliases so legacy .best/.good/.fair/.worst
+         class selectors keep working with the new palette. */
+      --tier-best-bg:    var(--tier-excellent-bg);
+      --tier-best-text:  var(--tier-excellent-text);
+      --tier-good-bg:    var(--tier-above-bg);
+      --tier-good-text:  var(--tier-above-text);
+      --tier-fair-bg:    var(--tier-below-bg);
+      --tier-fair-text:  var(--tier-below-text);
+      --tier-worst-bg:   var(--tier-poor-bg);
+      --tier-worst-text: var(--tier-poor-text);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: 'EB Garamond', Garamond, Georgia, serif !important; }
+    body { font-family: 'EB Garamond', Garamond, Georgia, serif; font-size: 18px; line-height: 1.65; color: var(--text-body); background: var(--bg-page); }
+    .skip-link { position: absolute; top: -3rem; left: 1rem; background: var(--navy); color: #fff; padding: .5rem 1rem; border-radius: 0 0 4px 4px; font-weight: 600; text-decoration: none; z-index: 100; transition: top .2s; }
+    .skip-link:focus { top: 0; }
+    :focus-visible { outline: 3px solid #0d3b8e; outline-offset: 2px; border-radius: 2px; }
+    .page-wrapper { max-width: 900px; margin: 0 auto; background: var(--bg-card); box-shadow: 0 2px 16px rgba(28,43,58,.10); }
+    /* Header */
+    .factsheet-header { background: var(--gold-banner); padding: 1rem 1.5rem; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; border-bottom: 3px solid #d4a800; }
+    .logo-adaparc { font-family: 'EB Garamond', serif; font-size: 1.3rem; font-weight: 700; line-height: 1.1; color: var(--navy); white-space: nowrap; }
+    .logo-adaparc .ada { color: #1c6ab0; }
+    .logo-adaparc .parc { color: #c2410c; }
+    .header-title { text-align: center; }
+    .header-title h1 { font-size: 1.4rem; font-weight: 700; color: var(--navy); line-height: 1.25; margin-bottom: .2rem; }
+    .header-title .published { font-size: .95rem; color: #4a3800; font-style: italic; }
+    .logo-ada-national { font-family: 'EB Garamond', serif; font-size: 1.1rem; font-weight: 700; color: #1c6ab0; text-align: center; white-space: nowrap; border: 2px solid #1c6ab0; padding: .3rem .5rem; border-radius: 3px; }
+    /* Body */
+    .factsheet-body { padding: 2rem 2.5rem; }
+    .intro-section p { margin-bottom: 1rem; }
+    .intro-section p:last-child { margin-bottom: 0; }
+    .section-heading { font-size: 1.25rem; font-weight: 700; color: var(--navy); margin: 2rem 0 .75rem; padding-bottom: .4rem; border-bottom: 2px solid var(--border); }
+    /* Direction note */
+    .direction-note { background: #e8f0e8; border-left: 4px solid #166534; border-radius: 0 6px 6px 0; padding: .75rem 1.1rem; margin-bottom: 1.25rem; font-size: .95rem; }
+    .direction-note strong { color: #166534; }
+    /* Map */
+    .map-figure { margin: 1rem 0; }
+    .map-title { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: .6rem; line-height: 1.3; }
+    .map-container { background: #f0f4f9; border-radius: 6px; min-height: 260px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .map-container svg { display: block; }
+    .map-loading { color: #4a5a67; font-size: .9rem; font-style: italic; padding: 1rem; }
+    .map-error { color: #b91c1c; font-size: .9rem; padding: 1rem; }
+    .map-noscript { font-size: .9rem; color: #4a5a67; padding: 1rem; }
+    /* Legend */
+    .map-legend { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 .5rem; align-items: center; }
+    .map-caption { font-size: .82rem; color: #4a5a67; line-height: 1.45; margin-top: .5rem; }
+    .map-caption a { color: #0d3b8e; }
+    /* Tier chips */
+    .tier-chip { display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 100px; font-size: .8rem; font-weight: 700; letter-spacing: .03em; }
+    .tier-chip.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
+    .tier-chip.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
+    .tier-chip.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
+    .tier-chip.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
+    /* Tables */
+    .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
+    .tier-table-group { margin-bottom: 1.25rem; }
+    .tier-header { display: block; padding: .4rem .75rem; font-weight: 700; font-size: 1rem; letter-spacing: .04em; text-transform: uppercase; border-radius: 4px 4px 0 0; }
+    .tier-header.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
+    .tier-header.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
+    .tier-header.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
+    .tier-header.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
+    table { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--bg-card); }
+    thead tr { background: var(--navy); color: #fff; }
+    thead th { padding: .5rem .75rem; text-align: left; font-weight: 600; font-size: .85rem; letter-spacing: .03em; }
+    thead th:not(:first-child) { text-align: right; }
+    tbody tr:nth-child(even) { background: #fafbfd; }
+    tbody td { padding: .4rem .75rem; border-bottom: 1px solid var(--border); }
+    tbody td:not(:first-child) { text-align: right; }
+    tbody tr:last-child td { border-bottom: none; }
+    /* Footnotes */
+    .footnotes { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .82rem; color: #4a5a67; line-height: 1.5; }
+    .footnotes ol { padding-left: 1.2rem; }
+    .footnotes li { margin-bottom: .35rem; }
+    /* Footer */
+    .factsheet-footer { background: #f0f4f9; border-top: 2px solid var(--border); padding: 1.25rem 2.5rem; font-size: .9rem; line-height: 1.55; }
+    .factsheet-footer p { margin-bottom: .5rem; }
+    .factsheet-footer p:last-child { margin-bottom: 0; }
+    .factsheet-footer a { color: #0d3b8e; }
+    .factsheet-footer a:hover { text-decoration: underline; }
+    .funding-note { font-style: italic; font-size: .85rem; color: #4a5a67; margin-bottom: .75rem !important; }
+    /* SVG state hover */
+    .state-path { transition: opacity .15s; cursor: default; }
+    .state-path:hover { opacity: .8; }
+    /* Responsive */
+    @media (max-width: 680px) {
+      .tables-grid { grid-template-columns: 1fr; }
+      .factsheet-body { padding: 1.25rem; }
+      .factsheet-header { grid-template-columns: 1fr; text-align: center; }
+    }
+    @media print {
+      body { background: #fff; font-size: 11pt; }
+      .page-wrapper { box-shadow: none; max-width: 100%; }
+      .skip-link { display: none; }
+      .factsheet-body { padding: 1rem; }
+      .tables-grid { grid-template-columns: 1fr 1fr; }
+    }
+  
+    /* ─── ADA-PARC tier classes (new canonical names) ─── */
+    .tier-chip.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .tier-chip.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .tier-chip.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .tier-chip.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    .tier-chip.na        { background: var(--tier-na-bg);        color: var(--tier-na-text); }
+    .tier-header.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .tier-header.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .tier-header.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .tier-header.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    /* ─── Enhanced SVG state interactivity (hover + keyboard focus) ─── */
+    /* These rules set stroke-WIDTH only. A stroke COLOUR here would overwrite
+       the per-state border ink adaparc-map.js sets from each state's own fill,
+       and a #1c2b3a outline on a #560000 fill is about 1.3:1, i.e. no visible
+       hover state on precisely the best-performing states. Width plus the
+       brightness lift carries the affordance on every tier. */
+    .state-path { transition: filter .15s ease, stroke-width .15s ease; cursor: pointer; outline: none; }
+    .state-path:hover,
+    .state-path:focus-visible { stroke-width: 2.25; filter: brightness(1.06); }
+    .state-path.is-active { stroke-width: 2.5; }
+    /* ─── Floating tooltip for hover / keyboard focus ─── */
+    .map-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: #1c2b3a;
+      color: #ffffff;
+      font-family: 'EB Garamond', Garamond, Georgia, serif;
+      font-size: .9rem;
+      line-height: 1.35;
+      padding: .55rem .8rem;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.18);
+      max-width: 260px;
+      z-index: 20;
+      opacity: 0;
+      transform: translate(-50%, calc(-100% - 10px));
+      transition: opacity .12s ease;
+    }
+    .map-tooltip[data-visible="true"] { opacity: 1; }
+    .map-tooltip .mt-name  { font-weight: 700; font-size: .95rem; display: block; }
+    .map-tooltip .mt-value { font-weight: 600; display: inline-block; margin-right: .35rem; }
+    .map-tooltip .mt-tier  { display: inline-block; padding: .05rem .45rem; border-radius: 3px;
+                              font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
+    .map-tooltip .mt-tier.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .map-tooltip .mt-tier.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .map-tooltip .mt-tier.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .map-tooltip .mt-tier.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    .map-tooltip .mt-tier.na        { background: var(--tier-na-bg);        color: var(--tier-na-text); }
+    .map-container { position: relative; }
+    /* ─── Screen-reader only (a11y live announcements) ─── */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+                overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    /* ─── Respect user's reduced-motion preference ─── */
+    @media (prefers-reduced-motion: reduce) {
+      .state-path { transition: none; }
+      .map-tooltip { transition: none; }
+      .skip-link   { transition: none; }
+    }
+
+    /* ---- per-factsheet overrides ---- */
+    .header-title h1 { font-size: 1.35rem; }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<div class="page-wrapper">
+
+  <header class="factsheet-header" role="banner">
+    <div class="logo-adaparc" aria-label="ADA-PARC">
+      <span class="ada">ADA</span><br>
+      <span class="parc">PARC</span>
+    </div>
+    <div class="header-title">
+      <h1>Living in the Community<br>Among People with Disabilities</h1>
+      <p class="published">Printed by ADA-PARC, September 2025</p>
+    </div>
+    <div class="logo-ada-national" aria-label="ADA National Network">
+      <span aria-hidden="true">ada</span>
+    </div>
+  </header>
+
+  <main id="main-content" class="factsheet-body">
+
+    <section class="intro-section" aria-label="Introduction">
+      <p>The Americans with Disabilities Act (ADA) rests on the principle that people with disabilities have the right to live in the community, with the supports they need, rather than in an institution. The U.S. Supreme Court affirmed that right in the landmark <em>Olmstead</em> decision in 1999, holding that unnecessary institutionalization is a form of discrimination.<sup>1</sup></p>
+
+      <p>This fact sheet shows how many people with disabilities are living in the community in each state. Community living covers two situations. Most people live <strong>at home</strong>, alone or with family. A smaller number live in <strong>non-institutional group quarters</strong>, a Census Bureau category for group settings that are not institutions, such as group homes, shelters and college dormitories.<sup>2</sup></p>
+
+      <p>Nationally, <strong>95.5 percent</strong> of people with disabilities live in the community, compared with <strong>99.5 percent</strong> of people without disabilities. The maps and tables below show how much that figure varies from state to state.</p>
+
+      <p>Higher percentages mean more people with disabilities are living in the community. The residence categories on this sheet and on its companion, <em>Living in Institution</em>, are measured against the same population and add to 100 percent. Every percentage point not living in the community is a percentage point living in an institution.</p>
+    </section>
+
+    <p>The map below combines both community settings, people living at home and people living in non-institutional group quarters, into a single measure. States shaded darker have a larger share of their disabled residents living in the community.</p>
+    <div class="direction-note" role="note">
+      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the most favorable outcomes (Excellent), here the highest share of people with disabilities living in the community. <em>Lighter gold</em> marks the least favorable outcomes (Poor).
+    </div>
+    <figure class="map-figure">
+      <h3 class="map-title" id="lic-combined-map-heading">People with Disabilities Living in the Community, by State</h3>
+      <div id="map-lic-combined" class="map-container" aria-labelledby="lic-combined-map-heading lic-combined-map-desc">
+        <p id="lic-combined-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+        <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+      </div>
+      <div class="map-legend" aria-label="Map color legend for Community living rate">
+        <span class="tier-chip excellent">Excellent (most community living)</span>
+        <span class="tier-chip above">Above Average</span>
+        <span class="tier-chip below">Below Average</span>
+        <span class="tier-chip poor">Poor (least community living)</span>
+      </div>
+      <figcaption class="map-caption">Darker maroon = a higher percentage of people with disabilities living in the community, at home or in non-institutional group quarters (better). Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024).</figcaption>
+    </figure>
+
+    <h2 class="section-heading">People with Disabilities Living in the Community, by State</h2>
+    <p>Excellent = the largest share living in the community. Poor = the smallest share, meaning more people living in institutions.</p>
+    <div class="tables-grid">
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header excellent" aria-hidden="true">Excellent</span>
+          <table aria-label="Community living rate, Excellent group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Nevada</td><td>97.7%</td><td>438,881</td></tr>
+              <tr><td>Alaska</td><td>97.2%</td><td>97,301</td></tr>
+              <tr><td>Washington</td><td>96.9%</td><td>1,045,711</td></tr>
+              <tr><td>New Mexico</td><td>96.9%</td><td>355,320</td></tr>
+              <tr><td>Utah</td><td>96.9%</td><td>358,156</td></tr>
+              <tr><td>Arizona</td><td>96.8%</td><td>999,727</td></tr>
+              <tr><td>Oregon</td><td>96.6%</td><td>649,573</td></tr>
+              <tr><td>Hawaii</td><td>96.6%</td><td>181,408</td></tr>
+              <tr><td>California</td><td>96.5%</td><td>4,511,505</td></tr>
+              <tr><td>South Carolina</td><td>96.3%</td><td>764,809</td></tr>
+              <tr><td>Delaware</td><td>96.1%</td><td>142,320</td></tr>
+              <tr><td>Tennessee</td><td>96.1%</td><td>1,045,887</td></tr>
+              <tr><td>Arkansas</td><td>96.0%</td><td>538,668</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tier-table-group">
+          <span class="tier-header above" aria-hidden="true">Above Average</span>
+          <table aria-label="Community living rate, Above Average group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>North Carolina</td><td>95.9%</td><td>1,441,114</td></tr>
+              <tr><td>Vermont</td><td>95.9%</td><td>92,440</td></tr>
+              <tr><td>Georgia</td><td>95.8%</td><td>1,415,649</td></tr>
+              <tr><td>Wyoming</td><td>95.8%</td><td>80,924</td></tr>
+              <tr><td>Michigan</td><td>95.7%</td><td>1,427,768</td></tr>
+              <tr><td>New Jersey</td><td>95.7%</td><td>1,001,515</td></tr>
+              <tr><td>Kentucky</td><td>95.7%</td><td>798,337</td></tr>
+              <tr><td>Virginia</td><td>95.7%</td><td>1,065,988</td></tr>
+              <tr><td>Alabama</td><td>95.6%</td><td>826,468</td></tr>
+              <tr><td>Louisiana</td><td>95.5%</td><td>740,285</td></tr>
+              <tr><td>Idaho</td><td>95.5%</td><td>269,743</td></tr>
+              <tr><td>West Virginia</td><td>95.5%</td><td>332,815</td></tr>
+              <tr><td>Wisconsin</td><td>95.4%</td><td>716,787</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header below" aria-hidden="true">Below Average</span>
+          <table aria-label="Community living rate, Below Average group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Mississippi</td><td>95.4%</td><td>514,515</td></tr>
+              <tr><td>New York</td><td>95.4%</td><td>2,480,620</td></tr>
+              <tr><td>Maryland</td><td>95.3%</td><td>709,797</td></tr>
+              <tr><td>Florida</td><td>95.3%</td><td>3,011,150</td></tr>
+              <tr><td>Texas</td><td>95.2%</td><td>3,651,322</td></tr>
+              <tr><td>Colorado</td><td>95.2%</td><td>664,067</td></tr>
+              <tr><td>Montana</td><td>95.1%</td><td>159,363</td></tr>
+              <tr><td>Massachusetts</td><td>95.1%</td><td>863,978</td></tr>
+              <tr><td>District of Columbia</td><td>95.1%</td><td>77,068</td></tr>
+              <tr><td>Oklahoma</td><td>95.1%</td><td>681,651</td></tr>
+              <tr><td>Connecticut</td><td>94.8%</td><td>436,400</td></tr>
+              <tr><td>Nebraska</td><td>94.7%</td><td>241,615</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tier-table-group">
+          <span class="tier-header poor" aria-hidden="true">Poor</span>
+          <table aria-label="Community living rate, Poor group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Missouri</td><td>94.5%</td><td>906,996</td></tr>
+              <tr><td>Indiana</td><td>94.5%</td><td>957,940</td></tr>
+              <tr><td>Maine</td><td>94.5%</td><td>217,620</td></tr>
+              <tr><td>Ohio</td><td>94.4%</td><td>1,683,147</td></tr>
+              <tr><td>Pennsylvania</td><td>94.2%</td><td>1,840,162</td></tr>
+              <tr><td>Illinois</td><td>94.2%</td><td>1,519,168</td></tr>
+              <tr><td>Minnesota</td><td>94.2%</td><td>659,756</td></tr>
+              <tr><td>New Hampshire</td><td>94.2%</td><td>182,676</td></tr>
+              <tr><td>Rhode Island</td><td>94.0%</td><td>149,067</td></tr>
+              <tr><td>Kansas</td><td>93.4%</td><td>390,960</td></tr>
+              <tr><td>Iowa</td><td>92.7%</td><td>401,590</td></tr>
+              <tr><td>North Dakota</td><td>91.8%</td><td>92,932</td></tr>
+              <tr><td>South Dakota</td><td>91.3%</td><td>110,999</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-heading">Living at Home</h2>
+    <p>Living at home means living in a house or apartment, alone, with family or with roommates, rather than in any kind of group setting. This is by far the most common living arrangement for people with disabilities, and it is the measure most directly tied to the independent living the ADA envisions.</p>
+    <div class="direction-note" role="note">
+      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the highest share of people with disabilities living at home. <em>Lighter gold</em> marks the lowest.
+    </div>
+    <figure class="map-figure">
+      <h3 class="map-title" id="lic-home-map-heading">People with Disabilities Living at Home, by State</h3>
+      <div id="map-lic-home" class="map-container" aria-labelledby="lic-home-map-heading lic-home-map-desc">
+        <p id="lic-home-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+        <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+      </div>
+      <div class="map-legend" aria-label="Map color legend for Living at home rate">
+        <span class="tier-chip excellent">Excellent (highest share at home)</span>
+        <span class="tier-chip above">Above Average</span>
+        <span class="tier-chip below">Below Average</span>
+        <span class="tier-chip poor">Poor (lowest share at home)</span>
+      </div>
+      <figcaption class="map-caption">Darker maroon = a higher percentage of people with disabilities living in a house or apartment rather than any group setting (better). Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024).</figcaption>
+    </figure>
+
+    <h2 class="section-heading">People with Disabilities Living at Home, by State</h2>
+    <div class="tables-grid">
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header excellent" aria-hidden="true">Excellent</span>
+          <table aria-label="Living at home rate, Excellent group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Nevada</td><td>97.0%</td><td>435,440</td></tr>
+              <tr><td>New Mexico</td><td>95.2%</td><td>349,258</td></tr>
+              <tr><td>Arkansas</td><td>95.0%</td><td>532,976</td></tr>
+              <tr><td>Arizona</td><td>94.9%</td><td>979,837</td></tr>
+              <tr><td>Utah</td><td>94.7%</td><td>350,133</td></tr>
+              <tr><td>Delaware</td><td>94.7%</td><td>140,160</td></tr>
+              <tr><td>Wyoming</td><td>94.6%</td><td>79,928</td></tr>
+              <tr><td>South Carolina</td><td>94.6%</td><td>751,734</td></tr>
+              <tr><td>Georgia</td><td>94.6%</td><td>1,397,299</td></tr>
+              <tr><td>Tennessee</td><td>94.6%</td><td>1,029,132</td></tr>
+              <tr><td>West Virginia</td><td>94.6%</td><td>329,582</td></tr>
+              <tr><td>Alabama</td><td>94.4%</td><td>816,743</td></tr>
+              <tr><td>Kentucky</td><td>94.4%</td><td>787,885</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tier-table-group">
+          <span class="tier-header above" aria-hidden="true">Above Average</span>
+          <table aria-label="Living at home rate, Above Average group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Mississippi</td><td>94.3%</td><td>508,259</td></tr>
+              <tr><td>Louisiana</td><td>94.2%</td><td>729,828</td></tr>
+              <tr><td>North Carolina</td><td>94.1%</td><td>1,413,246</td></tr>
+              <tr><td>Texas</td><td>94.1%</td><td>3,605,852</td></tr>
+              <tr><td>Idaho</td><td>94.0%</td><td>265,560</td></tr>
+              <tr><td>Washington</td><td>94.0%</td><td>1,014,181</td></tr>
+              <tr><td>Virginia</td><td>93.9%</td><td>1,046,150</td></tr>
+              <tr><td>New Jersey</td><td>93.9%</td><td>982,174</td></tr>
+              <tr><td>Oklahoma</td><td>93.8%</td><td>672,899</td></tr>
+              <tr><td>Florida</td><td>93.8%</td><td>2,965,695</td></tr>
+              <tr><td>Michigan</td><td>93.8%</td><td>1,398,587</td></tr>
+              <tr><td>Alaska</td><td>93.6%</td><td>93,604</td></tr>
+              <tr><td>Indiana</td><td>93.2%</td><td>944,533</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header below" aria-hidden="true">Below Average</span>
+          <table aria-label="Living at home rate, Below Average group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Maryland</td><td>93.2%</td><td>693,721</td></tr>
+              <tr><td>Hawaii</td><td>93.1%</td><td>174,911</td></tr>
+              <tr><td>Colorado</td><td>93.0%</td><td>649,047</td></tr>
+              <tr><td>Missouri</td><td>93.0%</td><td>892,448</td></tr>
+              <tr><td>Montana</td><td>92.7%</td><td>155,355</td></tr>
+              <tr><td>Oregon</td><td>92.7%</td><td>623,063</td></tr>
+              <tr><td>Ohio</td><td>92.7%</td><td>1,652,887</td></tr>
+              <tr><td>California</td><td>92.7%</td><td>4,331,931</td></tr>
+              <tr><td>Wisconsin</td><td>92.6%</td><td>695,640</td></tr>
+              <tr><td>Nebraska</td><td>92.6%</td><td>236,357</td></tr>
+              <tr><td>Illinois</td><td>92.3%</td><td>1,488,645</td></tr>
+              <tr><td>Maine</td><td>92.1%</td><td>212,136</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tier-table-group">
+          <span class="tier-header poor" aria-hidden="true">Poor</span>
+          <table aria-label="Living at home rate, Poor group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Pennsylvania</td><td>92.0%</td><td>1,795,661</td></tr>
+              <tr><td>New Hampshire</td><td>91.5%</td><td>177,477</td></tr>
+              <tr><td>Massachusetts</td><td>91.4%</td><td>830,932</td></tr>
+              <tr><td>New York</td><td>91.4%</td><td>2,376,458</td></tr>
+              <tr><td>Connecticut</td><td>91.2%</td><td>419,937</td></tr>
+              <tr><td>Kansas</td><td>91.0%</td><td>381,012</td></tr>
+              <tr><td>Vermont</td><td>90.7%</td><td>87,416</td></tr>
+              <tr><td>Iowa</td><td>90.5%</td><td>392,394</td></tr>
+              <tr><td>Rhode Island</td><td>90.4%</td><td>143,394</td></tr>
+              <tr><td>Minnesota</td><td>90.1%</td><td>631,232</td></tr>
+              <tr><td>North Dakota</td><td>89.4%</td><td>90,492</td></tr>
+              <tr><td>District of Columbia</td><td>89.3%</td><td>72,393</td></tr>
+              <tr><td>South Dakota</td><td>87.5%</td><td>106,394</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-heading">Non-Institutional Group Quarters</h2>
+    <p>Non-institutional group quarters is a Census Bureau category covering group living arrangements that are not institutions. It includes group homes and supported living for people with disabilities, but also emergency shelters, transitional housing and college dormitories.</p>
+    <p>Because the category mixes supported community living with housing instability, a higher percentage is not straightforwardly better or worse. This map is therefore shaded by how large the share is rather than by performance, and its groups are labeled by size rather than as Excellent or Poor. Read it alongside the other two measures rather than on its own.</p>
+    <div class="direction-note" role="note">
+      <strong>How to read the colors.</strong> This map is shaded by <strong>how large the share is</strong>, not by performance. Non-institutional group quarters covers group homes and supported living alongside emergency shelters and college dormitories, so a higher percentage is not straightforwardly better or worse. <em>Darker maroon</em> marks the largest shares, <em>lighter gold</em> the smallest.
+    </div>
+    <figure class="map-figure">
+      <h3 class="map-title" id="lic-gq-map-heading">People with Disabilities Living in Non-Institutional Group Quarters, by State</h3>
+      <div id="map-lic-gq" class="map-container" aria-labelledby="lic-gq-map-heading lic-gq-map-desc">
+        <p id="lic-gq-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+        <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+      </div>
+      <div class="map-legend" aria-label="Map color legend for Non-institutional group quarters rate">
+        <span class="tier-chip excellent">Highest quarter</span>
+        <span class="tier-chip above">Second highest quarter</span>
+        <span class="tier-chip below">Second lowest quarter</span>
+        <span class="tier-chip poor">Lowest quarter</span>
+      </div>
+      <figcaption class="map-caption">Darker maroon = a larger percentage of people with disabilities living in non-institutional group quarters. This map carries no performance judgment; read it alongside the other two measures. Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024).</figcaption>
+    </figure>
+
+    <h2 class="section-heading">People with Disabilities Living in Non-Institutional Group Quarters, by State</h2>
+    <div class="tables-grid">
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header excellent" aria-hidden="true">Highest quarter</span>
+          <table aria-label="Non-institutional group quarters rate, Highest quarter group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>District of Columbia</td><td>5.8%</td><td>4,675</td></tr>
+              <tr><td>Vermont</td><td>5.2%</td><td>5,024</td></tr>
+              <tr><td>Minnesota</td><td>4.1%</td><td>28,524</td></tr>
+              <tr><td>New York</td><td>4.0%</td><td>104,162</td></tr>
+              <tr><td>Oregon</td><td>3.9%</td><td>26,510</td></tr>
+              <tr><td>California</td><td>3.8%</td><td>179,574</td></tr>
+              <tr><td>South Dakota</td><td>3.8%</td><td>4,605</td></tr>
+              <tr><td>Alaska</td><td>3.7%</td><td>3,697</td></tr>
+              <tr><td>Massachusetts</td><td>3.6%</td><td>33,046</td></tr>
+              <tr><td>Connecticut</td><td>3.6%</td><td>16,463</td></tr>
+              <tr><td>Rhode Island</td><td>3.6%</td><td>5,673</td></tr>
+              <tr><td>Hawaii</td><td>3.5%</td><td>6,497</td></tr>
+              <tr><td>Washington</td><td>2.9%</td><td>31,530</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tier-table-group">
+          <span class="tier-header above" aria-hidden="true">Second highest quarter</span>
+          <table aria-label="Non-institutional group quarters rate, Second highest quarter group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Wisconsin</td><td>2.8%</td><td>21,147</td></tr>
+              <tr><td>New Hampshire</td><td>2.7%</td><td>5,199</td></tr>
+              <tr><td>North Dakota</td><td>2.4%</td><td>2,440</td></tr>
+              <tr><td>Montana</td><td>2.4%</td><td>4,008</td></tr>
+              <tr><td>Maine</td><td>2.4%</td><td>5,484</td></tr>
+              <tr><td>Kansas</td><td>2.4%</td><td>9,948</td></tr>
+              <tr><td>Pennsylvania</td><td>2.3%</td><td>44,501</td></tr>
+              <tr><td>Utah</td><td>2.2%</td><td>8,023</td></tr>
+              <tr><td>Maryland</td><td>2.2%</td><td>16,076</td></tr>
+              <tr><td>Colorado</td><td>2.2%</td><td>15,020</td></tr>
+              <tr><td>Iowa</td><td>2.1%</td><td>9,196</td></tr>
+              <tr><td>Nebraska</td><td>2.1%</td><td>5,258</td></tr>
+              <tr><td>Michigan</td><td>2.0%</td><td>29,181</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header below" aria-hidden="true">Second lowest quarter</span>
+          <table aria-label="Non-institutional group quarters rate, Second lowest quarter group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Arizona</td><td>1.9%</td><td>19,890</td></tr>
+              <tr><td>Illinois</td><td>1.9%</td><td>30,523</td></tr>
+              <tr><td>North Carolina</td><td>1.9%</td><td>27,868</td></tr>
+              <tr><td>New Jersey</td><td>1.8%</td><td>19,341</td></tr>
+              <tr><td>Virginia</td><td>1.8%</td><td>19,838</td></tr>
+              <tr><td>Ohio</td><td>1.7%</td><td>30,260</td></tr>
+              <tr><td>New Mexico</td><td>1.7%</td><td>6,062</td></tr>
+              <tr><td>South Carolina</td><td>1.6%</td><td>13,075</td></tr>
+              <tr><td>Tennessee</td><td>1.5%</td><td>16,755</td></tr>
+              <tr><td>Missouri</td><td>1.5%</td><td>14,548</td></tr>
+              <tr><td>Idaho</td><td>1.5%</td><td>4,183</td></tr>
+              <tr><td>Delaware</td><td>1.5%</td><td>2,160</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tier-table-group">
+          <span class="tier-header poor" aria-hidden="true">Lowest quarter</span>
+          <table aria-label="Non-institutional group quarters rate, Lowest quarter group">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Percent</th>
+              <th scope="col"NA>People</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Florida</td><td>1.4%</td><td>45,455</td></tr>
+              <tr><td>Louisiana</td><td>1.3%</td><td>10,457</td></tr>
+              <tr><td>Indiana</td><td>1.3%</td><td>13,407</td></tr>
+              <tr><td>Kentucky</td><td>1.3%</td><td>10,452</td></tr>
+              <tr><td>Georgia</td><td>1.2%</td><td>18,350</td></tr>
+              <tr><td>Oklahoma</td><td>1.2%</td><td>8,752</td></tr>
+              <tr><td>Texas</td><td>1.2%</td><td>45,470</td></tr>
+              <tr><td>Wyoming</td><td>1.2%</td><td>996</td></tr>
+              <tr><td>Mississippi</td><td>1.2%</td><td>6,256</td></tr>
+              <tr><td>Alabama</td><td>1.1%</td><td>9,725</td></tr>
+              <tr><td>Arkansas</td><td>1.0%</td><td>5,692</td></tr>
+              <tr><td>West Virginia</td><td>0.9%</td><td>3,233</td></tr>
+              <tr><td>Nevada</td><td>0.8%</td><td>3,441</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <h2 class="section-heading">Community Living, With and Without Disability</h2>
+    <p>The same measure for both populations, listed alphabetically, so the gap in each state is visible directly.</p>
+
+      <div class="state-table-wrapper">
+        <table aria-label="Percentage living in the community, people with disabilities compared with people without disabilities">
+          <caption>Living in the community, by state</caption>
+          <thead>
+            <tr>
+              <th scope="col">State</th>
+              <th scope="col" class="disability-col">With Disability</th>
+              <th scope="col">No Disability</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Alabama</td><td>95.6%</td><td>99.3%</td></tr>
+            <tr><td>Alaska</td><td>97.2%</td><td>99.3%</td></tr>
+            <tr><td>Arizona</td><td>96.8%</td><td>99.2%</td></tr>
+            <tr><td>Arkansas</td><td>96.0%</td><td>99.0%</td></tr>
+            <tr><td>California</td><td>96.5%</td><td>99.6%</td></tr>
+            <tr><td>Colorado</td><td>95.2%</td><td>99.6%</td></tr>
+            <tr><td>Connecticut</td><td>94.8%</td><td>99.7%</td></tr>
+            <tr><td>Delaware</td><td>96.1%</td><td>99.6%</td></tr>
+            <tr><td>District of Columbia</td><td>95.1%</td><td>99.8%</td></tr>
+            <tr><td>Florida</td><td>95.3%</td><td>99.4%</td></tr>
+            <tr><td>Georgia</td><td>95.8%</td><td>99.2%</td></tr>
+            <tr><td>Hawaii</td><td>96.6%</td><td>99.8%</td></tr>
+            <tr><td>Idaho</td><td>95.5%</td><td>99.5%</td></tr>
+            <tr><td>Illinois</td><td>94.2%</td><td>99.5%</td></tr>
+            <tr><td>Indiana</td><td>94.5%</td><td>99.4%</td></tr>
+            <tr><td>Iowa</td><td>92.7%</td><td>99.6%</td></tr>
+            <tr><td>Kansas</td><td>93.4%</td><td>99.5%</td></tr>
+            <tr><td>Kentucky</td><td>95.7%</td><td>99.2%</td></tr>
+            <tr><td>Louisiana</td><td>95.5%</td><td>98.9%</td></tr>
+            <tr><td>Maine</td><td>94.5%</td><td>99.8%</td></tr>
+            <tr><td>Maryland</td><td>95.3%</td><td>99.6%</td></tr>
+            <tr><td>Massachusetts</td><td>95.1%</td><td>99.8%</td></tr>
+            <tr><td>Michigan</td><td>95.7%</td><td>99.6%</td></tr>
+            <tr><td>Minnesota</td><td>94.2%</td><td>99.7%</td></tr>
+            <tr><td>Mississippi</td><td>95.4%</td><td>99.0%</td></tr>
+            <tr><td>Missouri</td><td>94.5%</td><td>99.5%</td></tr>
+            <tr><td>Montana</td><td>95.1%</td><td>99.5%</td></tr>
+            <tr><td>Nebraska</td><td>94.7%</td><td>99.5%</td></tr>
+            <tr><td>Nevada</td><td>97.7%</td><td>99.5%</td></tr>
+            <tr><td>New Hampshire</td><td>94.2%</td><td>99.7%</td></tr>
+            <tr><td>New Jersey</td><td>95.7%</td><td>99.6%</td></tr>
+            <tr><td>New Mexico</td><td>96.9%</td><td>99.4%</td></tr>
+            <tr><td>New York</td><td>95.4%</td><td>99.7%</td></tr>
+            <tr><td>North Carolina</td><td>95.9%</td><td>99.5%</td></tr>
+            <tr><td>North Dakota</td><td>91.8%</td><td>99.7%</td></tr>
+            <tr><td>Ohio</td><td>94.4%</td><td>99.5%</td></tr>
+            <tr><td>Oklahoma</td><td>95.1%</td><td>99.1%</td></tr>
+            <tr><td>Oregon</td><td>96.6%</td><td>99.5%</td></tr>
+            <tr><td>Pennsylvania</td><td>94.2%</td><td>99.4%</td></tr>
+            <tr><td>Rhode Island</td><td>94.0%</td><td>99.7%</td></tr>
+            <tr><td>South Carolina</td><td>96.3%</td><td>99.4%</td></tr>
+            <tr><td>South Dakota</td><td>91.3%</td><td>99.4%</td></tr>
+            <tr><td>Tennessee</td><td>96.1%</td><td>99.4%</td></tr>
+            <tr><td>Texas</td><td>95.2%</td><td>99.3%</td></tr>
+            <tr><td>Utah</td><td>96.9%</td><td>99.7%</td></tr>
+            <tr><td>Vermont</td><td>95.9%</td><td>99.8%</td></tr>
+            <tr><td>Virginia</td><td>95.7%</td><td>99.4%</td></tr>
+            <tr><td>Washington</td><td>96.9%</td><td>99.7%</td></tr>
+            <tr><td>West Virginia</td><td>95.5%</td><td>98.9%</td></tr>
+            <tr><td>Wisconsin</td><td>95.4%</td><td>99.5%</td></tr>
+            <tr><td>Wyoming</td><td>95.8%</td><td>99.4%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    <div class="footnotes" role="note" aria-label="Data sources">
+      <ol>
+        <li><em>Olmstead v. L.C.</em>, 527 U.S. 581 (1999). See also Office for Civil Rights. (2018, June 28). <em>Serving people with disabilities in the most integrated setting: Community living and Olmstead.</em> U.S. Department of Health and Human Services.</li>
+        <li>U.S. Census Bureau. American Community Survey 5-year estimates (2020&ndash;2024). Tables ACSST5Y2024.S2601A and ACSDT5Y2024.B26108. All percentages on this sheet are calculated against the total population with a disability, including people living in institutions.</li>
+      </ol>
+    </div>
+
+  </main>
+
+  <footer class="factsheet-footer" role="contentinfo">
+    <p class="funding-note">The ADA-PARC is funded by the National Institute for Disability, Independent Living, and Rehabilitation Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.</p>
+    <p>The Americans with Disabilities Act Participation Action Research Consortium (ADA-PARC) is a collaborative national project to document participation disparities experienced by people with disabilities at the national, state, and city levels. For more information on your state, visit <a href="https://adaparc.org" target="_blank" rel="noopener noreferrer">ADAPARC.ORG</a>. For more information about your rights, go to the ADA National Network at <a href="https://adata.org" target="_blank" rel="noopener noreferrer">ADATA.ORG</a>. Please contact <a href="mailto:hammel@uic.edu">hammel@uic.edu</a> with any questions.</p>
+  </footer>
+
+</div>
+
+<!-- D3 MAP SCRIPTS (ADA-PARC shared) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+// ── ADA-PARC shared map palette & renderer ─────────────────────
+// ADA-PARC HERITAGE tier fills, adopted 2026-07-28.
+//
+// This file runs in the browser and cannot call R, so these values MIRROR
+// ADA_PARC_PALETTE$fill in scripts/palettes.R, which is the single source of
+// truth shared with the national map, the city map and both scorecards.
+//
+// Do not edit these by hand. Edit scripts/palettes.R, then run
+//   python3 scripts/check_palette.py
+// which fails if this file has drifted, then regenerate the fact sheets.
+const ADAPARC_TIER_COLOR = {
+  excellent: "#560000",  // deep maroon  (Excellent, best performance)
+  above:     "#a52f1a",  // dark red     (Above Average)
+  below:     "#d88036",  // burnt orange (Below Average)
+  poor:      "#fdd182",  // warm gold    (Poor, worst performance)
+  na:        "#e0e0e0"
+};
+
+// Per-state border ink, adopted 2026-08-04. Mirrors ADA_PARC_PALETTE$on_fill
+// (and $na_text for the no-data fill) in scripts/palettes.R, and is checked by
+// scripts/check_palette.py alongside the fills above.
+//
+// The border used to be a fixed white on every state. That is invisible where
+// it meets either of the two light tiers, so neighbouring gold or orange states
+// merged into one undifferentiated patch. Each state now takes the ink that its
+// OWN fill calls for: near-black on the two light tiers, white on the two dark
+// ones. Same rule as border_ink_for_fill() on the national map.
+//
+// on_fill is held to the 4.5:1 AA text floor, which is stricter than the 3:1
+// WCAG 2.2 SC 1.4.11 floor a border has to clear, so reading it here is safe.
+const ADAPARC_TIER_BORDER = {
+  excellent: "#ffffff",
+  above:     "#ffffff",
+  below:     "#111111",
+  poor:      "#111111",
+  na:        "#444444"
+};
+
+// National perimeter. Drawn UNDER the states, wider than the per-state stroke,
+// so each state's fill paints over its inner half and only the outside flank
+// survives. Without it, a dark-tier coastal state's white border vanishes
+// against the white page and the national silhouette breaks up.
+const ADAPARC_MAP_PERIMETER = "#1c2b3a";  // = ADA_PARC_PALETTE$stroke
+
+const ADAPARC_TIER_LABEL = {
+  excellent: "Excellent",
+  above:     "Above Average",
+  below:     "Below Average",
+  poor:      "Poor",
+  na:        "No data available"
+};
+
+// Neutral alternative for indicators where a high or low value is not a better
+// or worse outcome, only a larger or smaller one. Non-institutional group
+// quarters is the motivating case: the category mixes group homes, shelters and
+// college dormitories, so calling any quartile "Excellent" would assert
+// something the data does not support. The color ramp still encodes magnitude
+// (darker = higher), but no label carries a value judgment.
+const ADAPARC_TIER_LABEL_MAGNITUDE = {
+  excellent: "Highest quarter",
+  above:     "Second highest quarter",
+  below:     "Second lowest quarter",
+  poor:      "Lowest quarter",
+  na:        "No data available"
+};
+
+// FIPS -> full state name
+const NAMES = {
+  "01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California",
+  "08":"Colorado","09":"Connecticut","10":"Delaware","11":"District of Columbia",
+  "12":"Florida","13":"Georgia","15":"Hawaii","16":"Idaho","17":"Illinois",
+  "18":"Indiana","19":"Iowa","20":"Kansas","21":"Kentucky","22":"Louisiana",
+  "23":"Maine","24":"Maryland","25":"Massachusetts","26":"Michigan","27":"Minnesota",
+  "28":"Mississippi","29":"Missouri","30":"Montana","31":"Nebraska","32":"Nevada",
+  "33":"New Hampshire","34":"New Jersey","35":"New Mexico","36":"New York",
+  "37":"North Carolina","38":"North Dakota","39":"Ohio","40":"Oklahoma",
+  "41":"Oregon","42":"Pennsylvania","44":"Rhode Island","45":"South Carolina",
+  "46":"South Dakota","47":"Tennessee","48":"Texas","49":"Utah","50":"Vermont",
+  "51":"Virginia","53":"Washington","54":"West Virginia","55":"Wisconsin","56":"Wyoming"
+};
+
+let __topoCache = null;
+async function __getTopoJSON() {
+  if (__topoCache) return __topoCache;
+  const r = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json");
+  if (!r.ok) throw new Error("Failed to fetch map data");
+  __topoCache = await r.json();
+  return __topoCache;
+}
+
+// Build or reuse a floating tooltip element attached to the map container.
+function __ensureTooltip(container, liveId) {
+  let tip = container.querySelector(".map-tooltip");
+  if (!tip) {
+    tip = document.createElement("div");
+    tip.className = "map-tooltip";
+    tip.setAttribute("role", "tooltip");
+    tip.setAttribute("aria-hidden", "true");
+    container.appendChild(tip);
+  }
+  let live = document.getElementById(liveId);
+  if (!live) {
+    live = document.createElement("div");
+    live.id = liveId;
+    live.className = "sr-only";
+    live.setAttribute("aria-live", "polite");
+    live.setAttribute("aria-atomic", "true");
+    container.appendChild(live);
+  }
+  return { tip, live };
+}
+
+/**
+ * Render an interactive, hover/keyboard-accessible choropleth.
+ * @param {object} opts
+ * @param {string} opts.containerId   DOM id of the map container
+ * @param {string} opts.descId        DOM id of the 'Loading…' paragraph to remove
+ * @param {object} opts.stateData     { FIPS -> [tier, displayValue] }
+ * @param {string} opts.svgTitle      accessible <title>
+ * @param {string} opts.svgDesc       accessible <desc>
+ * @param {string} opts.valueLabel    short label describing the value (e.g. "Poverty rate")
+ * @param {object} [opts.tierLabels]  optional tier -> label map. Defaults to the
+ *                                    performance labels. Pass
+ *                                    ADAPARC_TIER_LABEL_MAGNITUDE for indicators
+ *                                    with no better/worse direction.
+ */
+async function adaparcRenderMap(opts) {
+  const { containerId, descId, stateData, svgTitle, svgDesc, valueLabel } = opts;
+  const LABELS = opts.tierLabels || ADAPARC_TIER_LABEL;
+  const container = document.getElementById(containerId);
+  const descEl    = descId ? document.getElementById(descId) : null;
+  if (!container) return;
+
+  try {
+    const us = await __getTopoJSON();
+    const W = 880, H = 540;
+    container.innerHTML = "";
+
+    const { tip, live } = __ensureTooltip(container, containerId + "-live");
+
+    const svg = d3.select(container)
+      .append("svg")
+      .attr("viewBox", `0 0 ${W} ${H}`)
+      .attr("width", "100%")
+      .attr("role", "img")
+      .attr("aria-labelledby", `${containerId}-svgtitle ${containerId}-svgdesc`);
+
+    svg.append("title")
+      .attr("id", `${containerId}-svgtitle`)
+      .text(svgTitle);
+    svg.append("desc")
+      .attr("id", `${containerId}-svgdesc`)
+      .text(svgDesc);
+
+    const proj    = d3.geoAlbersUsa().scale(1080).translate([W / 2, H / 2]);
+    const pathGen = d3.geoPath().projection(proj);
+    const states  = topojson.feature(us, us.objects.states);
+
+    function showInfo(fips, el, evt) {
+      const name = NAMES[fips] || "Unknown state";
+      const row  = stateData[fips];
+      const tier = row ? row[0] : "na";
+      const val  = row ? row[1] : "N/A";
+      const tierLabel = LABELS[tier] || "No data available";
+      tip.innerHTML =
+          '<span class="mt-name">' + name + '</span>' +
+          '<span class="mt-value">' + (valueLabel || "Value") + ': ' + val + '</span>' +
+          '<span class="mt-tier ' + tier + '">' + tierLabel + '</span>';
+      tip.setAttribute("aria-hidden", "false");
+      tip.dataset.visible = "true";
+
+      // Position tooltip
+      const rect = container.getBoundingClientRect();
+      let x, y;
+      if (evt && (evt.clientX !== undefined)) {
+        x = evt.clientX - rect.left;
+        y = evt.clientY - rect.top;
+      } else if (el) {
+        const b = el.getBoundingClientRect();
+        x = b.left - rect.left + b.width / 2;
+        y = b.top  - rect.top;
+      } else {
+        x = rect.width / 2;
+        y = 40;
+      }
+      // Clamp so tip stays inside the container
+      const minX = 60, maxX = rect.width - 60;
+      if (x < minX) x = minX;
+      if (x > maxX) x = maxX;
+      tip.style.left = x + "px";
+      tip.style.top  = y + "px";
+
+      live.textContent = name + ', ' + (valueLabel || 'value') + ' ' + val + ', ' + tierLabel + '.';
+    }
+    function hideInfo() {
+      tip.dataset.visible = "false";
+      tip.setAttribute("aria-hidden", "true");
+    }
+
+    // National perimeter, appended BEFORE the states so it sits underneath.
+    // topojson.mesh with (a, b) => a === b returns only the arcs that belong to
+    // a single polygon, i.e. the coastline and the international borders.
+    svg.append("path")
+      .datum(topojson.mesh(us, us.objects.states, (a, b) => a === b))
+      .attr("class", "map-perimeter")
+      .attr("fill", "none")
+      .attr("stroke", ADAPARC_MAP_PERIMETER)
+      .attr("stroke-width", 1.4)
+      .attr("stroke-linejoin", "round")
+      .attr("d", pathGen)
+      .attr("aria-hidden", "true")
+      .style("pointer-events", "none");
+
+    svg.selectAll("path.state-path")
+      .data(states.features)
+      .join("path")
+      .attr("class", "state-path")
+      .attr("d", pathGen)
+      .attr("tabindex", 0)
+      .attr("fill", d => {
+        const fips = String(d.id).padStart(2, "0");
+        const row  = stateData[fips];
+        return row ? ADAPARC_TIER_COLOR[row[0]] : ADAPARC_TIER_COLOR.na;
+      })
+      .attr("stroke", d => {
+        const fips = String(d.id).padStart(2, "0");
+        const row  = stateData[fips];
+        return row ? ADAPARC_TIER_BORDER[row[0]] : ADAPARC_TIER_BORDER.na;
+      })
+      .attr("stroke-width", 0.6)
+      .attr("role", "button")
+      .attr("aria-label", d => {
+        const fips = String(d.id).padStart(2, "0");
+        const name = NAMES[fips] || "Unknown state";
+        const row  = stateData[fips];
+        const val  = row ? row[1] : "N/A";
+        const tier = row ? LABELS[row[0]] : LABELS.na;
+        return name + ': ' + (valueLabel || 'value') + ' ' + val + ', ' + tier + '.';
+      })
+      .each(function(d) {
+        // Keep a native SVG <title> for baseline browser/AT support
+        const fips = String(d.id).padStart(2, "0");
+        const name = NAMES[fips] || "Unknown state";
+        const row  = stateData[fips];
+        const val  = row ? row[1] : "N/A";
+        const tier = row ? LABELS[row[0]] : LABELS.na;
+        d3.select(this).append("title")
+          .text(name + ': ' + val + ' (' + tier + ')');
+      })
+      .on("mouseenter", function(event, d) {
+        const fips = String(d.id).padStart(2, "0");
+        d3.select(this).raise().classed("is-active", true);
+        showInfo(fips, this, event);
+      })
+      .on("mousemove", function(event, d) {
+        const fips = String(d.id).padStart(2, "0");
+        showInfo(fips, this, event);
+      })
+      .on("mouseleave", function() {
+        d3.select(this).classed("is-active", false);
+        hideInfo();
+      })
+      .on("focus", function(event, d) {
+        const fips = String(d.id).padStart(2, "0");
+        d3.select(this).raise().classed("is-active", true);
+        showInfo(fips, this, null);
+      })
+      .on("blur", function() {
+        d3.select(this).classed("is-active", false);
+        hideInfo();
+      });
+
+    // NOTE: an interior mesh used to be drawn here, a single white path over
+    // every shared boundary. It is gone deliberately. A mesh is one path and so
+    // can carry only one colour, which is exactly the fixed white the per-state
+    // ink above replaces; leaving it in would paint over every border the ink
+    // just corrected. Interior boundaries are now held by the state strokes
+    // themselves.
+
+    if (descEl) descEl.remove();
+
+  } catch (err) {
+    container.innerHTML =
+      '<div class="map-error" role="alert">Map could not be loaded (' + err.message +
+      '). All data is available in the table below.</div>';
+  }
+}
+// Expose globally for per-factsheet code blocks.
+window.adaparcRenderMap = adaparcRenderMap;
+window.ADAPARC_TIER_COLOR = ADAPARC_TIER_COLOR;
+window.ADAPARC_TIER_LABEL = ADAPARC_TIER_LABEL;
+window.ADAPARC_TIER_LABEL_MAGNITUDE = ADAPARC_TIER_LABEL_MAGNITUDE;
+
+
+const LIC_COMBINED_DATA = {
+  "01":["above","95.6%"],
+  "02":["excellent","97.2%"],
+  "04":["excellent","96.8%"],
+  "05":["excellent","96.0%"],
+  "06":["excellent","96.5%"],
+  "08":["below","95.2%"],
+  "09":["below","94.8%"],
+  "10":["excellent","96.1%"],
+  "11":["below","95.1%"],
+  "12":["below","95.3%"],
+  "13":["above","95.8%"],
+  "15":["excellent","96.6%"],
+  "16":["above","95.5%"],
+  "17":["poor","94.2%"],
+  "18":["poor","94.5%"],
+  "19":["poor","92.7%"],
+  "20":["poor","93.4%"],
+  "21":["above","95.7%"],
+  "22":["above","95.5%"],
+  "23":["poor","94.5%"],
+  "24":["below","95.3%"],
+  "25":["below","95.1%"],
+  "26":["above","95.7%"],
+  "27":["poor","94.2%"],
+  "28":["below","95.4%"],
+  "29":["poor","94.5%"],
+  "30":["below","95.1%"],
+  "31":["below","94.7%"],
+  "32":["excellent","97.7%"],
+  "33":["poor","94.2%"],
+  "34":["above","95.7%"],
+  "35":["excellent","96.9%"],
+  "36":["below","95.4%"],
+  "37":["above","95.9%"],
+  "38":["poor","91.8%"],
+  "39":["poor","94.4%"],
+  "40":["below","95.1%"],
+  "41":["excellent","96.6%"],
+  "42":["poor","94.2%"],
+  "44":["poor","94.0%"],
+  "45":["excellent","96.3%"],
+  "46":["poor","91.3%"],
+  "47":["excellent","96.1%"],
+  "48":["below","95.2%"],
+  "49":["excellent","96.9%"],
+  "50":["above","95.9%"],
+  "51":["above","95.7%"],
+  "53":["excellent","96.9%"],
+  "54":["above","95.5%"],
+  "55":["above","95.4%"],
+  "56":["above","95.8%"]
+};
+
+adaparcRenderMap({
+  containerId: "map-lic-combined",
+  descId:      "lic-combined-map-desc",
+  stateData:   LIC_COMBINED_DATA,
+  valueLabel:  "Community living rate",
+  svgTitle:    "People with disabilities living in the community, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC shaded by performance tier. Darker maroon (Excellent) marks the highest share of people with disabilities living in the community; lighter gold (Poor) marks the lowest. Full data is in the tables below."
+});
+
+const LIC_HOME_DATA = {
+  "01":["excellent","94.4%"],
+  "02":["above","93.6%"],
+  "04":["excellent","94.9%"],
+  "05":["excellent","95.0%"],
+  "06":["below","92.7%"],
+  "08":["below","93.0%"],
+  "09":["poor","91.2%"],
+  "10":["excellent","94.7%"],
+  "11":["poor","89.3%"],
+  "12":["above","93.8%"],
+  "13":["excellent","94.6%"],
+  "15":["below","93.1%"],
+  "16":["above","94.0%"],
+  "17":["below","92.3%"],
+  "18":["above","93.2%"],
+  "19":["poor","90.5%"],
+  "20":["poor","91.0%"],
+  "21":["excellent","94.4%"],
+  "22":["above","94.2%"],
+  "23":["below","92.1%"],
+  "24":["below","93.2%"],
+  "25":["poor","91.4%"],
+  "26":["above","93.8%"],
+  "27":["poor","90.1%"],
+  "28":["above","94.3%"],
+  "29":["below","93.0%"],
+  "30":["below","92.7%"],
+  "31":["below","92.6%"],
+  "32":["excellent","97.0%"],
+  "33":["poor","91.5%"],
+  "34":["above","93.9%"],
+  "35":["excellent","95.2%"],
+  "36":["poor","91.4%"],
+  "37":["above","94.1%"],
+  "38":["poor","89.4%"],
+  "39":["below","92.7%"],
+  "40":["above","93.8%"],
+  "41":["below","92.7%"],
+  "42":["poor","92.0%"],
+  "44":["poor","90.4%"],
+  "45":["excellent","94.6%"],
+  "46":["poor","87.5%"],
+  "47":["excellent","94.6%"],
+  "48":["above","94.1%"],
+  "49":["excellent","94.7%"],
+  "50":["poor","90.7%"],
+  "51":["above","93.9%"],
+  "53":["above","94.0%"],
+  "54":["excellent","94.6%"],
+  "55":["below","92.6%"],
+  "56":["excellent","94.6%"]
+};
+
+adaparcRenderMap({
+  containerId: "map-lic-home",
+  descId:      "lic-home-map-desc",
+  stateData:   LIC_HOME_DATA,
+  valueLabel:  "Living at home rate",
+  svgTitle:    "People with disabilities living at home, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC shaded by performance tier. Darker maroon (Excellent) marks the highest share of people with disabilities living at home; lighter gold (Poor) marks the lowest."
+});
+
+const LIC_GQ_DATA = {
+  "01":["poor","1.1%"],
+  "02":["excellent","3.7%"],
+  "04":["below","1.9%"],
+  "05":["poor","1.0%"],
+  "06":["excellent","3.8%"],
+  "08":["above","2.2%"],
+  "09":["excellent","3.6%"],
+  "10":["below","1.5%"],
+  "11":["excellent","5.8%"],
+  "12":["poor","1.4%"],
+  "13":["poor","1.2%"],
+  "15":["excellent","3.5%"],
+  "16":["below","1.5%"],
+  "17":["below","1.9%"],
+  "18":["poor","1.3%"],
+  "19":["above","2.1%"],
+  "20":["above","2.4%"],
+  "21":["poor","1.3%"],
+  "22":["poor","1.3%"],
+  "23":["above","2.4%"],
+  "24":["above","2.2%"],
+  "25":["excellent","3.6%"],
+  "26":["above","2.0%"],
+  "27":["excellent","4.1%"],
+  "28":["poor","1.2%"],
+  "29":["below","1.5%"],
+  "30":["above","2.4%"],
+  "31":["above","2.1%"],
+  "32":["poor","0.8%"],
+  "33":["above","2.7%"],
+  "34":["below","1.8%"],
+  "35":["below","1.7%"],
+  "36":["excellent","4.0%"],
+  "37":["below","1.9%"],
+  "38":["above","2.4%"],
+  "39":["below","1.7%"],
+  "40":["poor","1.2%"],
+  "41":["excellent","3.9%"],
+  "42":["above","2.3%"],
+  "44":["excellent","3.6%"],
+  "45":["below","1.6%"],
+  "46":["excellent","3.8%"],
+  "47":["below","1.5%"],
+  "48":["poor","1.2%"],
+  "49":["above","2.2%"],
+  "50":["excellent","5.2%"],
+  "51":["below","1.8%"],
+  "53":["excellent","2.9%"],
+  "54":["poor","0.9%"],
+  "55":["above","2.8%"],
+  "56":["poor","1.2%"]
+};
+
+adaparcRenderMap({
+  containerId: "map-lic-gq",
+  descId:      "lic-gq-map-desc",
+  stateData:   LIC_GQ_DATA,
+  valueLabel:  "Non-institutional group quarters rate",
+  svgTitle:    "People with disabilities living in non-institutional group quarters, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC shaded by size of share, not by performance. Darker maroon marks the largest shares living in non-institutional group quarters; lighter gold marks the smallest. This category mixes supported community living with emergency housing, so neither end is a better outcome.",
+  tierLabels:  ADAPARC_TIER_LABEL_MAGNITUDE
+});
+</script>
+</body>
+</html>

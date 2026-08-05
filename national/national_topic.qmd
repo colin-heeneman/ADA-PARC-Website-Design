@@ -1,0 +1,453 @@
+---
+title: ""
+params:
+  bundle: "bundle.rds"
+format:
+  html:
+    self-contained: true
+    toc: false
+    page-layout: full
+    include-in-header: ../scorecard/font-loader.html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+# ─────────────────────────────────────────────────────────────────────────────
+# National Data — single-topic downloadable view
+#
+# This template is rendered on demand by the National Data Shiny app when the
+# user clicks "Download Selected Topic". All substantive content (map, table,
+# titles, notes) is prepared by the app and passed in via a single RDS bundle
+# so this document only handles presentation and ADA-PARC branding. Keeping the
+# data logic in the app is the single source of truth: what downloads always
+# matches what is on screen.
+#
+# Bundle contents (see server downloadHandler in ADA_PARC.Rmd):
+#   title        cleaned topic title (character)
+#   category     category label, e.g. "Demographics" (character)
+#   interp_note  interpretation note or "" (character)
+#   source_note  data source sentence (character)
+#   alt_text     plain-language map summary for accessibility (character)
+#   table_df     formatted data frame, first column "State" (data.frame)
+#   map_svg      the state map as inline SVG markup (character)
+#   generated    date string (character)
+# ─────────────────────────────────────────────────────────────────────────────
+options(cli.width = 80)
+
+library(htmltools)
+library(knitr)
+
+b <- tryCatch(readRDS(params$bundle), error = function(e) NULL)
+
+ok <- !is.null(b) &&
+  all(c("title", "table_df", "map_svg") %in% names(b))
+
+# Small helpers with safe fallbacks
+val <- function(name, default = "") {
+  if (ok && !is.null(b[[name]]) && length(b[[name]]) == 1 &&
+      !is.na(b[[name]]) && nzchar(trimws(b[[name]]))) b[[name]] else default
+}
+```
+
+```{css}
+:root {
+  --adaparc-maroon: #6d1f2e;
+  --adaparc-gold:   #c9a84c;
+  --adaparc-ink:    #1c2b3a;
+}
+
+body {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  color: #111;
+  font-size: 18px;
+  line-height: 1.5;
+  max-width: 8.5in;
+  margin: 0 auto;
+  padding: 0 0.5in 0.75in 0.5in;
+}
+
+/* ── Brand banner ─────────────────────────────────────────────────────────── */
+.adaparc-banner {
+  background: var(--adaparc-maroon);
+  color: #ffffff;
+  border-bottom: 5px solid var(--adaparc-gold);
+  padding: 1rem 1.25rem;
+  margin: 0 0 1.25rem 0;
+}
+.adaparc-banner .brand {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+.adaparc-banner .sub {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0.15rem 0 0 0;
+  color: #f3e6c9;
+}
+
+h1.topic-title {
+  color: var(--adaparc-maroon);
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin: 0.25rem 0 0.75rem 0;
+}
+h2.section-title {
+  color: var(--adaparc-maroon);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0.25rem 0 0.75rem 0;
+}
+h2.section-title-continued { font-size: 1.25rem; }
+h2.section-title .continued { font-weight: 500; color: #555; }
+
+/* ── Interpretation note ──────────────────────────────────────────────────── */
+.interp-note {
+  background: #f9f7f4;
+  border-left: 5px solid var(--adaparc-gold);
+  padding: 0.7rem 1rem;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+.interp-note .label { font-weight: 700; color: var(--adaparc-maroon); }
+
+/* ── Map figure ───────────────────────────────────────────────────────────── */
+.map-figure { margin: 0.5rem 0 1rem 0; text-align: center; }
+.map-figure svg { max-width: 100%; height: auto; }
+.map-summary {
+  font-size: 1rem;
+  color: #333;
+  margin: 0.5rem auto 0 auto;
+  max-width: 7in;
+  text-align: left;
+}
+.map-summary .label { font-weight: 700; color: var(--adaparc-ink); }
+
+.source-note {
+  font-size: 0.95rem;
+  color: #444;
+  margin: 0.75rem 0 0 0;
+}
+.source-note .label { font-weight: 700; }
+
+/* ── Data table ───────────────────────────────────────────────────────────── */
+.table-wrap { margin-top: 0.5rem; overflow-x: auto; }
+table.national-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 1rem;
+}
+table.national-table thead th {
+  background: var(--adaparc-maroon);
+  color: #ffffff;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--adaparc-maroon);
+  font-weight: 700;
+}
+table.national-table tbody td {
+  padding: 6px 12px;
+  border: 1px solid #d9d4c9;
+  text-align: right;
+}
+table.national-table tbody td:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+table.national-table tbody tr:nth-child(even) { background: #f6f3ee; }
+table.national-table thead th:not(:first-child) { text-align: right; }
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.adaparc-footer {
+  margin-top: 1.5rem;
+  padding-top: 0.75rem;
+  border-top: 2px solid var(--adaparc-gold);
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* ── "See next page" note ─────────────────────────────────────────────────── */
+.see-next {
+  margin: 1.25rem 0 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--adaparc-maroon);
+}
+
+/* ── Screen-only print helper ─────────────────────────────────────────────── */
+.print-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin: 0 0 1rem 0;
+}
+.btn-print {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--adaparc-maroon);
+  border: 1.5px solid var(--adaparc-maroon);
+  border-radius: 6px;
+  padding: 8px 18px;
+  cursor: pointer;
+}
+.btn-print:hover { background: #8b2737; border-color: #8b2737; }
+.btn-print:focus { outline: 3px solid var(--adaparc-gold); outline-offset: 2px; }
+
+/* ── Pagination: map on page 1, table from page 2 ─────────────────────────── */
+/* An explicit page box gives print/PDF engines a defined page size so the
+   break below is actually paginated (without @page, some "save to PDF" paths
+   lay the whole document on one continuous page and ignore the break). */
+@page {
+  size: Letter;
+  margin: 0.6in 0.5in;
+}
+.page-two {
+  break-before: page;
+  page-break-before: always;
+}
+
+@media print {
+  /* Quarto wraps the document in #quarto-content.page-columns, which is a CSS
+     grid, and main.content is one of its grid items. Chromium does not
+     fragment grid containers: it lays the whole grid out monolithically and
+     drops forced breaks inside it, which is why "Save as PDF" was returning a
+     single clipped page. Restoring normal block layout for print puts the
+     document back on the standard fragmentation path so @page and
+     .page-two are honored. */
+  #quarto-content,
+  #quarto-content.page-columns,
+  .page-columns,
+  main.content,
+  main#quarto-document-content,
+  .cell {
+    display: block !important;
+    grid-template-columns: none !important;
+  }
+
+  .print-bar { display: none !important; }
+
+  body { max-width: none; padding: 0; font-size: 12pt; }
+
+  /* Backgrounds carry meaning here (brand banner, table header, zebra rows),
+     so ask the engine to print them rather than drop them. */
+  body,
+  .adaparc-banner,
+  table.national-table thead th,
+  table.national-table tbody tr:nth-child(even) {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Page one budget: the banner, title, note, map, summary and source note
+     have to clear 9.8in of content box. The map is exported at 9 x 6.4in, so
+     unconstrained it renders ~5.3in tall and pushes the closing lines onto a
+     stray page of their own. Fixing its printed height (width follows from the
+     viewBox aspect ratio) leaves room for the text below it. */
+  .adaparc-banner { padding: 0.7rem 1rem; margin-bottom: 0.8rem; }
+  h1.topic-title { font-size: 17pt; margin: 0 0 0.45rem 0; }
+  .interp-note { margin-bottom: 0.6rem; padding: 0.5rem 0.8rem; }
+  .map-figure { margin: 0.3rem 0 0.5rem 0; }
+  .map-figure svg {
+    height: 4.3in !important;
+    width: auto !important;
+    max-width: 100% !important;
+  }
+  .map-summary { margin-top: 0.3rem; }
+  .source-note { margin-top: 0.45rem; }
+  .see-next { margin-top: 0.6rem; break-inside: avoid; }
+
+  /* Page two onward: 52 rows of five columns will not fit on a single sheet at
+     a readable size, so the table flows across two pages with the column
+     header repeated and no row split across the break.
+
+     The wrapper has to drop its horizontal scroll first. Any ancestor with a
+     non-visible overflow is a monolithic fragmentation context in Chromium:
+     the table cannot be split, so the overflow is clipped at the page edge
+     (the "cut off" rows) and the header group is never re-emitted on the
+     following page. Bootstrap's .cell-output-display and .table-responsive
+     carry the same overflow-x, so they are reset alongside .table-wrap. */
+  .table-wrap,
+  .cell-output-display,
+  .knitsql-table,
+  .table-responsive,
+  .page-two {
+    overflow: visible !important;
+  }
+
+  /* Each block is one printed page of the table, carrying its own header. */
+  .table-page-next {
+    break-before: page;
+    page-break-before: always;
+  }
+  .table-page { break-inside: auto; }
+
+  h2.section-title { font-size: 14pt; break-after: avoid; }
+  h2.section-title-continued { font-size: 12pt; }
+  table.national-table { font-size: 9.5pt; break-inside: auto; }
+  table.national-table thead th { padding: 4px 8px; }
+  table.national-table tbody td { padding: 2px 8px; }
+  /* Explicit groups: the header repeats on every page the table spans, and
+     the body stays a normal fragmentable row group. */
+  table.national-table thead { display: table-header-group !important; }
+  table.national-table tbody { display: table-row-group !important; }
+  table.national-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .adaparc-footer { break-inside: avoid; }
+  a[href]:after { content: ""; }
+}
+```
+
+```{r banner, results='asis'}
+if (!ok) {
+  cat('<div class="adaparc-banner"><p class="brand">ADA-PARC</p>',
+      '<p class="sub">National Data</p></div>',
+      '<p>No topic was provided to render. Please return to the ',
+      'National Data page and try again.</p>')
+  knitr::knit_exit()
+}
+
+htmltools::tagList(
+  htmltools::div(
+    class = "adaparc-banner",
+    htmltools::p(class = "brand", "ADA-PARC"),
+    htmltools::p(
+      class = "sub",
+      paste0("National Data",
+             if (nzchar(val("category"))) paste0("  ·  ", val("category")) else "")
+    )
+  )
+) |> as.character() |> cat()
+```
+
+```{r page-one, results='asis'}
+# Screen-only print control. Hidden in print via .print-bar, so it never
+# appears in the saved PDF. The background-graphics tip matters because the
+# banner, table header and zebra rows are colour-coded.
+cat(paste0(
+  '<div class="print-bar">',
+  '<button type="button" class="btn-print" onclick="window.print()">',
+  'Print or save as PDF</button>',
+  '</div>\n'
+))
+
+# Topic title
+cat(sprintf('<h1 class="topic-title">%s</h1>\n', htmltools::htmlEscape(val("title"))))
+
+# Interpretation note (only present for directional indicators)
+if (nzchar(val("interp_note"))) {
+  cat(sprintf(
+    '<div class="interp-note"><span class="label">Interpretation Note: </span>%s</div>\n',
+    htmltools::htmlEscape(val("interp_note"))
+  ))
+}
+
+# Map (inline SVG, already contains the legend/key)
+cat('<div class="map-figure" role="img" aria-label="',
+    htmltools::htmlEscape(val("alt_text", "State-by-state map of the selected topic."), attribute = TRUE),
+    '">\n', sep = "")
+cat(b$map_svg)
+cat('\n</div>\n')
+
+# Accessible plain-language summary
+if (nzchar(val("alt_text"))) {
+  cat(sprintf(
+    '<p class="map-summary"><span class="label">Summary: </span>%s</p>\n',
+    htmltools::htmlEscape(val("alt_text"))
+  ))
+}
+
+# Source note
+cat(sprintf(
+  '<p class="source-note"><span class="label">This indicator sourced from: </span>%s</p>\n',
+  htmltools::htmlEscape(val("source_note", "2020-2024 American Community Survey 5-Year Estimates"))
+))
+
+# End-of-page-one pointer to the table, which starts on page 2
+cat('<p class="see-next">Data table begins on the next page.</p>\n')
+```
+
+```{r page-two, results='asis'}
+# ── Data table, split into one table per printed page ───────────────────────
+# A single long table with one <thead> relies on the print engine repeating
+# the header group on continuation pages. Chromium and Firefox do; WebKit
+# (Safari, and therefore macOS "Export as PDF") does not, and has never
+# implemented it, so the second table page arrived headerless. Emitting each
+# page's rows as its own table with its own header makes the result identical
+# in every engine and in any HTML-to-PDF converter, at the cost of choosing
+# the split point here rather than letting the engine choose it.
+#
+# ROWS_PER_PAGE is the measured capacity of one Letter page at the print
+# styles set above: heading + header row + rows, with the last page also
+# carrying the footer. National tables run 53 rows (US, 50 states, DC, PR),
+# so this yields two balanced pages of roughly 27 rows.
+ROWS_PER_PAGE <- 27L
+
+cat('<div class="page-two">\n')
+
+df <- b$table_df
+# First column left-aligned, all others right-aligned
+aligns <- c("l", rep("r", max(0, ncol(df) - 1)))
+
+n_rows  <- nrow(df)
+n_pages <- max(1L, as.integer(ceiling(n_rows / ROWS_PER_PAGE)))
+# Balance the pages rather than filling the first to capacity and leaving a
+# stub on the last one.
+per_page <- as.integer(ceiling(n_rows / n_pages))
+groups   <- split(seq_len(n_rows), ceiling(seq_len(n_rows) / per_page))
+
+title_esc <- htmltools::htmlEscape(val("title"))
+
+for (k in seq_along(groups)) {
+  # The first block inherits the page break from .page-two; each later block
+  # carries its own.
+  cat(sprintf('<div class="table-page%s">\n',
+              if (k == 1) "" else " table-page-next"))
+
+  if (k == 1) {
+    cat(sprintf('<h2 class="section-title">Data Table: %s</h2>\n', title_esc))
+  } else {
+    cat(sprintf(
+      '<h2 class="section-title section-title-continued">Data Table: %s <span class="continued">(continued)</span></h2>\n',
+      title_esc
+    ))
+  }
+
+  chunk <- df[groups[[k]], , drop = FALSE]
+
+  tbl_html <- knitr::kable(
+    chunk,
+    format     = "html",
+    align      = aligns,
+    escape     = TRUE,
+    row.names  = FALSE,   # subsetting leaves non-sequential row names behind
+    table.attr = 'class="national-table"'
+  )
+
+  cat('<div class="table-wrap">\n')
+  cat(tbl_html)
+  cat('\n</div>\n')
+  cat('</div>\n')
+}
+```
+
+```{r footer, results='asis'}
+cat(sprintf(
+  paste0('<div class="adaparc-footer">ADA-PARC  ·  ADA Participation Action ',
+         'Consortium  ·  Generated %s. Darker map colors always indicate more ',
+         'opportunity.</div>'),
+  htmltools::htmlEscape(val("generated", format(Sys.Date(), "%B %d, %Y")))
+))
+
+# Close the .page-two wrapper opened in the page-two chunk so the table and
+# this footer note stay grouped on the second page.
+cat('</div>\n')
+```

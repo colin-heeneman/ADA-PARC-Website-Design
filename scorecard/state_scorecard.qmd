@@ -3,6 +3,10 @@ title: "ADA-PARC State Scorecard"
 params:
   state_abbr: "NY"   # Any state/territory abbreviation in the data
   year: 2024
+  # Display settings, passed by the app. Defaults reproduce the
+  # pre-2026-08-03 output exactly, so a hand render still works.
+  palette: "heritage"
+  contrast: "standard"
 format:
   html:
     self-contained: true
@@ -21,6 +25,28 @@ execute:
 # Fix cli::ansi_strwrap() error that occurs when quarto renders in a subprocess
 # with no terminal attached (width = 0). Setting cli.width = 80 prevents the crash.
 options(cli.width = 80)
+
+# ── Chart sizing + rasterisation resolution ─────────────────────────────────
+# Make every ggplot figure scale to its container width instead of being
+# pinned at its raster pixel width. Under self-contained rendering the Bootstrap
+# theme CSS (img-fluid: max-width 100%, height auto) is stripped, so without
+# this the bar charts emit <img width="710"> and stay fixed at 710px, looking
+# stranded and small in the wider domain card. out.width = "100%" emits an
+# inline style="width:100%" that fills the card on any screen or deploy.
+#
+# THE CHART-TEXT-TOO-SMALL BUG, AND WHY IT KEPT COMING BACK:
+# showtext lays out glyphs using ITS OWN dpi (showtext_opts(dpi=...)), which must
+# equal the graphics DEVICE dpi. The device dpi is NOT the `dpi` option alone — it
+# is `dpi * fig.retina`. Quarto's HTML format injects fig-retina: 2 by default, so
+# the device runs at twice the `dpi` value. Any time showtext's dpi was lower than
+# dpi*fig.retina, every piece of chart TEXT rendered at half size (bars and axes,
+# drawn by device geometry, stayed full size — that is why only the text looked
+# shrunk). Hardcoding a showtext number is fragile because the retina multiplier
+# is easy to forget. Instead we set dpi + fig.retina here explicitly, then below
+# compute showtext's dpi as dpi*fig.retina by reading these back — so the two can
+# never drift, regardless of Quarto's defaults. dpi 96 * retina 2 = 192 effective
+# (7.4in -> 1420px), crisp and a small file.
+knitr::opts_chunk$set(out.width = "100%", dpi = 96, fig.retina = 2)
 
 library(readr)
 library(dplyr)
@@ -57,10 +83,51 @@ local({
     }
     try({
       showtext::showtext_auto()
-      showtext::showtext_opts(dpi = 96)
+      # Match showtext to the DEVICE dpi (= dpi * fig.retina), read back from
+      # knitr so it tracks whatever resolution is actually in effect. This is the
+      # robust fix for the recurring "chart text too small on deploy" bug; see the
+      # detailed note in the opts_chunk block above. Never hardcode this number.
+      .ck_dpi    <- knitr::opts_chunk$get("dpi")
+      .ck_retina <- knitr::opts_chunk$get("fig.retina")
+      if (is.null(.ck_dpi))    .ck_dpi    <- 96
+      if (is.null(.ck_retina)) .ck_retina <- 1
+      showtext::showtext_opts(dpi = .ck_dpi * .ck_retina)
     }, silent = TRUE)
   }
 })
+
+# ── Tier palette: single source of truth ──────────────────────────────────
+# scripts/palettes.R defines ADA-PARC Heritage and is shared with the Shiny
+# app, the category scorecard and the fact sheets. This document renders in a
+# Quarto subprocess with execute_dir = scorecard/, so the path is resolved by
+# probing rather than assumed; `here` is not a dependency of this render.
+local({
+  cand <- c(file.path("..", "scripts", "palettes.R"),
+            file.path("scripts", "palettes.R"))
+  hit  <- cand[file.exists(cand)]
+  if (length(hit) == 0) {
+    stop("state_scorecard.qmd cannot locate scripts/palettes.R. ",
+         "Render with execute_dir set to the scorecard/ directory, ",
+         "or from the project root.")
+  }
+  source(hit[1], local = FALSE)
+})
+
+# ── Active palette and contrast ───────────────────────────────────────────
+# Phase 5 of docs/palette-v1-build-plan.qmd. The reader's Display settings
+# arrive as render params, so the file on disk carries the palette it was
+# generated with. That is why v1 renders rather than switches client-side: the
+# gauge map is baked into the output at render time and cannot respond to
+# CSS, so a client-side switch would recolour everything EXCEPT the map.
+#
+# PAL is the EFFECTIVE fill palette, which is not always the one selected:
+# high contrast forces High Contrast Mono. Routing through
+# pal_effective_fill_id() is what keeps this file agreeing with the app.
+#
+# Defaults in the YAML header are heritage and standard, so `quarto render`
+# by hand still produces exactly what it produced before this phase.
+CONTRAST <- pal_contrast_mode(params$contrast)
+PAL      <- pal_effective_fill_id(params$palette, CONTRAST)
 
 # ── Data ───────────────────────────────────────────────────────────────────
 raw       <- read_csv("scorecard_data/final/index_scores_wide.csv",
@@ -93,12 +160,67 @@ n <- function(col) {
 f <- function(x) ifelse(is.na(x), "—", sprintf("%.1f", x))
 
 # ── Domain colours ─────────────────────────────────────────────────────────
+# Phase 3.1 of docs/palette-v2-build-plan.qmd, 2026-08-03. These now come from
+# the `identity` role of the SELECTED palette, not from ADAPARC_DOC_TOKENS.
+#
+# WHAT CHANGED AND WHY. The paragraph that used to stand here said the three
+# domains had never been told apart by colour, and it was right: the values it
+# described sat 1.1 CIEDE2000 apart under deuteranopia in standard contrast and
+# collapsed to three identical blacks in high contrast. That was recorded as a
+# limitation and treated as unavoidable. It was not. Authoring the triple per
+# palette against a separation floor of 20, rather than deriving it from the
+# document ink, gives 20.1 in standard contrast and 22.8 in high, where the old
+# code gave 1.1 and 0.0. The measurements are in the IDENTITY note in
+# scripts/palettes.R and the frontier is docs/identity-frontier.txt.
+#
+# PAL, not params$palette, so high contrast reaches the domains by the same
+# route it reaches the tiers and the two cannot end up describing different
+# modes. Every card, pill and summary row still prints the domain NAME, so
+# colour remains reinforcement (WCAG 2.2 SC 1.4.1); it is now reinforcement
+# that works.
+.DOC <- pal_doc_tokens(CONTRAST)
 COL <- list(
-  cl  = "#c2410c",   # burnt orange
-  cp  = "#a16207",   # muted gold
-  we  = "#7b1717",   # deep crimson
-  nat = "#888888"
+  cl  = pal_identity("cl", PAL),
+  cp  = pal_identity("cp", PAL),
+  we  = pal_identity("we", PAL),
+  nat = if (CONTRAST == "high") "#000000" else "#888888"
 )
+
+# Text drawn ON a domain fill. Read from the catalogue rather than assumed to be
+# white: the lightest member of every identity triple is a light chip carrying
+# near-black, which is what buys the triple its lightness range. A hardcoded
+# "white" here would ship 1.6:1 on that bar.
+COL_ON <- list(
+  cl = pal_on_identity("cl", PAL),
+  cp = pal_on_identity("cp", PAL),
+  we = pal_on_identity("we", PAL)
+)
+
+# ── Summary table chrome ──────────────────────────────────────────────────
+# Phase 3.4. The header band, the top and closing rules and the Overall row
+# spine were the literals #5a0a0a and #7d3232. They are CHROME, not identity:
+# the table carries all three domains, so no domain's colour belongs to it, and
+# inventing a fourth identity-like colour would mean separating it from the
+# other three for nothing.
+#
+# doc_navy, which follows the contrast mode and goes to pure black in high
+# contrast. The literals did neither: in high contrast they stayed maroon while
+# every other rule on the page went black.
+CHROME    <- unname(.DOC[["doc_navy"]])
+CHROME_ON <- unname(.DOC[["doc_paper"]])
+
+# The 1px divider between column labels, drawn ON the chrome band. It was
+# #7d3232, a lighter maroon on a darker maroon, and the intent was a divider
+# just visible enough to separate the labels. Expressed as the band's own ink at
+# low alpha it keeps that intent for any band colour, in either contrast mode,
+# without a second hex that has to be re-picked whenever the first one changes.
+CHROME_RULE <- local({
+  ink <- CHROME_ON
+  r <- strtoi(substr(ink, 2, 3), 16L)
+  g <- strtoi(substr(ink, 4, 5), 16L)
+  b <- strtoi(substr(ink, 6, 7), 16L)
+  sprintf("rgba(%d,%d,%d,0.35)", r, g, b)
+})
 
 # ── Rankings (higher score = better = lower rank number) ───────────────────
 states_only <- raw |> filter(ABBR != "USA")
@@ -135,12 +257,15 @@ RNK <- list(
 )
 
 # ── Rank pill helper (for banner) ──────────────────────────────────────────
+# The 13/26/39 cut points that used to be written out here, in bar_qual_label()
+# and inside the tier colour helpers now come from pal_rank_cuts(n_ranked) in
+# scripts/palettes.R. Deriving them from the number of ranked jurisdictions
+# rather than writing them down keeps the banding correct if that count ever
+# changes, and makes a future change to the banding one edit rather than three.
 qual_info <- function(r) {
-  if (is.na(r))   return(list(label = "N/A",          cls = ""))
-  if (r <= 13)    list(label = "Excellent",     cls = "excellent")
-  else if (r <= 26) list(label = "Above Average", cls = "above-avg")
-  else if (r <= 39) list(label = "Below Average", cls = "below-avg")
-  else              list(label = "Poor",           cls = "poor")
+  if (is.na(r)) return(list(label = "N/A", cls = ""))
+  tier <- pal_tier_of_rank(r, n_ranked)
+  list(label = pal_tier_label(tier), cls = pal_tier_class(tier))
 }
 
 rank_pill <- function(domain_label, rnk, n_total) {
@@ -156,19 +281,121 @@ rank_pill <- function(domain_label, rnk, n_total) {
   )
 }
 
-# ── Qualitative label + colour for bar chart annotations ──────────────────
-bar_qual_color <- function(r) "#1c2b3a"
+# ── Qualitative label for a rank ──────────────────────────────────────────
+# bar_qual_color() was removed on 2026-07-27. It returned "#111111" for every
+# rank, so the ann_color plumbing and scale_color_identity() in the old ggplot
+# bar chart were dead code and every tier annotation rendered flat black.
+# Tier colour now comes from tier_bg() / tier_ink() below.
 bar_qual_label <- function(r) {
-  if (is.na(r))   return("")
-  if (r <= 13)    "Excellent"
-  else if (r <= 26) "Above Average"
-  else if (r <= 39) "Below Average"
-  else              "Poor"
+  pal_tier_label(pal_tier_of_rank(r, n_ranked), na_label = "")
+}
+
+# ── Rank band legend, printed in the footer ───────────────────────────────
+# Built from the same pal_rank_cuts() the classifiers use, so the bands a
+# reader is told about are the bands actually applied. The footer previously
+# printed a fixed "1-13 / 14-26 / 27-39 / 40-52", whose last band did not match
+# the number of ranked jurisdictions stated one line above it.
+rank_band_note <- function() {
+  cuts  <- pal_rank_cuts(n_ranked)
+  tiers <- c("excellent", "above", "below", "poor")
+  lo    <- c(1L, cuts[1] + 1L, cuts[2] + 1L, cuts[3] + 1L)
+  hi    <- c(cuts, as.integer(n_ranked))
+  parts <- mapply(function(t, a, b) {
+    paste0("<strong>", pal_tier_label(t), "</strong> (", a,
+           if (b > a) paste0("–", b) else "", ")")
+  }, tiers, lo, hi, USE.NAMES = FALSE)
+  paste(parts, collapse = " &nbsp;·&nbsp; ")
+}
+
+# ── Domain label colours for the summary table ────────────────────────────
+# RETIRED AS A PER-DOMAIN ROLE, 2026-08-03. Phase 2 of
+# docs/palette-v2-build-plan.qmd.
+#
+# These used to be darkened variants of the domain fills, one per domain. That
+# does not survive being made per-palette, and the reason is the same one
+# already recorded for `on_white` in scripts/palettes.R. Darkening three colours
+# far enough to clear AA as small bold text on the warm tint forces them all
+# into a narrow band of lightness, and lightness is what was carrying the
+# separation. Measured on the adopted triples: ADA-PARC collapses to 2.5
+# CIEDE2000, High Contrast Mono to 0.2. There is no palette for which it works.
+#
+# So the domain LABEL is plain document ink, the same as every other label in
+# the table, and the identity colour appears beside it as the 4px left rule on
+# the row. That rule is a fill, so it keeps its full separation. Colour moves
+# from the text to the mark, which is where it can still do the job.
+#
+# Do not reintroduce a per-domain text colour here without redoing that
+# measurement.
+#
+# `overall` IS NOT A DOMAIN, and it takes doc_navy rather than doc_accent.
+# Phase 3.4. The Overall row summarises all three domains, so no identity colour
+# belongs to it and a fourth identity-like colour would have to be separated
+# from the other three for no gain. doc_accent was the obvious alternative and
+# is wrong for a different reason: it is #7b1717, maroon, fixed, which is
+# exactly the "everything stays ADA-PARC whatever the reader chose" complaint
+# this phase exists to answer. doc_navy is neutral chrome, it follows the
+# contrast mode, and it is already the site's navbar colour.
+COL_TXT <- list(
+  overall = unname(.DOC[["doc_navy"]]),
+  cl      = unname(.DOC[["doc_ink"]]),
+  cp      = unname(.DOC[["doc_ink"]]),
+  we      = unname(.DOC[["doc_ink"]])
+)
+
+# ── Tier colour ───────────────────────────────────────────────────────────
+# Delegates to scripts/palettes.R. This returns the ADA-PARC Heritage `on_white`
+# ramp, not the fill ramp, because every consumer here draws the tier as TEXT
+# on white or on the warm table tint, or as the 9px summary-table swatch. The
+# fill ramp's two lightest stops are far too light for that.
+#
+# The `.rp-qual.*` colour rules in scorecard_state.css mirror these values and
+# are verified by `python3 scripts/check_palette.py`. Do not edit either place
+# by hand; edit scripts/palettes.R and re-run the check.
+# REPLACED pal_on_white() ON 2026-08-03. Reported by Colin: the tier words
+# stayed ADA-PARC maroon and amber on every palette. They did, and it was by
+# design in v1: pal_on_white() has no `id` parameter because a per-palette
+# on_white ramp collapses to between 0.8 and 7.3 CIEDE2000 of separation, and
+# High Contrast Mono has no solution at all. That measurement still holds, so
+# the fix is not to give it an id.
+#
+# The fix is the move phase 3 already made for the domain labels: take the
+# colour off the TEXT and put it on a MARK. `fill` and `on_fill` follow the
+# reader's palette and are admitted at 15 CIEDE2000 across all four vision
+# types, which is exactly the property the text form could not have. So a tier
+# is now a small filled chip carrying its own recorded ink, in all four places
+# a tier appears: the headline rank line, the banner rank pill, the sub-index
+# bar rows and the summary table.
+#
+# Always use these two TOGETHER. tier_bg() without tier_ink() is how white
+# lands on #fdd182 at 1.3:1.
+tier_bg <- function(r) {
+  tier <- pal_tier_of_rank(r, n_ranked)
+  if (length(tier) != 1 || is.na(tier)) return(ADA_PARC_PALETTE$na_fill)
+  unname(pal_get(PAL)$fill[[tier]])
+}
+
+tier_ink <- function(r) {
+  tier <- pal_tier_of_rank(r, n_ranked)
+  if (length(tier) != 1 || is.na(tier)) return(ADA_PARC_PALETTE$na_text)
+  pal_on_fill(tier, PAL)
+}
+
+# Badge rank line, e.g. "Rank #44 of 51 · Poor". The domain colour on the big
+# score number says WHICH domain this is; the tier colour here says HOW the
+# state is doing. Keeping those on separate elements stops one from being
+# mistaken for the other.
+rank_line <- function(r) {
+  if (is.na(r)) return("—")
+  paste0(
+    "Rank #", r, " of ", n_ranked, " · ",
+    '<span class="rank-tier" style="background:', tier_bg(r),
+    ';color:', tier_ink(r), '">',
+    bar_qual_label(r), '</span>'
+  )
 }
 
 # ── SVG speedometer-style gauge ───────────────────────────────────────────
-make_gauge <- function(score, nat_score, arc_color = "#60a5fa",
-                       gauge_label = "Score") {
+make_gauge <- function(score, nat_score, gauge_label = "Score") {
 
   if (is.na(score)) {
     return(HTML(paste0(
@@ -176,7 +403,7 @@ make_gauge <- function(score, nat_score, arc_color = "#60a5fa",
       ' role="img" aria-label="', gauge_label, ': score pending">',
       '<title>', gauge_label, ': score pending</title>',
       '<text x="150" y="130" text-anchor="middle" font-family="EB Garamond,Garamond,Georgia,serif"',
-      ' font-size="22" fill="#aaaaaa">Score pending</text></svg>'
+      ' font-size="22" fill="#111111">Score pending</text></svg>'
     )))
   }
 
@@ -197,19 +424,28 @@ make_gauge <- function(score, nat_score, arc_color = "#60a5fa",
     p1 <- xy(v1); p2 <- xy(v2)
     large <- if ((v2 - v1) > 50) 1 else 0
     paste0('<path d="M ', p1$x, ' ', p1$y,
-           ' A ', r, ' ', r, ' 0 ', large, ' 0 ', p2$x, ' ', p2$y, '"',
+           ' A ', r, ' ', r, ' 0 ', large, ' 1 ', p2$x, ' ', p2$y, '"',
            ' fill="none" stroke="', color, '"',
            ' stroke-width="', width, '" stroke-linecap="butt"/>')
   }
 
-  # Coloured performance zones (Poor → Excellent), using ADA-PARC map palette
-  # Note: poor-tier colour darkened from #f7e49c to #e8c84a so that dark tick
-  # labels (#1c2b3a) achieve WCAG AA contrast at small sizes (≥4.5:1 ratio).
+  # Coloured performance zones, Poor to Excellent, left to right. These are
+  # FILL areas, so they take the ADA-PARC Heritage fill ramp from
+  # scripts/palettes.R, identical to the national and city map bins.
+  #
+  # The tick labels are drawn inside the arc on the white card, not on the arc
+  # itself, so the arc colours carry no text-contrast requirement. The previous
+  # ramp had darkened its lowest stop to solve a contrast problem that does not
+  # exist at this position, and that darkening is what pushed the two lowest
+  # tiers to 7.7 CIEDE2000 units apart under simulated deuteranopia. Heritage
+  # restores a light lowest stop and clears 15 under every simulated deficiency.
+  # See docs/color-palette-expansion.qmd.
+  .zone_fill <- pal_fill(4, PAL)   # poor, below, above, excellent
   zone_arcs <- paste0(
-    arc_seg(0,  25, "#e8c84a"),   # Poor  – amber (was pale yellow; darkened for contrast)
-    arc_seg(25, 50, "#fa8e57"),   # Below Average – orange
-    arc_seg(50, 75, "#c41306"),   # Above Average – dark red
-    arc_seg(75, 100, "#630801")  # Excellent – deep maroon
+    arc_seg(0,   25,  .zone_fill[1]),   # Poor
+    arc_seg(25,  50,  .zone_fill[2]),   # Below Average
+    arc_seg(50,  75,  .zone_fill[3]),   # Above Average
+    arc_seg(75,  100, .zone_fill[4])    # Excellent
   )
 
   # White radial dividers at each tier boundary
@@ -224,11 +460,11 @@ make_gauge <- function(score, nat_score, arc_color = "#60a5fa",
 
   # Tick marks: minor every 10, major at 0/25/50/75/100
   tick_line <- function(val, major = FALSE) {
-    inner_r <- if (major) r - arc_w / 2 - 9 else r - arc_w / 2 - 4
+    inner_r <- if (major) r - arc_w / 2 - 13 else r - arc_w / 2 - 5
     outer_r <- r - arc_w / 2 - 1
     p1 <- xy(val, inner_r); p2 <- xy(val, outer_r)
-    col <- if (major) "#1c2b3a" else "#6b7280"
-    w   <- if (major) 2 else 1
+    col <- "#111111"
+    w   <- if (major) 3 else 1.5
     paste0('<line x1="', p1$x, '" y1="', p1$y,
            '" x2="', p2$x, '" y2="', p2$y,
            '" stroke="', col, '" stroke-width="', w, '"/>')
@@ -248,14 +484,14 @@ make_gauge <- function(score, nat_score, arc_color = "#60a5fa",
     ly <- round(cy - (r - arc_w / 2 - 20) * sin(a) + dy, 1)
     paste0('<text x="', lx, '" y="', ly,
            '" text-anchor="middle"',
-           ' font-family="EB Garamond,Garamond,Georgia,serif" font-size="13" fill="#1c2b3a">',
+           ' font-family="EB Garamond,Garamond,Georgia,serif" font-size="15" fill="#111111">',
            val, '</text>')
   }
 
   tick_labels <- paste0(
     lbl(0,   dx =  6, dy = 4),
     lbl(25,  dy = -2),
-    lbl(50,  dy = -4),
+    lbl(50,  dy =  6),
     lbl(75,  dy = -2),
     lbl(100, dx = -6, dy = 4)
   )
@@ -274,14 +510,14 @@ make_gauge <- function(score, nat_score, arc_color = "#60a5fa",
     '<polygon points="', tip$x, ',', tip$y, ' ',
     base1_x, ',', base1_y, ' ',
     base2_x, ',', base2_y, '"',
-    ' fill="#1c2b3a" opacity="0.92"/>'
+    ' fill="#111111" opacity="0.92"/>'
   )
 
   # Hub: white ring with dark centre dot
   hub_html <- paste0(
     '<circle cx="', cx, '" cy="', cy, '" r="', hub_r, '"',
-    ' fill="white" stroke="#1c2b3a" stroke-width="2.5"/>',
-    '<circle cx="', cx, '" cy="', cy, '" r="4" fill="#1c2b3a"/>'
+    ' fill="white" stroke="#111111" stroke-width="2.5"/>',
+    '<circle cx="', cx, '" cy="', cy, '" r="4" fill="#111111"/>'
   )
 
   # National average marker removed per design update
@@ -292,19 +528,19 @@ make_gauge <- function(score, nat_score, arc_color = "#60a5fa",
     '<text x="', cx, '" y="', cy + 68, '"',
     ' text-anchor="middle"',
     ' font-family="EB Garamond,Garamond,Georgia,serif"',
-    ' font-size="52" font-weight="700" fill="#1c2b3a">',
+    ' font-size="52" font-weight="700" fill="#111111">',
     f(score), '</text>',
     '<text x="', cx, '" y="', cy + 86, '"',
     ' text-anchor="middle"',
     ' font-family="EB Garamond,Garamond,Georgia,serif"',
-    ' font-size="13" fill="#374151">out of 100</text>'
+    ' font-size="13" fill="#111111">out of 100</text>'
   )
 
   nat_label <- if (!is.na(nat_score)) {
     paste0('<text x="', cx, '" y="', cy + 103, '"',
            ' text-anchor="middle"',
            ' font-family="EB Garamond,Garamond,Georgia,serif"',
-           ' font-size="13" fill="#374151">US avg: ', f(nat_score), '</text>')
+           ' font-size="13" fill="#111111">US avg: ', f(nat_score), '</text>')
   } else ""
 
   # Accessible description
@@ -330,71 +566,115 @@ make_gauge <- function(score, nat_score, arc_color = "#60a5fa",
 # ── Horizontal bar chart ───────────────────────────────────────────────────
 # NA-aware: silently drops any label/score/rank where score is NA
 # (pending sub-indices won't create empty bars)
-make_bar_chart <- function(labels, state_scores, ranks,
-                           fill_color = "#1a4d9e") {
+make_subindex_bars <- function(labels, state_scores, ranks,
+                               fill_color = pal_identity("we", PAL),
+                               text_color = pal_on_identity("we", PAL),
+                               order_by   = c("index", "score")) {
 
+  order_by     <- match.arg(order_by)
   keep         <- !is.na(state_scores)
   labels       <- labels[keep]
   state_scores <- state_scores[keep]
   ranks        <- ranks[keep]
 
   if (length(labels) == 0) {
-    return(
-      ggplot() +
-        annotate("text", x = 0.5, y = 0.5,
-                 label = "No sub-index scores available for this domain.",
-                 hjust = 0.5, size = 3.8, color = "#888888",
-                 family = "EB Garamond") +
-        theme_void(base_family = "EB Garamond")
-    )
+    return(HTML(
+      '<p class="sib-empty">No sub-index scores available for this domain.</p>'
+    ))
   }
 
-  ann_text  <- mapply(function(r, sc) {
-    paste0("Rank #", r, "  \u00b7  ", bar_qual_label(r))
-  }, ranks, state_scores)
-  ann_color <- sapply(ranks, bar_qual_color)
+  if (order_by == "score") {
+    o            <- order(state_scores, decreasing = TRUE)
+    labels       <- labels[o]
+    state_scores <- state_scores[o]
+    ranks        <- ranks[o]
+  }
 
-  df <- tibble(
-    label     = factor(labels, levels = rev(labels)),
-    state     = state_scores,
-    full      = 100,
-    ann_text  = ann_text,
-    ann_color = ann_color
-  )
+  rows <- vapply(seq_along(labels), function(i) {
+    sc    <- state_scores[i]
+    rk    <- ranks[i]
+    lab   <- labels[i]
+    pct_w <- sprintf("%.1f", max(min(sc, 100), 0))
 
-  ggplot(df) +
-    geom_col(aes(x = full, y = label),
-             fill = "#edf0f5", width = 0.5) +
-    geom_col(aes(x = state, y = label),
-             fill = fill_color, alpha = 0.88, width = 0.5) +
-    geom_text(aes(x = state, y = label, label = f(state)),
-              hjust = 1.15, size = 3.6,
-              color = "white", fontface = "bold",
-              family = "EB Garamond") +
-    geom_text(aes(x = 102, y = label, label = ann_text, color = ann_color),
-              hjust = 0, size = 3.35, fontface = "bold",
-              family = "EB Garamond") +
-    scale_color_identity() +
-    scale_x_continuous(limits = c(0, 175),
-                       breaks = c(0, 25, 50, 75, 100),
-                       labels = c("0", "25", "50", "75", "100"),
-                       expand = c(0, 0)) +
-    labs(x = NULL, y = NULL) +
-    theme_minimal(base_size = 12, base_family = "EB Garamond") +
-    theme(
-      text               = element_text(family = "EB Garamond"),
-      panel.grid.major.x = element_line(color = "#e8ecf1", linewidth = 0.4),
-      panel.grid.major.y = element_blank(),
-      panel.grid.minor   = element_blank(),
-      axis.text.y        = element_text(size = 11, color = "#2c3e50",
-                                        family = "EB Garamond"),
-      axis.text.x        = element_text(size = 8.5, color = "#333333",
-                                        family = "EB Garamond"),
-      plot.background    = element_blank(),
-      panel.background   = element_blank(),
-      plot.margin        = margin(2, 8, 2, 2)
+    # The value sits inside the bar when the bar is wide enough to hold it, and
+    # flips outside in document ink when it is not, so a very low score can
+    # never render pale-on-pale and disappear.
+    #
+    # THE INSIDE COLOUR IS NOT ALWAYS WHITE. It was, and hardcoded in
+    # scorecard_state.css, until phase 3 made the fill follow the reader's
+    # palette. Every identity triple has one LIGHT member carrying near-black
+    # text, which is what buys the triple its lightness range, and white on that
+    # chip is about 1.7:1. text_color carries the value the catalogue actually
+    # records for this fill; see pal_on_identity() in scripts/palettes.R.
+    inside <- sc >= 16
+
+    tier <- bar_qual_label(rk)
+    tbg  <- tier_bg(rk)
+    tink <- tier_ink(rk)
+
+    # One aria-label per bar carries the full reading of that row, so the
+    # decorative track and fill divs stay out of the accessibility tree.
+    desc <- paste0(
+      lab, ": ", f(sc), " out of 100",
+      if (is.na(rk)) "." else
+        paste0(". Rank ", rk, " of ", n_ranked, ", ", tier, ".")
     )
+
+    paste0(
+      '<div class="sib-row">',
+        '<div class="sib-label">', lab, '</div>',
+        '<div class="sib-track" role="img" aria-label="', desc, '">',
+          '<div class="sib-fill" style="width:', pct_w, '%;background:', fill_color, '">',
+            if (inside)
+              paste0('<span class="sib-value sib-value-in" style="color:',
+                     text_color, '">', f(sc), '</span>')
+            else '',
+          '</div>',
+          if (!inside)
+            paste0('<span class="sib-value sib-value-out" style="left:calc(',
+                   pct_w, '% + 8px)">', f(sc), '</span>')
+          else '',
+        '</div>',
+        '<div class="sib-meta" aria-hidden="true">',
+          if (is.na(rk)) '<span class="sib-rank">\u2014</span>' else
+            paste0('<span class="sib-rank">Rank #', rk, '</span>',
+                   '<span class="sib-tier" style="background:', tbg,
+                          ';color:', tink, '">', tier, '</span>'),
+        '</div>',
+      '</div>'
+    )
+  }, character(1))
+
+  HTML(paste0(
+    '<div class="subindex-bars">',
+      paste0(rows, collapse = ""),
+      '<div class="sib-row sib-axis" aria-hidden="true">',
+        '<div></div>',
+        '<div class="sib-axis-scale">',
+          '<span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>',
+        '</div>',
+        '<div></div>',
+      '</div>',
+    '</div>'
+  ))
 }
+
+# Retained only so the old call signature fails loudly rather than silently
+# rendering nothing if a stale chunk is left behind somewhere.
+make_bar_chart <- function(...) {
+  stop("make_bar_chart() was replaced by make_subindex_bars() on 2026-07-27.")
+}
+
+```
+
+```{r doc-tokens, results='asis'}
+# ── Token block for this render ───────────────────────────────────────────
+# Phase 5.4. Emits the :root custom properties that scorecard_state.css and
+# scorecard_v3.css consume, plus the data-adaparc-contrast hook their
+# structural rules key on. Written into the body, which puts it AFTER the
+# linked stylesheet in document order, so at equal specificity it wins; the
+# copy in the .css file is the fallback for opening that file on its own.
+cat(pal_doc_header(params$palette, CONTRAST))
 ```
 
 ::: {.page-wrap}
@@ -414,7 +694,6 @@ make_bar_chart <- function(labels, state_scores, ranks,
 make_gauge(
   score       = s("index_adaparc"),
   nat_score   = n("index_adaparc"),
-  arc_color   = "#9ca3af",
   gauge_label = paste0(state_name, " Overall ADA-PARC Score")
 )
 ```
@@ -442,34 +721,36 @@ HTML(paste0(
 ::: {.domain-header-row}
 ::: {}
 <h2 class="domain-heading cl">Community Living</h2>
+<p class="domain-desc">How often people with disabilities aged 18 to 64 live in community settings rather than nursing homes or correctional facilities, and how far states invest in community-based housing resources.</p>
 :::
 ::: {.domain-score-badge .cl}
 <div class="score-val">`r f(s("index_rel_community_living"))`</div>
 <div class="score-lbl">Score</div>
 <div class="score-nat">US avg: `r f(n("index_rel_community_living"))`</div>
-<div class="score-rank">`r ifelse(is.na(RNK$cl), "\u2014", paste0("Rank #", RNK$cl, " of ", n_ranked, " \u00b7 ", bar_qual_label(RNK$cl)))`</div>
+<div class="score-rank">`r rank_line(RNK$cl)`</div>
 :::
 :::
 
 <h3 class="chart-label">Sub-Index Scores</h3>
 
 ```{r}
-#| label: cl-chart
-#| fig-height: 2.8
-#| fig-width: 7.4
-#| fig-alt: !expr 'paste0("Bar chart: Community Living sub-index scores for ", state_name, ". Housing Access: ", f(s("index_rel_housing_access")), " (Rank ", RNK$housing_access, "). Community Resource: ", f(s("index_rel_community_resource")), " (Rank ", RNK$community_res, "). Living Arrangements: ", f(s("index_rel_living_arrangements")), " (Rank ", RNK$living_arrangements, ").")'
-make_bar_chart(
+#| label: cl-bars
+#| output: asis
+# Order matches the Score Summary table below. Each bar carries its own
+# aria-label, so the chunk-level fig-alt the PNG version needed is gone.
+cat(as.character(make_subindex_bars(
   labels = c(
-    "Housing Access",
-    "Community Resource",
-    "Living Arrangements"
+    "Living Arrangements",
+    "Community Resources",
+    "Housing Access"
   ),
-  state_scores = c(s("index_rel_housing_access"),
+  state_scores = c(s("index_rel_living_arrangements"),
                    s("index_rel_community_resource"),
-                   s("index_rel_living_arrangements")),
-  ranks        = c(RNK$housing_access, RNK$community_res, RNK$living_arrangements),
-  fill_color   = COL$cl
-)
+                   s("index_rel_housing_access")),
+  ranks        = c(RNK$living_arrangements, RNK$community_res, RNK$housing_access),
+  fill_color   = COL$cl,
+  text_color   = COL_ON$cl
+)))
 ```
 
 :::
@@ -482,39 +763,39 @@ make_bar_chart(
 ::: {.domain-header-row}
 ::: {}
 <h2 class="domain-heading cp">Community Participation</h2>
+<p class="domain-desc">Access to the tools and systems that enable full participation in community life, including technology, health insurance, educational attainment, transportation, and public safety.</p>
 :::
 ::: {.domain-score-badge .cp}
 <div class="score-val">`r f(s("index_rel_community_participation"))`</div>
 <div class="score-lbl">Score</div>
 <div class="score-nat">US avg: `r f(n("index_rel_community_participation"))`</div>
-<div class="score-rank">`r ifelse(is.na(RNK$cp), "\u2014", paste0("Rank #", RNK$cp, " of ", n_ranked, " \u00b7 ", bar_qual_label(RNK$cp)))`</div>
+<div class="score-rank">`r rank_line(RNK$cp)`</div>
 :::
 :::
 
 <h3 class="chart-label">Sub-Index Scores</h3>
 
 ```{r}
-#| label: cp-chart
-#| fig-height: 3.6
-#| fig-width: 7.4
-#| fig-alt: !expr 'paste0("Bar chart: Community Participation sub-index scores for ", state_name, ". Public Safety: ", f(s("index_rel_safety")), " (Rank ", RNK$safety, "). Transportation Access: ", f(s("index_rel_commute")), " (Rank ", RNK$commute, "). Education Access: ", f(s("index_rel_education")), " (Rank ", RNK$education, "). Insurance Access: ", f(s("index_rel_insurance")), " (Rank ", RNK$insurance, "). Technology Access: ", f(s("index_rel_tech")), " (Rank ", RNK$tech, ").")'
-make_bar_chart(
+#| label: cp-bars
+#| output: asis
+cat(as.character(make_subindex_bars(
   labels = c(
-    "Public Safety",
-    "Transportation Access",
+    "Technology Access",
     "Education Access",
     "Insurance Access",
-    "Technology Access"
+    "Transportation Access",
+    "Public Safety"
   ),
-  state_scores = c(s("index_rel_safety"),
-                   s("index_rel_commute"),
+  state_scores = c(s("index_rel_tech"),
                    s("index_rel_education"),
                    s("index_rel_insurance"),
-                   s("index_rel_tech")),
-  ranks        = c(RNK$safety,
-                   RNK$commute, RNK$education, RNK$insurance, RNK$tech),
-  fill_color   = COL$cp
-)
+                   s("index_rel_commute"),
+                   s("index_rel_safety")),
+  ranks        = c(RNK$tech, RNK$education, RNK$insurance,
+                   RNK$commute, RNK$safety),
+  fill_color   = COL$cp,
+  text_color   = COL_ON$cp
+)))
 ```
 
 :::
@@ -527,34 +808,34 @@ make_bar_chart(
 ::: {.domain-header-row}
 ::: {}
 <h2 class="domain-heading we">Work &amp; Economic</h2>
+<p class="domain-desc">Economic inclusion and security for people with disabilities, covering positive work outcomes such as employment and income, negative labor force indicators such as poverty and unemployment, and housing affordability.</p>
 :::
 ::: {.domain-score-badge .we}
 <div class="score-val">`r f(s("index_rel_work_economic"))`</div>
 <div class="score-lbl">Score</div>
 <div class="score-nat">US avg: `r f(n("index_rel_work_economic"))`</div>
-<div class="score-rank">`r ifelse(is.na(RNK$we), "\u2014", paste0("Rank #", RNK$we, " of ", n_ranked, " \u00b7 ", bar_qual_label(RNK$we)))`</div>
+<div class="score-rank">`r rank_line(RNK$we)`</div>
 :::
 :::
 
 <h3 class="chart-label">Sub-Index Scores</h3>
 
 ```{r}
-#| label: we-chart
-#| fig-height: 2.8
-#| fig-width: 7.4
-#| fig-alt: !expr 'paste0("Bar chart: Work and Economic sub-index scores for ", state_name, ". Housing Affordability: ", f(s("index_rel_housing_affordability")), " (Rank ", RNK$housing_afford, "). Negative Work Score: ", f(s("index_rel_negative_work")), " (Rank ", RNK$negative_work, "). Positive Work Score: ", f(s("index_rel_positive_work")), " (Rank ", RNK$positive_work, ").")'
-make_bar_chart(
+#| label: we-bars
+#| output: asis
+cat(as.character(make_subindex_bars(
   labels = c(
-    "Housing Affordability",
+    "Positive Work Score",
     "Negative Work Score",
-    "Positive Work Score"
+    "Housing Affordability"
   ),
-  state_scores = c(s("index_rel_housing_affordability"),
+  state_scores = c(s("index_rel_positive_work"),
                    s("index_rel_negative_work"),
-                   s("index_rel_positive_work")),
-  ranks        = c(RNK$housing_afford, RNK$negative_work, RNK$positive_work),
-  fill_color   = COL$we
-)
+                   s("index_rel_housing_affordability")),
+  ranks        = c(RNK$positive_work, RNK$negative_work, RNK$housing_afford),
+  fill_color   = COL$we,
+  text_color   = COL_ON$we
+)))
 ```
 
 :::
@@ -632,65 +913,220 @@ tbl_df <- tibble(
   nat_score   = sapply(score_cols_tbl, n),
   rank_n      = rnk_list
 ) |>
-  mutate(tier = sapply(rank_n, bar_qual_label))
+  mutate(
+    tier = sapply(rank_n, bar_qual_label),
+    # Diff = state minus US average. Signed number only; no colour, so the
+    # +/- glyph is the sole carrier of direction (works in print and for
+    # screen readers, and does not compete with the Tier swatch).
+    diff = state_score - nat_score
+  )
 
-dom_rows <- which(tbl_df$level %in% c("overall", "domain"))
-exc_rows <- which(!is.na(tbl_df$rank_n) & tbl_df$rank_n <= 13)
-abv_rows <- which(!is.na(tbl_df$rank_n) & tbl_df$rank_n >= 14 & tbl_df$rank_n <= 26)
-blw_rows <- which(!is.na(tbl_df$rank_n) & tbl_df$rank_n >= 27 & tbl_df$rank_n <= 39)
-por_rows <- which(!is.na(tbl_df$rank_n) & tbl_df$rank_n >= 40)
+# Row index groups used for structural styling below
+overall_row <- which(tbl_df$level == "overall")
+dom_rows    <- which(tbl_df$level %in% c("overall", "domain"))
+sub_rows    <- which(tbl_df$level == "sub")
+cl_rows     <- which(tbl_df$domain == "cl")
+cp_rows     <- which(tbl_df$domain == "cp")
+we_rows     <- which(tbl_df$domain == "we")
+# First row of each domain block takes the section rule above it, except the
+# very first: it already sits under the Overall row's heavy closing rule, and
+# two adjacent borders would read as one thick smear.
+block_head_rows <- setdiff(which(tbl_df$level == "domain"), overall_row + 1)
+last_row    <- nrow(tbl_df)
+
+# Alternating fill for sub-index rows only, counted fresh inside each domain
+# block so every block starts on white and the rhythm never depends on how
+# many sub-indices the block above happened to have.
+stripe_rows <- unlist(lapply(
+  list(cl_rows, cp_rows, we_rows),
+  function(idx) {
+    subs <- idx[tbl_df$level[idx] == "sub"]
+    subs[seq_along(subs) %% 2 == 0]
+  }
+))
+
+# Tier cell: colour square + black label. Colour is redundant to the word,
+# never the sole channel (WCAG 1.4.1). Built here in row order so the
+# text_transform below can hand gt raw, unescaped HTML.
+tier_html <- mapply(
+  function(lbl, r) {
+    if (is.na(r) || !nzchar(lbl)) return("—")
+    paste0(
+      '<span class="tier-swatch" style="background:', tier_bg(r), '"></span>',
+      '<span class="tier-label">', lbl, '</span>'
+    )
+  },
+  tbl_df$tier, tbl_df$rank_n, USE.NAMES = FALSE
+)
 
 tbl_df |>
-  select(metric, state_score, nat_score, rank_n, tier) |>
+  select(metric, state_score, nat_score, diff, rank_n, tier) |>
   gt() |>
   cols_label(
     metric      = "Index / Sub-Index",
     state_score = state_name,
-    nat_score   = "US Average",
+    nat_score   = "US Avg",
+    diff        = "Diff",
     rank_n      = "Rank",
     tier        = "Tier"
   ) |>
   fmt_number(columns = c(state_score, nat_score), decimals = 1) |>
+  # Signed difference, using the true Unicode minus (U+2212) rather than a
+  # hyphen so the glyph aligns with the digits and reads as "minus".
+  fmt(columns = diff,
+      fns     = function(x) ifelse(
+        is.na(x), "\u2014",
+        paste0(ifelse(x >= 0, "+", "\u2212"), sprintf("%.1f", abs(x)))
+      )) |>
   fmt(columns = rank_n,
-      fns     = function(x) ifelse(is.na(x), "\u2014", paste0("#", as.integer(x)))) |>
+      fns     = function(x) ifelse(is.na(x), "\u2014", as.character(as.integer(x)))) |>
+  text_transform(
+    locations = cells_body(columns = tier),
+    fn        = function(x) tier_html
+  ) |>
+  # \u2500\u2500 Alignment \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  # Numbers right-aligned so decimals stack down each column; labels left.
+  cols_align(align = "left",  columns = c(metric, tier)) |>
+  cols_align(align = "right", columns = c(state_score, nat_score, diff, rank_n)) |>
+  cols_width(
+    metric      ~ pct(31),
+    state_score ~ pct(12),
+    nat_score   ~ pct(12),
+    diff        ~ pct(12),
+    rank_n      ~ pct(10),
+    tier        ~ pct(23)
+  ) |>
+  # \u2500\u2500 Body text: uniformly near-black (Black canon, max contrast) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  tab_style(
+    style     = cell_text(color = "#111111"),
+    locations = cells_body()
+  ) |>
+  # \u2500\u2500 Alternating sub-index rows: warm off-white, applied before the domain
+  #    fills so a domain row can never be overwritten by a stripe. \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  tab_style(
+    style     = cell_fill(color = unname(.DOC[["doc_cream"]])),
+    locations = cells_body(rows = stripe_rows)
+  ) |>
+  # \u2500\u2500 Domain / overall rows: bold on a warm tint \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   tab_style(
     style     = list(cell_text(weight = "bold"),
-                     cell_fill(color = "#f4f6fa")),
+                     cell_fill(color = unname(.DOC[["doc_tint"]]))),
     locations = cells_body(rows = dom_rows)
   ) |>
+  # Category names carry their domain colour; every other cell stays black
   tab_style(
-    style     = cell_text(indent = px(16), color = "#444444"),
+    style     = cell_text(color = COL_TXT$cl),
     locations = cells_body(columns = metric,
-                           rows = !tbl_df$level %in% c("overall","domain"))
+                           rows = intersect(cl_rows, dom_rows))
   ) |>
-  cols_align(align = "left",   columns = metric) |>
-  cols_align(align = "center", columns = c(state_score, nat_score, rank_n, tier)) |>
   tab_style(
-    style     = cell_text(color = "white", weight = "bold"),
+    style     = cell_text(color = COL_TXT$cp),
+    locations = cells_body(columns = metric,
+                           rows = intersect(cp_rows, dom_rows))
+  ) |>
+  tab_style(
+    style     = cell_text(color = COL_TXT$we),
+    locations = cells_body(columns = metric,
+                           rows = intersect(we_rows, dom_rows))
+  ) |>
+  # Overall row sits a step above the domains
+  tab_style(
+    # Was #f7f1ea, a third warm shade between cream and tint. Merged into
+    # doc_tint: three near-identical warm fills was more than the design was
+    # using, and the Overall row is already set apart by its larger text, its
+    # spine and the 2px rule beneath it. A literal here also stayed warm in high
+    # contrast, where doc_tint goes to #e8e8e8 and everything around it changed.
+    style     = list(cell_text(size = px(17)),
+                     cell_fill(color = unname(.DOC[["doc_tint"]]))),
+    locations = cells_body(rows = overall_row)
+  ) |>
+  # Applied after the size rule above so the colour cannot be dropped when gt
+  # collapses two cell_text() styles targeting the same cell.
+  tab_style(
+    style     = cell_text(color = COL_TXT$overall),
+    locations = cells_body(columns = metric, rows = overall_row)
+  ) |>
+  tab_style(
+    style     = cell_borders(sides = "bottom", color = CHROME, weight = px(2)),
+    locations = cells_body(rows = overall_row)
+  ) |>
+  # \u2500\u2500 Sub-index rows: indented under their domain \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  tab_style(
+    style     = cell_text(indent = px(22)),
+    locations = cells_body(columns = metric, rows = sub_rows)
+  ) |>
+  # \u2500\u2500 Vertical column rules: the grid is what makes this read as a table \u2500\u2500
+  tab_style(
+    style     = cell_borders(sides = "left", color = "#e5ddd3", weight = px(1)),
+    locations = cells_body(columns = c(state_score, nat_score, diff, rank_n, tier))
+  ) |>
+  tab_style(
+    style     = cell_borders(sides = "left", color = CHROME_RULE, weight = px(1)),
+    locations = cells_column_labels(
+      columns = c(state_score, nat_score, diff, rank_n, tier))
+  ) |>
+  # \u2500\u2500 Section rules above each domain block \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  tab_style(
+    style     = cell_borders(sides = "top", color = "#d8cec2", weight = px(1)),
+    locations = cells_body(rows = block_head_rows)
+  ) |>
+  # \u2500\u2500 Domain spine: the one place domain colour survives, and it is a rule,
+  #    not text. Delete these three blocks to go fully monochrome. \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  tab_style(
+    style     = cell_borders(sides = "left", color = COL$cl, weight = px(4)),
+    locations = cells_body(columns = metric, rows = cl_rows)
+  ) |>
+  tab_style(
+    style     = cell_borders(sides = "left", color = COL$cp, weight = px(4)),
+    locations = cells_body(columns = metric, rows = cp_rows)
+  ) |>
+  tab_style(
+    style     = cell_borders(sides = "left", color = COL$we, weight = px(4)),
+    locations = cells_body(columns = metric, rows = we_rows)
+  ) |>
+  tab_style(
+    style     = cell_borders(sides = "left", color = CHROME, weight = px(4)),
+    locations = cells_body(columns = metric, rows = overall_row)
+  ) |>
+  # \u2500\u2500 Closing rule \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  tab_style(
+    style     = cell_borders(sides = "bottom", color = CHROME, weight = px(2)),
+    locations = cells_body(rows = last_row)
+  ) |>
+  tab_style(
+    style     = cell_text(color = CHROME_ON, weight = "bold"),
     locations = cells_column_labels()
   ) |>
   tab_source_note(
     source_note = md(
-      "Scores range 0\u2013100; higher is better. Rankings among all U.S. states and territories with available data. Puerto Rico may show \u2014 for PUMS-sourced indices."
+      paste0(
+        "Scores range 0\u2013100; higher is better. **Diff** is ", state_name,
+        " minus the US average. Rankings among all U.S. states and territories ",
+        "with available data. Tier follows rank, not score, so a state can beat ",
+        "the US average and still rank below the midpoint when the distribution ",
+        "is skewed. Puerto Rico may show \u2014 for PUMS-sourced indices."
+      )
     )
   ) |>
   tab_options(
     table.width                        = pct(100),
     table.font.names                   = c("EB Garamond", "Georgia", "serif"),
-    table.font.size                    = px(15),
-    data_row.padding                   = px(6),
+    table.font.size                    = px(16),
+    data_row.padding                   = px(8),
     column_labels.font.weight          = "bold",
-    column_labels.background.color     = "#1a1a1a",
-    column_labels.padding              = px(10),
-    table.border.top.color             = "#1a1a1a",
+    column_labels.font.size            = px(15),
+    column_labels.background.color     = CHROME,
+    column_labels.padding              = px(15),
+    column_labels.padding.horizontal   = px(10),
+    table.border.top.color             = CHROME,
     table.border.top.width             = px(2),
-    table_body.border.bottom.color     = "#dde2ea",
-    table_body.hlines.color            = "#eaecf0",
-    row.striping.background_color      = "#fafbfc",
-    source_notes.font.size             = px(12),
-    source_notes.background.color      = "#f8f8fc"
-  ) |>
-  opt_row_striping()
+    table.border.bottom.style          = "none",
+    table_body.border.top.style        = "none",
+    table_body.border.bottom.style     = "none",
+    table_body.hlines.color            = "#f2ece4",
+    source_notes.font.size             = px(12.5),
+    source_notes.background.color      = "#ffffff"
+  )
 ```
 :::
 
@@ -720,10 +1156,7 @@ tbl_df |>
   `r year_label` Data &nbsp;·&nbsp;
   Scores range 0–100; higher is better. &nbsp;·&nbsp;
   Rankings among `r n_ranked` U.S. states and territories. &nbsp;·&nbsp;
-  Rank tiers: <strong>Excellent</strong> (1–13) &nbsp;·&nbsp;
-  <strong>Above Average</strong> (14–26) &nbsp;·&nbsp;
-  <strong>Below Average</strong> (27–39) &nbsp;·&nbsp;
-  <strong>Poor</strong> (40–52).
+  Rank tiers: `r rank_band_note()`.
 </p>
 
 :::

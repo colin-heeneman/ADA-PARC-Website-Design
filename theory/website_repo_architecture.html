@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADA-PARC Website. Repository Architecture Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#7B1A1A; --maroon-dark:#591313; --gold:#B8860B; --gold-soft:#C9A227;
+    --ink:#1a1a1a; --paper:#ffffff; --panel:#faf8f5; --line:#e6ddd2;
+    --data:#5a3d2b; --entry:#7B1A1A; --render:#8a5a00; --deploy:#1f5c34;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'EB Garamond',Garamond,Georgia,serif;color:var(--ink);background:var(--paper);font-size:19px;line-height:1.6;}
+  .wrap{max-width:1000px;margin:0 auto;padding:2.5rem 1.5rem 4rem;}
+  header.mast{border-bottom:4px solid var(--maroon);padding-bottom:1.3rem;margin-bottom:1.8rem;}
+  .eyebrow{font-size:16px;letter-spacing:0.09em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.3rem;}
+  h1{font-size:2.5rem;line-height:1.15;color:var(--maroon);font-weight:800;margin-bottom:0.4rem;}
+  .meta{font-size:17px;color:#4a4a4a;}
+  .lede{font-size:20px;background:var(--panel);border-left:5px solid var(--gold);padding:1rem 1.3rem;border-radius:0 8px 8px 0;margin:1.4rem 0 2rem;}
+  h2{font-size:1.85rem;color:var(--maroon);font-weight:700;margin:2.6rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:2px solid var(--gold-soft);}
+  h3{font-size:1.3rem;color:var(--maroon-dark);font-weight:700;margin:1.4rem 0 0.4rem;}
+  p{margin:0.5rem 0;}
+  code,.path{font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:15.5px;background:#f0ece5;color:var(--maroon-dark);padding:0.08rem 0.35rem;border-radius:4px;}
+
+  .flow{display:flex;flex-wrap:wrap;gap:0;align-items:stretch;margin:1.5rem 0 0.5rem;}
+  .stage{flex:1 1 0;min-width:150px;border-radius:10px;color:#fff;padding:1rem 0.9rem;}
+  .stage h4{font-size:1.15rem;font-weight:700;margin-bottom:0.2rem;color:#fff;}
+  .stage .tag{font-size:14px;letter-spacing:0.05em;text-transform:uppercase;opacity:0.9;display:block;margin-bottom:0.5rem;}
+  .stage ul{list-style:none;margin:0;padding:0;}
+  .stage li{font-size:16px;margin-bottom:0.3rem;line-height:1.35;}
+  .stage .file{font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:13.5px;background:rgba(255,255,255,0.16);padding:0.05rem 0.3rem;border-radius:3px;}
+  .s-data{background:var(--data);}
+  .s-entry{background:var(--entry);}
+  .s-render{background:var(--render);}
+  .s-deploy{background:var(--deploy);}
+  .arrow{display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--gold);font-weight:800;padding:0 0.35rem;flex:0 0 auto;}
+  @media (max-width:820px){ .flow{flex-direction:column;} .arrow{transform:rotate(90deg);padding:0.35rem 0;} }
+
+  table{width:100%;border-collapse:collapse;margin:0.8rem 0 0.4rem;font-size:17px;background:var(--paper);}
+  caption{text-align:left;font-weight:700;color:var(--maroon-dark);font-size:1.05rem;padding:0.4rem 0;}
+  th,td{text-align:left;padding:0.55rem 0.7rem;border-bottom:1px solid var(--line);vertical-align:top;}
+  thead th{background:var(--maroon);color:#fff;font-weight:600;font-size:16px;}
+  tbody tr:nth-child(even){background:var(--panel);}
+  td:first-child{white-space:nowrap;}
+
+  .note{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.3rem;margin:1rem 0;}
+  .note h3{margin-top:0;}
+  ul.plain{margin:0.4rem 0 0.4rem 1.3rem;}
+  ul.plain li{margin-bottom:0.4rem;}
+  .callout{border-left:5px solid var(--maroon);background:#fbf3f3;padding:0.9rem 1.2rem;border-radius:0 8px 8px 0;margin:1rem 0;font-size:18px;}
+  .legend{display:flex;flex-wrap:wrap;gap:0.6rem 1.4rem;margin:0.6rem 0 0;font-size:16px;}
+  .legend span{display:inline-flex;align-items:center;gap:0.4rem;}
+  .sw{width:16px;height:16px;border-radius:4px;display:inline-block;}
+  footer.foot{margin-top:3rem;padding-top:1.1rem;border-top:3px solid var(--maroon);font-size:16px;color:#4a4a4a;text-align:center;}
+  a{color:var(--maroon);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">ADA-PARC. Repository Architecture Map</p>
+  <h1>Website Design Repository</h1>
+  <p class="meta">A guide to <span class="path">ADA-PARC-Website-Design</span>. What renders the site, how the pages fit together, and where the data comes from. Prepared 20 July 2026.</p>
+</header>
+
+<p class="lede">This repository is the public website. It is an R and Quarto project that renders an interactive Shiny dashboard of disability outcomes for the United States. One document, <span class="path">ADA_PARC.Rmd</span>, is the whole application. It reads finished datasets produced by the data pipeline repo, then presents them as maps, tables, scorecards, and factsheets, and deploys to shinyapps.io.</p>
+
+<p>The mental model to hold onto is a storefront rather than a factory. The hard work of gathering and shaping data happens in a separate repository, the data pipeline. This repository receives the finished datasets and is concerned only with presentation. That means the questions a maintainer answers here are about how information looks and behaves for a member of the public. How does a map read at a glance, how does a table stay legible on a phone, how does a keyboard user move between tabs, how does the brand feel consistent from page to page. Understanding that division of labor prevents a common mistake, which is trying to fix a data problem by editing the website. If a number is wrong, the fix almost always belongs upstream in the pipeline.</p>
+
+<p>This document is written to be handed to whoever leads the website next. It explains not only where files live but why the site is built as a single flexdashboard document, so a new maintainer can extend it confidently.</p>
+
+<h2>The render flow at a glance</h2>
+<p>Prepared data enters from the pipeline. The flexdashboard app renders it live in a Shiny runtime. Scorecards and factsheets render from their own Quarto documents. The whole thing deploys to shinyapps.io. The word render is worth pausing on, because it explains a lot about how the site behaves. Much of the page is not a static file sitting on a server. It is produced on demand when a visitor interacts with a control, which is what makes the maps and tables respond to a dropdown selection. That interactivity is powerful, but it also means the running app depends on a live R session on shinyapps.io, and that some outputs such as the scorecards are generated at run time rather than served from a saved copy.</p>
+
+<div class="flow">
+  <div class="stage s-data">
+    <span class="tag">1. Data in</span>
+    <h4>Finished datasets</h4>
+    <ul>
+      <li>Five Rds files from the pipeline</li>
+      <li><span class="file">data/final/</span></li>
+      <li>Dictionary <span class="file">data/dict_vars.csv</span></li>
+    </ul>
+  </div>
+  <div class="arrow" aria-hidden="true">&#8594;</div>
+  <div class="stage s-entry">
+    <span class="tag">2. App</span>
+    <h4>The dashboard</h4>
+    <ul>
+      <li>Flexdashboard plus Shiny runtime</li>
+      <li><span class="file">ADA_PARC.Rmd</span></li>
+      <li>Logic in <span class="file">scripts/functions.R</span></li>
+    </ul>
+  </div>
+  <div class="arrow" aria-hidden="true">&#8594;</div>
+  <div class="stage s-render">
+    <span class="tag">3. Render</span>
+    <h4>Pages and reports</h4>
+    <ul>
+      <li>Scorecards from <span class="file">scorecard/*.qmd</span></li>
+      <li>Factsheets from <span class="file">factsheets/</span></li>
+      <li>Topic download from <span class="file">national/</span></li>
+    </ul>
+  </div>
+  <div class="arrow" aria-hidden="true">&#8594;</div>
+  <div class="stage s-deploy">
+    <span class="tag">4. Deploy</span>
+    <h4>Live site</h4>
+    <ul>
+      <li>Published to shinyapps.io</li>
+      <li>Config in <span class="file">rsconnect/</span></li>
+      <li>Environment locked by <span class="file">renv.lock</span></li>
+    </ul>
+  </div>
+</div>
+<div class="legend" aria-hidden="true">
+  <span><span class="sw" style="background:var(--data)"></span>Data in</span>
+  <span><span class="sw" style="background:var(--entry)"></span>App</span>
+  <span><span class="sw" style="background:var(--render)"></span>Render</span>
+  <span><span class="sw" style="background:var(--deploy)"></span>Deploy</span>
+</div>
+
+<div class="callout">
+  <strong>Where the data comes from.</strong> The five datasets in <span class="path">data/final/</span> (<span class="path">national_data.Rds</span>, <span class="path">tracts_data.Rds</span>, <span class="path">tracts_sf.Rds</span>, <span class="path">city_place_full.Rds</span>, <span class="path">dict_location_crosswalk.Rds</span>) are not built here. They are produced by the <span class="path">ADAPARCDataPipeline</span> repo and copied in. This repo consumes data. It does not download or transform it.
+</div>
+
+<h2>The application entry point</h2>
+<p>A single flexdashboard document defines every page. It runs a Shiny runtime so maps and tables respond to user input. Concentrating the whole application in one file is unusual for a large site, and it is worth understanding the tradeoff. The benefit is that there is exactly one place to look, and the flow of the site reads in order from top to bottom. The cost is that the file is long and dense, so the practical way to work in it is to navigate by page and by the code chunk that builds each output, rather than reading it start to finish. Shared logic that would otherwise bloat the document is pulled out into <span class="path">scripts/functions.R</span>, which is why that file is the second place to look when tracing how a map or table is built.</p>
+<table>
+  <caption>ADA_PARC.Rmd at a glance</caption>
+  <thead><tr><th>Element</th><th>Detail</th></tr></thead>
+  <tbody>
+    <tr><td>Format</td><td>flexdashboard, row orientation, <span class="path">runtime: shiny</span>, yeti theme.</td></tr>
+    <tr><td>Head include</td><td><span class="path">www/cssloaders.html</span> for the font, skip link, ARIA tab behavior, and loading spinners.</td></tr>
+    <tr><td>Styles</td><td><span class="path">www/styles.css</span>, the canonical source for EB Garamond and design tokens.</td></tr>
+    <tr><td>Pages</td><td>Home, National Data, City Data, Scorecards, Fact Sheets, Help.</td></tr>
+    <tr><td>Declared resources</td><td>A <span class="path">resource_files</span> manifest lists every dataset, script, image, and stylesheet the deploy needs.</td></tr>
+  </tbody>
+</table>
+
+<h2>Folder by folder</h2>
+<p>The layout separates four concerns. The application itself and its shared logic sit at the top. Data lives under <span class="path">data/</span>. The three render subsystems that produce standalone documents (scorecards, factsheets, and the national topic download) each have their own folder so their Quarto sources and assets stay self contained. Everything the browser loads directly, from stylesheets to images to finished PDF reports, sits under <span class="path">www/</span>, which is the conventional home for web assets in a Shiny app. Reading the table below with those four groupings in mind makes the structure easier to remember.</p>
+<table>
+  <thead><tr><th>Path</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td><span class="path">ADA_PARC.Rmd</span></td><td>The entire application. Defines all pages, maps, tables, inputs, and downloads.</td></tr>
+    <tr><td><span class="path">scripts/functions.R</span></td><td>Shared functions used across the app (map, chart, and table builders).</td></tr>
+    <tr><td><span class="path">data/final/</span></td><td>The five prepared Rds datasets from the pipeline. The app reads these.</td></tr>
+    <tr><td><span class="path">data/dict_vars.csv</span></td><td>Front end dictionary. Variable labels and the text that describes indicators on maps, charts, and tables.</td></tr>
+    <tr><td><span class="path">scorecard/</span></td><td>Scorecard render layer. <span class="path">state_scorecard.qmd</span> and <span class="path">category_scorecard.qmd</span>, their CSS, the index and indicator dictionaries, and scorecard data. Rendered at runtime.</td></tr>
+    <tr><td><span class="path">factsheets/</span></td><td>Factsheet system. <span class="path">_generate/generate-factsheets.qmd</span> builds the four topic factsheets from content, assets, and data.</td></tr>
+    <tr><td><span class="path">national/</span></td><td><span class="path">national_topic.qmd</span>, the branded single topic download (map plus data table).</td></tr>
+    <tr><td><span class="path">www/</span></td><td>Web assets. <span class="path">styles.css</span>, <span class="path">cssloaders.html</span>, the logo, images, deployed factsheet HTML and PDFs, and the scorecard report PDF.</td></tr>
+    <tr><td><span class="path">rsconnect/</span></td><td>shinyapps.io deployment records.</td></tr>
+    <tr><td><span class="path">renv.lock</span> + <span class="path">renv/</span></td><td>Locked package versions for a reproducible environment.</td></tr>
+  </tbody>
+</table>
+
+<h2>The styling and accessibility layer</h2>
+<p>Two files carry the brand and the accessibility behavior for the whole site, and they are worth treating as first class parts of the architecture rather than afterthoughts. Accessibility is a core commitment of this project, not a finishing touch, so a good deal of care lives in these two files. The pattern to understand is that flexdashboard does not provide several things a fully accessible site needs, so the site adds them. A skip to content link, an explicit document language, and proper tab semantics with keyboard navigation are all injected by the code in <span class="path">cssloaders.html</span>. When you change the navigation or add a page, it is worth confirming these behaviors still work, since they are layered on top of the framework rather than built into it.</p>
+<table>
+  <thead><tr><th>File</th><th>What it provides</th></tr></thead>
+  <tbody>
+    <tr><td><span class="path">www/styles.css</span></td><td>Canonical EB Garamond load, design tokens, typography, table styling, focus rings, navbar and button colors, footer.</td></tr>
+    <tr><td><span class="path">www/cssloaders.html</span></td><td>Font preconnect, a skip to content link, a document language setting, the full WAI-ARIA tabs pattern with arrow key navigation, reduced motion support, and loading spinners.</td></tr>
+  </tbody>
+</table>
+
+<h2>How to update and deploy</h2>
+<p>Updates fall into two kinds, and it helps to know which kind you are making before you start. A data update changes the numbers and originates upstream in the pipeline, after which the refreshed datasets are copied into <span class="path">data/final/</span> here. A presentation update changes how the site looks or behaves and happens entirely within this repository. The environment is pinned by <span class="path">renv.lock</span>, so a new maintainer should restore the locked packages first to match what the deployed site runs. The steps below cover the normal cycle.</p>
+<ul class="plain">
+  <li>Refresh data upstream. Run the pipeline in <span class="path">ADAPARCDataPipeline</span>, then copy the five final Rds files into <span class="path">data/final/</span> here.</li>
+  <li>Edit the app in <span class="path">ADA_PARC.Rmd</span> and shared logic in <span class="path">scripts/functions.R</span>.</li>
+  <li>Adjust look and behavior in <span class="path">www/styles.css</span> and <span class="path">www/cssloaders.html</span>.</li>
+  <li>Deploy to shinyapps.io. Note that scorecards render at runtime, so a redeploy alone does not always refresh a committed scorecard HTML. Verify the fresh render.</li>
+</ul>
+
+<footer class="foot">
+  ADA-PARC Website Repository Architecture Map. Generated 20 July 2026. Companion to the Data Pipeline Architecture Map.
+</footer>
+
+</div>
+</body>
+</html>

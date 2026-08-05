@@ -1,0 +1,2435 @@
+---
+title: "ADA-PARC National Factsheets: Reproducible Generator"
+author: "ADA-PARC"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    theme: cosmo
+    self-contained: true
+    css: assets/factsheet-base.css
+execute:
+  echo: true
+  warning: false
+  message: false
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup}
+#| label: setup
+library(dplyr)
+library(here)
+library(stringr)
+library(yaml)
+
+source(here::here("factsheets", "_generate", "R", "factsheet-functions.R"))
+
+# Editable intro text + citations for every factsheet. The prose is edited in
+# docs/factsheet-prose.docx and converted into content/factsheet-content.yml by
+# scripts/prose_docx_to_yml.R; the YAML is a generated file, not a source one.
+# Everything else (maps, tables, tiers) is computed from the live pipeline data.
+content <- fs_load_content()
+
+# Output directory for regenerated factsheets. Writes to a PREVIEW folder so the
+# original /factsheets/*.html files stay untouched for side-by-side comparison.
+out_dir <- here::here("factsheets", "_generate", "_preview")
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+```
+
+# Purpose
+
+This document builds the ADA-PARC national factsheets as HTML files in a
+reproducible, source-controlled generator. Rendering it (a) writes factsheet
+HTML into `_preview/` and (b) produces this validation report. Reviewed files
+are promoted to `www/factsheets/` with `scripts/promote_factsheets.R`; nothing
+here writes to the published directory.
+
+Four of the sheets were originally reverse-engineered from hand-built PDFs
+published in September 2025 from the **2019–2023 ACS 5-year** vintage (and, for
+HCBS, a CMS/Mathematica LTSS spreadsheet). The data now in the pipeline
+(`data/final/national_data.Rds`) is a later vintage, so regenerated values
+differ from the published snapshot. This is the intended behavior for future
+updates: bump the source data and regenerate.
+
+**Living in Community** and **Living in Institution** are new, built for the
+revised ten-sheet structure. Living in Institution absorbs and replaces the
+September 2025 nursing home sheet, and corrects its denominator; see the note
+under Community Living below, and `docs/factsheets_audit.qmd` for the wider
+plan.
+
+## Methodology
+
+Tiers are equal-count quartiles via `quantile(type = 7)` + `findInterval`, with
+per-indicator direction:
+
+| Factsheet             | Indicator(s)                                  | Direction        | Scale       |
+|-----------------------|-----------------------------------------------|------------------|-------------|
+| Living in Community   | % PWD in the community; at home               | high = Excellent | single      |
+| Living in Community   | % PWD in non-institutional group quarters     | magnitude only   | single      |
+| Living in Institution | % PWD institutional; nursing; correctional    | low = Excellent  | single      |
+| HCBS                  | community-living spending per recipient       | high = Excellent | single      |
+| Housing               | % HoH w/ disability (PH; HCV)                 | high = Excellent | per-map     |
+| Poverty               | % below poverty (PWD; no-dis)                 | low = Excellent  | pooled pair |
+
+"Magnitude only" means the map keeps the four-color sequential ramp but drops
+the Excellent/Poor labeling, because the indicator has no defensible better or
+worse direction. See `FS_TIER_LABELS_MAGNITUDE` in `R/factsheet-functions.R`.
+
+Scope is 50 states + DC (USA and Puerto Rico excluded).
+
+```{r load-data}
+#| label: load-data
+national <- readRDS(here::here("data", "final", "national_data.Rds"))
+
+# 50 states + DC, ordered for joins.
+states_df <- national |>
+  filter(!ABBR %in% c("USA", "PR")) |>
+  mutate(fips = unname(FS_ABBR_TO_FIPS[ABBR]))
+
+stopifnot(nrow(states_df) == 51, all(!is.na(states_df$fips)))
+acs_year <- unique(national$year)
+acs_year
+```
+
+# Community Living: shared derived measures
+
+Every Community Living measure is calculated against the same denominator, the
+total population with a disability (`pop_grp_total_dis`), so the residence
+categories form an exact partition:
+
+$$\text{living at home} + \text{non-institutional group quarters} + \text{institutional} = 100\%$$
+
+and the institutional share decomposes again into nursing and medical
+facilities, adult correctional facilities, and a small residual covering
+settings such as psychiatric hospitals and juvenile facilities.
+
+That matters for two reasons. First, the institutional total has **no variable
+of its own** in `dict_vars.csv`; the row that should hold it has a populated
+`var_pretty` and a blank `var_readable`. Deriving it as the residual gives an
+exact figure with no pipeline change. Second, it makes the two Community Living
+sheets exact complements of one another, which is what lets *Living in
+Community* and *Living in Institution* be read together.
+
+`fs_cl_measures()` performs the derivation and refuses to return if the
+partition does not hold, so a future vintage with changed variable definitions
+fails at build time rather than publishing a decomposition that does not add up.
+
+## A note on the nursing home denominator
+
+The nursing home fact sheet published in September 2025, which *Living in
+Institution* replaces, calculated its rate as
+`pop_grp_nursing_18to64_dis / pop_cni_18to64_all`. That denominator is the
+civilian **noninstitutional** population, which excludes the people counted in
+the numerator, and it does not match the definition the sheet itself described
+("state percentages for working-age people with disabilities"). It produced
+rates around 0.14% where the correct base gives around 1.13%, and because the
+two series correlate only at 0.83, tier assignments differ as well.
+
+The sheets below use the total population with a disability throughout. This is
+a deliberate correction. It is documented internally, in `docs/factsheets_audit.qmd`
+and in `factsheets/old/retired-2026-07-28/README.md`, rather than on the sheet;
+the client asked for the explanatory box to come off the published version.
+
+```{r cl-data}
+#| label: cl-data
+cl <- states_df |>
+  fs_cl_measures() |>
+  mutate(
+    name = NAME,
+    cl_community_n_dis = pop_grp_home_dis + pop_grp_noninstgroupquarters_total_dis,
+    # Direction per indicator. Non-institutional group quarters is deliberately
+    # "magnitude" rather than high_good: the Census category mixes group homes
+    # and supported living with emergency shelters and college dormitories, so
+    # neither end of the range is a better outcome. Its map keeps the same
+    # sequential color ramp but drops the Excellent/Poor labeling.
+    tier_community   = fs_assign_tiers(cl_community_dis,   "high_good"),
+    tier_home        = fs_assign_tiers(cl_home_dis,        "high_good"),
+    tier_nonintgq    = fs_assign_tiers(cl_nonintgq_dis,    "magnitude"),
+    tier_inst        = fs_assign_tiers(cl_inst_dis,        "low_good"),
+    tier_nursing     = fs_assign_tiers(cl_nursing_dis,     "low_good"),
+    tier_corrections = fs_assign_tiers(cl_corrections_dis, "low_good")
+  )
+
+# Population-weighted national shares. The introductions in
+# docs/factsheet-prose.docx quote these figures as typed text, so they must be
+# checked against this output whenever the data vintage changes.
+cl_national <- tibble::tibble(
+  measure = c("Living at home", "Non-institutional group quarters",
+              "Living in community", "Living in an institution",
+              "  nursing / medical facility", "  correctional facility",
+              "  other institutional"),
+  pwd = c(
+    sum(cl$pop_grp_home_dis), sum(cl$pop_grp_noninstgroupquarters_total_dis),
+    sum(cl$cl_community_n_dis), sum(cl$cl_inst_n_dis),
+    sum(cl$cl_nursing_n_dis), sum(cl$pop_grp_corrections_total_dis),
+    sum(cl$cl_other_inst_n_dis)) / sum(cl$pop_grp_total_dis) * 100,
+  no_disability = c(
+    sum(cl$pop_grp_home_nodis), sum(cl$pop_grp_noninstgroupquarters_total_nodis),
+    sum(cl$pop_grp_home_nodis) + sum(cl$pop_grp_noninstgroupquarters_total_nodis),
+    sum(cl$cl_inst_n_nodis), sum(cl$cl_nursing_n_nodis),
+    sum(cl$pop_grp_corrections_total_nodis),
+    sum(cl$cl_other_inst_n_nodis)) / sum(cl$pop_grp_total_nodis) * 100)
+
+cl_national |> mutate(across(where(is.numeric), \(x) round(x, 2)))
+```
+
+# Living in Community factsheet
+
+Two mapped sections plus a combined headline. Directions: community share and
+living at home are high-is-better; non-institutional group quarters is shown by
+magnitude with no performance claim.
+
+```{r lic-build}
+#| label: lic-build
+build_living_community <- function(cl, acs_year, cfg) {
+
+  specs <- list(
+    list(
+      id = "lic-combined", heading = NULL,
+      map_title     = "People with Disabilities Living in the Community, by State",
+      table_heading = "People with Disabilities Living in the Community, by State",
+      value_col = "cl_community_dis", tier_col = "tier_community",
+      direction = "high_good",
+      value_label = "Community living rate",
+      svg_title = "People with disabilities living in the community, by U.S. state",
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the highest share of people with disabilities ",
+        "living in the community; lighter gold (Poor) marks the lowest. Full ",
+        "data is in the tables below."),
+      legend_best = "most community living", legend_worst = "least community living",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the most favorable outcomes (Excellent), here the ",
+        "highest share of people with disabilities living in the community. ",
+        "<em>Lighter gold</em> marks the least favorable outcomes (Poor)."),
+      caption = paste0(
+        "Darker maroon = a higher percentage of people with disabilities living ",
+        "in the community, at home or in non-institutional group quarters (better). ",
+        "Source: U.S. Census Bureau, American Community Survey 5-year estimates (",
+        acs_year - 4, "&ndash;", acs_year, ")."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("cl_community_dis", "cl_community_n_dis"),
+      cell_fmts = list(function(x) fmt_pct(x, 1), fmt_count),
+      table_note = paste0(
+        "Excellent = the largest share living in the community. Poor = the ",
+        "smallest share, meaning more people living in institutions."),
+      lead = cfg$community_combined_lead),
+
+    list(
+      id = "lic-home", heading = "Living at Home",
+      map_title     = "People with Disabilities Living at Home, by State",
+      table_heading = "People with Disabilities Living at Home, by State",
+      value_col = "cl_home_dis", tier_col = "tier_home",
+      direction = "high_good",
+      value_label = "Living at home rate",
+      svg_title = "People with disabilities living at home, by U.S. state",
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the highest share of people with disabilities ",
+        "living at home; lighter gold (Poor) marks the lowest."),
+      legend_best = "highest share at home", legend_worst = "lowest share at home",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the highest share of people with disabilities living ",
+        "at home. <em>Lighter gold</em> marks the lowest."),
+      caption = paste0(
+        "Darker maroon = a higher percentage of people with disabilities living ",
+        "in a house or apartment rather than any group setting (better). Source: ",
+        "U.S. Census Bureau, American Community Survey 5-year estimates (",
+        acs_year - 4, "&ndash;", acs_year, ")."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("cl_home_dis", "pop_grp_home_dis"),
+      cell_fmts = list(function(x) fmt_pct(x, 1), fmt_count),
+      lead = cfg$home_lead),
+
+    list(
+      id = "lic-gq", heading = "Non-Institutional Group Quarters",
+      map_title     = "People with Disabilities Living in Non-Institutional Group Quarters, by State",
+      table_heading = "People with Disabilities Living in Non-Institutional Group Quarters, by State",
+      value_col = "cl_nonintgq_dis", tier_col = "tier_nonintgq",
+      direction = "magnitude",
+      value_label = "Non-institutional group quarters rate",
+      svg_title = paste0("People with disabilities living in non-institutional ",
+                         "group quarters, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by size of share, not by ",
+        "performance. Darker maroon marks the largest shares living in ",
+        "non-institutional group quarters; lighter gold marks the smallest. ",
+        "This category mixes supported community living with emergency housing, ",
+        "so neither end is a better outcome."),
+      direction_note = paste0(
+        "This map is shaded by <strong>how large the share is</strong>, not by ",
+        "performance. Non-institutional group quarters covers group homes and ",
+        "supported living alongside emergency shelters and college dormitories, ",
+        "so a higher percentage is not straightforwardly better or worse. ",
+        "<em>Darker maroon</em> marks the largest shares, <em>lighter gold</em> ",
+        "the smallest."),
+      caption = paste0(
+        "Darker maroon = a larger percentage of people with disabilities living ",
+        "in non-institutional group quarters. This map carries no performance ",
+        "judgment; read it alongside the other two measures. Source: U.S. Census ",
+        "Bureau, American Community Survey 5-year estimates (",
+        acs_year - 4, "&ndash;", acs_year, ")."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("cl_nonintgq_dis", "pop_grp_noninstgroupquarters_total_dis"),
+      cell_fmts = list(function(x) fmt_pct(x, 1), fmt_count),
+      lead = cfg$nonintgq_lead)
+  )
+
+  built    <- lapply(specs, fs_indicator_section, data = cl)
+  sections <- paste(vapply(built, `[[`, character(1), "html"), collapse = "\n")
+  map_js   <- paste(vapply(built, `[[`, character(1), "js"),   collapse = "\n\n")
+
+  # Disabled / non-disabled comparison on the headline measure.
+  ord <- order(cl$name)
+  compare <- fs_compare_table(
+    caption = "Living in the community, by state",
+    aria_label = paste0("Percentage living in the community, people with ",
+                        "disabilities compared with people without disabilities"),
+    names = cl$name[ord],
+    dis   = cl$cl_community_dis[ord],
+    nod   = cl$cl_community_nodis[ord])
+
+  head_html <- fs_html_head(
+    title = "Living in Community | ADA-PARC Factsheet",
+    description = paste0(
+      "ADA-PARC factsheet on the share of people with disabilities living in ",
+      "the community, at home or in non-institutional group quarters, with ",
+      "state-by-state data."),
+    extra_css = "")
+
+  header_html <- fs_header("Living in Community", "Community Living")
+
+  main_html <- paste0(
+'
+', fs_population_note(
+  "People with a disability of any age, in every type of residence",
+  paste0("Shares are taken over the total population with a disability, which ",
+         "includes people living in institutions, so the community and ",
+         "institutional shares on this sheet and on <em>Living in ",
+         "Institution</em> are on the same base and sum to 100 percent.")), '
+', fs_intro(cfg$intro, acs_year = acs_year), '
+
+', sections, '
+
+    <h2 class="section-heading">Community Living, With and Without Disability</h2>
+    <p>The same measure for both populations, listed alphabetically, so the gap in each state is visible directly.</p>
+
+', compare, '
+
+', fs_footnotes(cfg$footnotes, acs_year = acs_year), '
+')
+
+  fs_write_file(
+    path = file.path(out_dir, "factsheet-living-community.html"),
+    head_html = head_html, header_html = header_html,
+    main_html = main_html, footer_html = fs_footer(),
+    scripts_html = fs_scripts(map_js))
+}
+
+lic_path <- build_living_community(cl, acs_year, content$living_community)
+lic_path
+```
+
+```{r lic-validate}
+#| label: lic-validate
+#| echo: false
+cat("Wrote:", lic_path, "\n")
+cat("File size:", file.info(lic_path)$size, "bytes\n\n")
+cat("Tier counts (", acs_year, " vintage):\n", sep = "")
+print(cl |> count(tier_community, name = "community"))
+print(cl |> count(tier_home, name = "home"))
+print(cl |> count(tier_nonintgq, name = "non_inst_gq"))
+```
+
+# Living in Institution factsheet
+
+Three mapped sections, all low-is-better and all on the common base, plus a
+supplementary age table that is explicitly flagged as using different
+denominators. Absorbs and replaces the September 2025 nursing home sheet.
+
+This sheet has no *About These Data* box. One was drafted to explain the
+denominator correction, and the client asked for it to come off the published
+version, so the correction is documented in `docs/factsheets_audit.qmd` and
+`factsheets/old/retired-2026-07-28/README.md` instead. Re-adding it means
+restoring the `About These Data` section under the Living in Institution heading
+in `docs/factsheet-prose.docx` and putting `fs_about(cfg$about)` back below the
+age table.
+
+```{r lii-build}
+#| label: lii-build
+build_living_institution <- function(cl, acs_year, cfg) {
+
+  specs <- list(
+    list(
+      id = "lii-combined", heading = NULL,
+      map_title     = "People with Disabilities Living in an Institution, by State",
+      table_heading = "People with Disabilities Living in an Institution, by State",
+      value_col = "cl_inst_dis", tier_col = "tier_inst",
+      direction = "low_good",
+      value_label = "Institutional rate",
+      svg_title = "People with disabilities living in an institution, by U.S. state",
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the lowest share of people with disabilities ",
+        "living in an institution; lighter gold (Poor) marks the highest. Full ",
+        "data is in the tables below."),
+      legend_best = "lowest rate", legend_worst = "highest rate",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the most favorable outcomes (Excellent), here the ",
+        "lowest rates of institutionalization and the most community living. ",
+        "<em>Lighter gold</em> marks the least favorable outcomes (Poor)."),
+      caption = paste0(
+        "Darker maroon = a lower percentage of people with disabilities living ",
+        "in an institution (better). Institutional settings are nursing and ",
+        "medical facilities, adult correctional facilities, and a small residual ",
+        "including psychiatric hospitals. Source: U.S. Census Bureau, American ",
+        "Community Survey 5-year estimates (", acs_year - 4, "&ndash;", acs_year, ")."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("cl_inst_dis", "cl_inst_n_dis"),
+      cell_fmts = list(function(x) fmt_pct(x, 1), fmt_count),
+      table_note = paste0(
+        "Excellent = fewest people in institutions (more community living). ",
+        "Poor = most people in institutions (less community living)."),
+      lead = cfg$inst_combined_lead),
+
+    list(
+      id = "lii-nursing", heading = "Nursing Homes and Medical Facilities",
+      map_title     = "People with Disabilities Living in Nursing Homes and Medical Facilities, by State",
+      table_heading = "People with Disabilities Living in Nursing Homes and Medical Facilities, by State",
+      value_col = "cl_nursing_dis", tier_col = "tier_nursing",
+      direction = "low_good",
+      value_label = "Nursing home rate",
+      svg_title = paste0("People with disabilities living in nursing homes and ",
+                         "medical facilities, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the lowest nursing home rates; lighter gold ",
+        "(Poor) marks the highest."),
+      legend_best = "lowest rate", legend_worst = "highest rate",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the lowest share of people with disabilities living ",
+        "in nursing homes and medical facilities. <em>Lighter gold</em> marks ",
+        "the highest."),
+      caption = paste0(
+        "Darker maroon = a lower percentage of people with disabilities living ",
+        "in a nursing home or other long-term medical facility (better). All ",
+        "ages. Source: U.S. Census Bureau, American Community Survey 5-year ",
+        "estimates (", acs_year - 4, "&ndash;", acs_year, ")."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("cl_nursing_dis", "cl_nursing_n_dis"),
+      cell_fmts = list(function(x) fmt_pct(x, 1), fmt_count),
+      lead = cfg$nursing_lead),
+
+    list(
+      id = "lii-corrections", heading = "Correctional Facilities",
+      map_title     = "People with Disabilities Living in Adult Correctional Facilities, by State",
+      table_heading = "People with Disabilities Living in Adult Correctional Facilities, by State",
+      value_col = "cl_corrections_dis", tier_col = "tier_corrections",
+      direction = "low_good",
+      value_label = "Correctional facility rate",
+      svg_title = paste0("People with disabilities living in adult correctional ",
+                         "facilities, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the lowest share of people with disabilities ",
+        "in adult correctional facilities; lighter gold (Poor) marks the highest."),
+      legend_best = "lowest rate", legend_worst = "highest rate",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the lowest share of people with disabilities living ",
+        "in adult correctional facilities. <em>Lighter gold</em> marks the highest."),
+      caption = paste0(
+        "Darker maroon = a lower percentage of people with disabilities living ",
+        "in an adult correctional facility (better). Source: U.S. Census Bureau, ",
+        "American Community Survey 5-year estimates (",
+        acs_year - 4, "&ndash;", acs_year, ")."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("cl_corrections_dis", "pop_grp_corrections_total_dis"),
+      cell_fmts = list(function(x) fmt_pct(x, 1), fmt_count),
+      lead = cfg$corrections_lead)
+  )
+
+  built    <- lapply(specs, fs_indicator_section, data = cl)
+  sections <- paste(vapply(built, `[[`, character(1), "html"), collapse = "\n")
+  map_js   <- paste(vapply(built, `[[`, character(1), "js"),   collapse = "\n\n")
+
+  ord <- order(cl$name)
+
+  # Disabled / non-disabled comparison on the headline measure.
+  compare <- fs_compare_table(
+    caption = "Living in an institution, by state",
+    aria_label = paste0("Percentage living in an institution, people with ",
+                        "disabilities compared with people without disabilities"),
+    names = cl$name[ord],
+    dis   = cl$cl_inst_dis[ord],
+    nod   = cl$cl_inst_nodis[ord])
+
+  # Supplementary age table. NOTE the different denominators: these two columns
+  # are calculated against the disabled population in their own age band, not
+  # against the total disabled population used everywhere else on this sheet.
+  # They are not additive and not comparable to the maps above. The lead
+  # paragraph says so in the prose; the caption repeats it.
+  age_table <- fs_compare_table(
+    caption = paste0("Nursing home residence by age group, people with ",
+                     "disabilities. Each column uses its own age-group denominator."),
+    aria_label = paste0("Nursing home residence among people with disabilities, ",
+                        "ages 18 to 64 compared with age 65 and over"),
+    names   = cl$name[ord],
+    dis     = cl$pct_grp_dis_18to64_nursing[ord],
+    nod     = cl$pct_grp_dis_65plus_nursing[ord],
+    col_dis = "Ages 18 to 64",
+    col_nod = "Age 65 and Over")
+
+  head_html <- fs_html_head(
+    title = "Living in Institution | ADA-PARC Factsheet",
+    description = paste0(
+      "ADA-PARC factsheet on the share of people with disabilities living in ",
+      "institutions, covering nursing homes and medical facilities and adult ",
+      "correctional facilities, with state-by-state data."),
+    extra_css = "")
+
+  header_html <- fs_header("Living in Institution", "Community Living")
+
+  main_html <- paste0(
+'
+', fs_population_note(
+  "People with a disability of any age, in every type of residence",
+  paste0("Shares are taken over the total population with a disability. The ",
+         "nursing home table at the foot of this sheet is the one exception: ",
+         "it uses age-specific denominators and its figures are therefore not ",
+         "comparable with the mapped shares above.")), '
+', fs_intro(cfg$intro, acs_year = acs_year), '
+
+', sections, '
+
+    <h2 class="section-heading">Institutionalization, With and Without Disability</h2>
+    <p>The same measure for both populations, listed alphabetically, so the disparity in each state is visible directly.</p>
+
+', compare, '
+
+    <h2 class="section-heading">Nursing Home Residence by Age Group</h2>
+
+', paste0("    <p>", unlist(cfg$nursing_by_age_lead), "</p>", collapse = "\n"), '
+
+', age_table, '
+
+', fs_footnotes(cfg$footnotes, acs_year = acs_year), '
+')
+
+  fs_write_file(
+    path = file.path(out_dir, "factsheet-living-institution.html"),
+    head_html = head_html, header_html = header_html,
+    main_html = main_html, footer_html = fs_footer(),
+    scripts_html = fs_scripts(map_js))
+}
+
+lii_path <- build_living_institution(cl, acs_year, content$living_institution)
+lii_path
+```
+
+```{r lii-validate}
+#| label: lii-validate
+#| echo: false
+cat("Wrote:", lii_path, "\n")
+cat("File size:", file.info(lii_path)$size, "bytes\n\n")
+cat("Tier counts (", acs_year, " vintage):\n", sep = "")
+print(cl |> count(tier_inst, name = "institutional"))
+print(cl |> count(tier_nursing, name = "nursing"))
+print(cl |> count(tier_corrections, name = "corrections"))
+
+cat("\nCheck: the two sheets are exact complements.\n")
+cat("max |community + institutional - 100| = ",
+    max(abs(cl$cl_community_dis + cl$cl_inst_dis - 100)), "\n", sep = "")
+
+cat("\nCorrected vs published-basis working-age nursing rate:\n")
+print(cl |>
+  transmute(name,
+            corrected = pct_grp_dis_18to64_nursing,
+            published_basis = pop_grp_nursing_18to64_dis / pop_cni_18to64_all * 100) |>
+  summarise(across(c(corrected, published_basis),
+                   list(min = min, mean = mean, max = max))) |>
+  mutate(across(everything(), \(x) round(x, 3))))
+```
+
+
+# Poverty factsheet
+
+Two maps (with-disability, without-disability) share **one pooled quartile
+scale** computed across both series and all 52 jurisdictions (50 states + DC +
+Puerto Rico). Pooling matches the published methodology and keeps colors
+comparable across the two maps; PR is included in the *scale* so the legend
+spans the real data range, but PR is shown only in the table, never on the
+maps. Direction is `low_good` (lowest poverty = Excellent). Tables are
+alphabetical three-column blocks (split A-M / M-W + PR); a with-disability rate
+above 25% is flagged red.
+
+Variables: `pct_cni_18to64_poverty_dis`, `pct_cni_18to64_poverty_nodis`.
+
+```{r poverty-data}
+#| label: poverty-data
+pr_row <- national |> filter(ABBR == "PR")
+
+pv <- states_df |>
+  transmute(
+    fips, ABBR, name = NAME,
+    dis = pct_cni_18to64_poverty_dis,
+    nod = pct_cni_18to64_poverty_nodis
+  )
+
+# Pooled scale: both series across 51 states + DC + PR.
+pooled <- c(pv$dis, pv$nod,
+            pr_row$pct_cni_18to64_poverty_dis,
+            pr_row$pct_cni_18to64_poverty_nodis)
+pov_breaks <- fs_tier_breaks(pooled)
+
+pv <- pv |>
+  mutate(
+    tier_dis = fs_assign_tiers(dis, "low_good", breaks = pov_breaks),
+    tier_nod = fs_assign_tiers(nod, "low_good", breaks = pov_breaks)
+  )
+
+# Sanity: tier distribution on each map series.
+list(pwd = table(pv$tier_dis, useNA = "ifany"),
+     nod = table(pv$tier_nod, useNA = "ifany"))
+```
+
+```{r poverty-build}
+#| label: poverty-build
+build_poverty <- function(pv, pr_row, pov_breaks, acs_year, cfg) {
+  ranges <- fs_ranges_closed(pov_breaks, digits = 0)
+
+  pr_dis <- pr_row$pct_cni_18to64_poverty_dis
+  pr_nod <- pr_row$pct_cni_18to64_poverty_nodis
+
+  # ---- maps (PR excluded) ----
+  pwd_js <- fs_map_js(
+    obj_name = "POV_PWD", container_id = "map-pwd", desc_id = "pwd-map-desc",
+    data = pv |> filter(!is.na(tier_dis)) |>
+      transmute(fips, tier = tier_dis, display = fmt_pct(dis, 1)),
+    value_label = "Poverty rate (with disability)",
+    svg_title = "Poverty rate among working-age people with disabilities, by U.S. state",
+    svg_desc = paste0("Choropleth of the 50 states and DC shaded by the share of ",
+      "working-age people with disabilities living below the poverty line. ",
+      "Full data is in the table below."))
+
+  nod_js <- fs_map_js(
+    obj_name = "POV_NOD", container_id = "map-nod", desc_id = "nod-map-desc",
+    data = pv |> filter(!is.na(tier_nod)) |>
+      transmute(fips, tier = tier_nod, display = fmt_pct(nod, 1)),
+    value_label = "Poverty rate (no disability)",
+    svg_title = "Poverty rate among working-age people without disabilities, by U.S. state",
+    svg_desc = paste0("Choropleth of the 50 states and DC shaded by the share of ",
+      "working-age people without disabilities living below the poverty line. ",
+      "Full data is in the table below."))
+
+  # ---- alphabetical tables (PR appended to the second half) ----
+  pv_ord <- pv[order(pv$name), ]
+  first  <- pv_ord[1:26, ]
+  second <- pv_ord[27:nrow(pv_ord), ]
+
+  left_table <- fs_poverty_table(
+    caption = "States A-M: Percent below poverty line, ages 18-64",
+    aria_label = "Poverty rates, states A through M",
+    names = first$name, dis = first$dis, nod = first$nod)
+
+  right_table <- fs_poverty_table(
+    caption = "States M-W &amp; Puerto Rico: Percent below poverty line, ages 18-64",
+    aria_label = "Poverty rates, states M through W and Puerto Rico",
+    names = c(second$name, "Puerto Rico"),
+    dis   = c(second$dis, pr_dis),
+    nod   = c(second$nod, pr_nod))
+
+  extra_css <-
+'    .summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.25rem 0; }
+    .summary-stat { background: #f5f7fa; border: 1px solid var(--border); border-radius: 6px; padding: .9rem 1.1rem; text-align: center; }
+    .summary-stat .stat-number { font-size: 2rem; font-weight: 700; color: #c2410c; line-height: 1.1; }
+    .summary-stat .stat-label { font-size: .85rem; color: #4a5a67; margin-top: .25rem; line-height: 1.35; }
+    .maps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+    .map-figure { margin: 0; }
+    .table-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+    .state-table-wrapper { overflow-x: auto; }
+    table caption { font-size: .87rem; font-style: italic; color: #4a5a67; caption-side: top; text-align: left; padding-bottom: .5rem; font-weight: 600; }
+    thead th.disability-col { background: #2e4a64; }
+    td.high-poverty { color: #b91c1c; font-weight: 600; }
+    @media (max-width: 680px) { .maps-grid, .table-columns { grid-template-columns: 1fr; } }
+    @media print { .maps-grid, .table-columns { grid-template-columns: 1fr 1fr; } }'
+
+  head_html <- fs_html_head(
+    title = "Working-Age People Living in Poverty | ADA-PARC Factsheet",
+    description = paste0("ADA-PARC factsheet on poverty rates among working-age ",
+      "people with and without disabilities (ages 18-64), with state-by-state data."),
+    extra_css = extra_css)
+
+  header_html <- fs_header("Poverty", "Work &amp; Economic")
+
+  main_html <- paste0(
+'
+', fs_population_note(
+  "Working-age people, ages 18 to 64",
+  paste0("Poverty among people 65 and over is shaped by Social Security and ",
+         "Medicare rather than by participation in work, so it is not ",
+         "combined with the working-age figures here.")), '
+', fs_intro(cfg$intro, acs_year = acs_year), '
+
+', fs_summary_stats(cfg$summary_stats), '
+
+    <h2 class="section-heading">State Maps</h2>
+    <p>Maps compare poverty rates for working-age people <em>with</em> disabilities (left) and <em>without</em> disabilities (right). Puerto Rico data appears in the table but is not shown on the maps.</p>
+
+    <div class="direction-note" role="note">
+      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the most favorable outcomes (Excellent), here the lowest poverty rates. <em>Lighter gold</em> marks the least favorable outcomes (Poor), the highest rates.
+    </div>
+
+    <div class="map-legend" aria-label="Performance tiers for poverty rate, from Excellent (lowest rate) to Poor (highest rate)" style="margin-bottom:.75rem;">
+      <span style="font-size:.85rem;font-weight:600;color:var(--navy);margin-right:.25rem;">Poverty rate:</span>
+      <span class="tier-chip excellent">Excellent (', ranges[["excellent"]], ')</span>
+      <span class="tier-chip above">Above Average (', ranges[["above"]], ')</span>
+      <span class="tier-chip below">Below Average (', ranges[["below"]], ')</span>
+      <span class="tier-chip poor">Poor (', ranges[["poor"]], ')</span>
+    </div>
+
+    <div class="maps-grid">
+      <figure class="map-figure">
+        <h3 class="map-title" id="pwd-map-heading">Poverty Rate, People <em>with</em> Disabilities</h3>
+        <div id="map-pwd" class="map-container" aria-labelledby="pwd-map-heading pwd-map-desc">
+          <p id="pwd-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+          <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+        </div>
+        <figcaption class="map-caption">Darker maroon = lower poverty rate for working-age people with disabilities (better). Puerto Rico (', fmt_pct(pr_dis, 1), ') is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (', acs_year - 4, '&ndash;', acs_year, ').</figcaption>
+      </figure>
+
+      <figure class="map-figure">
+        <h3 class="map-title" id="nod-map-heading">Poverty Rate, People <em>without</em> Disabilities</h3>
+        <div id="map-nod" class="map-container" aria-labelledby="nod-map-heading nod-map-desc">
+          <p id="nod-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+          <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+        </div>
+        <figcaption class="map-caption">Darker maroon = lower poverty rate for working-age people without disabilities (better). Rates here are notably lower overall than for people with disabilities. Puerto Rico (', fmt_pct(pr_nod, 1), ') is not shown.</figcaption>
+      </figure>
+    </div>
+
+    <h2 class="section-heading">Percent of People (Ages 18&ndash;64) Below the Poverty Line, by State</h2>
+    <p>Disability poverty rates bolded in red indicate states where more than 25% of working-age people with disabilities live below the poverty line.</p>
+
+    <div class="table-columns">
+', left_table, '
+
+', right_table, '
+    </div>
+
+', fs_footnotes(cfg$footnotes, acs_year = acs_year), '
+')
+
+  footer_html  <- fs_footer()
+  scripts_html <- fs_scripts(paste0(pwd_js, "\n\n", nod_js))
+
+  fs_write_file(
+    path = file.path(out_dir, "factsheet-poverty.html"),
+    head_html = head_html, header_html = header_html,
+    main_html = main_html, footer_html = footer_html,
+    scripts_html = scripts_html)
+}
+
+poverty_path <- build_poverty(pv, pr_row, pov_breaks, acs_year, content$poverty)
+poverty_path
+```
+
+```{r poverty-validate}
+#| label: poverty-validate
+#| echo: false
+cat("Wrote:", poverty_path, "\n")
+cat("File size:", file.info(poverty_path)$size, "bytes\n\n")
+cat("Pooled tier breaks (", acs_year, " vintage): ",
+    paste(formatC(pov_breaks, format = "f", digits = 2), collapse = ", "), "\n", sep = "")
+cat("States with disability poverty > 25%: ", sum(pv$dis > 25, na.rm = TRUE), "\n")
+```
+
+# Employment factsheet
+
+Three mapped sections covering the mutually exclusive C18120 categories, plus a
+supplementary table carrying the two rates that use different denominators.
+
+Directions: employed is high-is-better; unemployed and not-in-labor-force are
+both low-is-better. The not-in-labor-force direction is a deliberate editorial
+choice rather than a property of the data. The category mixes study, caregiving
+and early retirement with people who have stopped looking after sustained
+difficulty finding work, so a lower share is not unambiguously better for every
+person it counts. Tiering it low-is-better keeps the sheet internally consistent
+with employed being high-is-better, since the three shares sum to 100, and the
+section lead states the caveat in plain language.
+
+These figures were independently reconciled against a fresh Census API pull of
+C18120 in July 2026 with zero discrepancies across all national, state and place
+records; see `scripts/audit_employment_acs.R` and
+`docs/employment_audit_2026-07-28.html`. `fs_emp_measures()` re-checks the same
+properties at build time.
+
+```{r emp-data}
+#| label: emp-data
+emp <- states_df |>
+  fs_emp_measures() |>
+  mutate(
+    name = NAME,
+    tier_employed   = fs_assign_tiers(emp_employed_dis,   "high_good"),
+    tier_unemployed = fs_assign_tiers(emp_unemployed_dis, "low_good"),
+    tier_notlabor   = fs_assign_tiers(emp_notlabor_dis,   "low_good")
+  )
+
+# Population-weighted national shares. The introduction in
+# docs/factsheet-prose.docx quotes 43 percent, 78 percent, 10.9 percent and
+# 4.8 percent as typed text; check them against this table when the vintage moves.
+emp_national <- tibble::tibble(
+  measure = c("Employed", "Unemployed", "Not in labor force",
+              "In the labor force", "Unemployment rate (of labor force)"),
+  pwd = c(
+    sum(emp$pop_cni_18to64_employed_dis),
+    sum(emp$pop_cni_18to64_unemployed_dis),
+    sum(emp$pop_cni_18to64_notlabor_dis),
+    sum(emp$pop_cni_18to64_employed_dis) + sum(emp$pop_cni_18to64_unemployed_dis),
+    NA) / sum(emp$emp_base_dis) * 100,
+  no_disability = c(
+    sum(emp$pop_cni_18to64_employed_nodis),
+    sum(emp$pop_cni_18to64_unemployed_nodis),
+    sum(emp$pop_cni_18to64_notlabor_nodis),
+    sum(emp$pop_cni_18to64_employed_nodis) + sum(emp$pop_cni_18to64_unemployed_nodis),
+    NA) / sum(emp$emp_base_nodis) * 100)
+
+# The unemployment rate has its own denominator, so it is filled in separately.
+emp_national$pwd[5] <- sum(emp$pop_cni_18to64_unemployed_dis) /
+  (sum(emp$pop_cni_18to64_employed_dis) + sum(emp$pop_cni_18to64_unemployed_dis)) * 100
+emp_national$no_disability[5] <- sum(emp$pop_cni_18to64_unemployed_nodis) /
+  (sum(emp$pop_cni_18to64_employed_nodis) + sum(emp$pop_cni_18to64_unemployed_nodis)) * 100
+
+emp_national |> mutate(across(where(is.numeric), \(x) round(x, 2)))
+```
+
+```{r emp-build}
+#| label: emp-build
+build_employment <- function(emp, acs_year, cfg) {
+
+  pct1 <- function(x) fmt_pct(x, 1)
+
+  specs <- list(
+    list(
+      id = "emp-employed", heading = NULL,
+      map_title     = "People with Disabilities Who Are Employed, by State",
+      table_heading = "People with Disabilities Who Are Employed, by State",
+      value_col = "emp_employed_dis", tier_col = "tier_employed",
+      direction = "high_good",
+      value_label = "Employment rate",
+      svg_title = paste0("Working-age people with disabilities who are employed, ",
+                         "by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the highest share of working-age people with ",
+        "disabilities in work; lighter gold (Poor) marks the lowest. Full data ",
+        "is in the tables below."),
+      legend_best = "highest employment", legend_worst = "lowest employment",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the most favorable outcomes (Excellent), here the ",
+        "highest share of working-age people with disabilities in work. ",
+        "<em>Lighter gold</em> marks the least favorable outcomes (Poor)."),
+      caption = paste0(
+        "Darker maroon = a higher percentage of people with disabilities aged ",
+        "18 to 64 who are employed (better). Source: U.S. Census Bureau, ",
+        "American Community Survey 5-year estimates (",
+        acs_year - 4, "&ndash;", acs_year, "), Table C18120."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("emp_employed_dis", "pop_cni_18to64_employed_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      table_note = paste0(
+        "Excellent = the largest share of working-age people with disabilities ",
+        "in work. Poor = the smallest share."),
+      lead = cfg$employed_lead),
+
+    list(
+      id = "emp-unemployed", heading = "Unemployed",
+      map_title     = "People with Disabilities Who Are Unemployed, by State",
+      table_heading = "People with Disabilities Who Are Unemployed, by State",
+      value_col = "emp_unemployed_dis", tier_col = "tier_unemployed",
+      direction = "low_good",
+      value_label = "Share unemployed",
+      svg_title = paste0("Working-age people with disabilities who are ",
+                         "unemployed, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the lowest share of working-age people with ",
+        "disabilities who are not working but looking for work; lighter gold ",
+        "(Poor) marks the highest."),
+      legend_best = "lowest share", legend_worst = "highest share",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the lowest share of working-age people with ",
+        "disabilities who are unemployed. <em>Lighter gold</em> marks the highest."),
+      caption = paste0(
+        "Darker maroon = a lower percentage of people with disabilities aged 18 ",
+        "to 64 who are not working but actively looking for work (better). This ",
+        "is a share of everyone in the age group, not the unemployment rate; ",
+        "both appear in the table further down. Source: U.S. Census Bureau, ",
+        "American Community Survey 5-year estimates (",
+        acs_year - 4, "&ndash;", acs_year, "), Table C18120."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("emp_unemployed_dis", "pop_cni_18to64_unemployed_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      lead = cfg$unemployed_lead),
+
+    list(
+      id = "emp-notlabor", heading = "Not in the Labor Force",
+      map_title     = "People with Disabilities Not in the Labor Force, by State",
+      table_heading = "People with Disabilities Not in the Labor Force, by State",
+      value_col = "emp_notlabor_dis", tier_col = "tier_notlabor",
+      direction = "low_good",
+      value_label = "Share not in the labor force",
+      svg_title = paste0("Working-age people with disabilities who are not in ",
+                         "the labor force, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the lowest share of working-age people with ",
+        "disabilities who are neither working nor looking for work; lighter ",
+        "gold (Poor) marks the highest."),
+      legend_best = "lowest share", legend_worst = "highest share",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the lowest share of working-age people with ",
+        "disabilities outside the labor force. <em>Lighter gold</em> marks the ",
+        "highest. This category covers study, caregiving and early retirement ",
+        "as well as people who have stopped looking for work, so read the tier ",
+        "labels alongside the note above the map."),
+      caption = paste0(
+        "Darker maroon = a lower percentage of people with disabilities aged 18 ",
+        "to 64 who are neither working nor looking for work. Lower is treated ",
+        "as the more favorable outcome, on the reasoning that a person who wants ",
+        "to work should be able to; the category also includes people who are ",
+        "studying, caregiving or retired early. Source: U.S. Census Bureau, ",
+        "American Community Survey 5-year estimates (",
+        acs_year - 4, "&ndash;", acs_year, "), Table C18120."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("emp_notlabor_dis", "pop_cni_18to64_notlabor_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      lead = cfg$notlabor_lead)
+  )
+
+  built    <- lapply(specs, fs_indicator_section, data = emp)
+  sections <- paste(vapply(built, `[[`, character(1), "html"), collapse = "\n")
+  map_js   <- paste(vapply(built, `[[`, character(1), "js"),   collapse = "\n\n")
+
+  ord <- order(emp$name)
+
+  # Disabled / non-disabled comparison on the headline measure.
+  compare <- fs_compare_table(
+    caption = "Employment rate, by state",
+    aria_label = paste0("Percentage employed, working-age people with ",
+                        "disabilities compared with people without disabilities"),
+    names = emp$name[ord],
+    dis   = emp$emp_employed_dis[ord],
+    nod   = emp$emp_employed_nodis[ord])
+
+  # Supplementary rates. NOTE the differing denominators: labor force
+  # participation is over the whole age group, the unemployment rate is over the
+  # labor force only. Two separate tables rather than one four-column table,
+  # because mixing the denominators in adjacent columns is exactly the confusion
+  # this section exists to prevent.
+  lfp_table <- fs_compare_table(
+    caption = paste0("Labor force participation rate, the share of people aged ",
+                     "18 to 64 who are working or looking for work"),
+    aria_label = paste0("Labor force participation rate, people with ",
+                        "disabilities compared with people without disabilities"),
+    names = emp$name[ord],
+    dis   = emp$emp_lfp_dis[ord],
+    nod   = emp$emp_lfp_nodis[ord])
+
+  urate_table <- fs_compare_table(
+    caption = paste0("Unemployment rate, the share of those in the labor force ",
+                     "who are not working. This is the definition the Bureau of ",
+                     "Labor Statistics uses, and its denominator differs from ",
+                     "the maps above."),
+    aria_label = paste0("Unemployment rate among those in the labor force, ",
+                        "people with disabilities compared with people without ",
+                        "disabilities"),
+    names = emp$name[ord],
+    dis   = emp$emp_urate_dis[ord],
+    nod   = emp$emp_urate_nodis[ord])
+
+  head_html <- fs_html_head(
+    title = "Employment | ADA-PARC Factsheet",
+    description = paste0(
+      "ADA-PARC factsheet on employment among working-age people with ",
+      "disabilities, covering employment, unemployment and labor force ",
+      "participation, with state-by-state data."),
+    extra_css = "")
+
+  header_html <- fs_header("Employment", "Work &amp; Economic")
+
+  main_html <- paste0(
+'
+', fs_population_note(
+  "The civilian noninstitutionalized population ages 18 to 64",
+  paste0("People living in nursing homes, other institutions and correctional ",
+         "facilities are outside this universe, as is anyone on active ",
+         "military duty, so these rates do not describe the whole population ",
+         "with a disability.")), '
+', fs_intro(cfg$intro, acs_year = acs_year), '
+
+', sections, '
+
+    <h2 class="section-heading">Employment, With and Without Disability</h2>
+    <p>The same measure for both populations, listed alphabetically, so the gap in each state is visible directly.</p>
+
+', compare, '
+
+    <h2 class="section-heading">Labor Force Participation and Unemployment Rate</h2>
+
+', paste0("    <p>", unlist(cfg$rates_table_lead), "</p>", collapse = "\n"), '
+
+', lfp_table, '
+
+', urate_table, '
+
+', fs_footnotes(cfg$footnotes, acs_year = acs_year), '
+')
+
+  fs_write_file(
+    path = file.path(out_dir, "factsheet-employment.html"),
+    head_html = head_html, header_html = header_html,
+    main_html = main_html, footer_html = fs_footer(),
+    scripts_html = fs_scripts(map_js))
+}
+
+emp_path <- build_employment(emp, acs_year, content$employment)
+emp_path
+```
+
+```{r emp-validate}
+#| label: emp-validate
+#| echo: false
+cat("Wrote:", emp_path, "\n")
+cat("File size:", file.info(emp_path)$size, "bytes\n\n")
+cat("Tier counts (", acs_year, " vintage):\n", sep = "")
+print(emp |> count(tier_employed,   name = "employed"))
+print(emp |> count(tier_unemployed, name = "unemployed"))
+print(emp |> count(tier_notlabor,   name = "not_in_labor_force"))
+
+cat("\nCheck: the three categories partition each population.\n")
+for (s in c("dis", "nodis")) {
+  tot <- emp[[paste0("emp_employed_", s)]] +
+         emp[[paste0("emp_unemployed_", s)]] +
+         emp[[paste0("emp_notlabor_", s)]]
+  cat("  ", s, ": max |sum - 100| = ", max(abs(tot - 100)), "\n", sep = "")
+}
+
+cat("\nThe two denominators, so the difference stays visible in the report:\n")
+print(emp |>
+  summarise(
+    `share unemployed, of all 18-64` = mean(emp_unemployed_dis),
+    `unemployment rate, of labor force` = mean(emp_urate_dis)) |>
+  mutate(across(everything(), \(x) round(x, 2))))
+```
+
+
+# Housing factsheet
+
+Two independent maps (Public Housing, Housing Choice Vouchers), each with its
+**own** quartile scale (per-map, not pooled), direction `high_good` (highest
+share of heads-of-household with a disability = Excellent). Four tier-grouped
+two-column tables per map. DC is labeled "Washington DC" in the tables. Puerto
+Rico is appended to the Poor tables **only when present**; in the 2024 vintage
+PR has no HUD picture-of-subsidized-households value, so it is omitted.
+
+Variables: `pct_cni_hoh_pubhousing_dis`, `pct_cni_hoh_hcv_dis`.
+
+```{r housing-data}
+#| label: housing-data
+hd <- states_df |>
+  transmute(
+    fips, ABBR, name = NAME,
+    tname = ifelse(ABBR == "DC", "Washington DC", NAME),
+    ph  = pct_cni_hoh_pubhousing_dis,
+    hcv = pct_cni_hoh_hcv_dis
+  ) |>
+  mutate(
+    tier_ph  = fs_assign_tiers(ph,  "high_good"),
+    tier_hcv = fs_assign_tiers(hcv, "high_good")
+  )
+
+ph_breaks  <- fs_tier_breaks(hd$ph)
+hcv_breaks <- fs_tier_breaks(hd$hcv)
+
+list(ph = table(hd$tier_ph, useNA = "ifany"),
+     hcv = table(hd$tier_hcv, useNA = "ifany"))
+```
+
+```{r housing-build}
+#| label: housing-build
+build_housing <- function(hd, pr_row, ph_breaks, hcv_breaks, acs_year, cfg) {
+
+  # Build the four tier tables for one series.
+  series_tables <- function(value, tier, label, prval) {
+    tab <- function(t, aria_suffix) {
+      keep <- tier == t & !is.na(tier)
+      vals <- value[keep]; nms <- hd$tname[keep]
+      ord  <- order(-vals)
+      vals <- vals[ord];  nms <- nms[ord]
+      if (t == "poor" && !is.na(prval)) {
+        nms  <- c(nms, "Puerto Rico")
+        vals <- c(vals, prval)
+      }
+      fs_tier_table(
+        tier = t, col_headers = c("State", "Percent"),
+        state_names = nms, cells = list(fmt_pct(vals, 1)),
+        aria_label = paste0(label, " - ", aria_suffix))
+    }
+    left  <- paste0(tab("excellent", "Excellent performers states"), "\n\n",
+                    tab("above", "Above Average performers states"))
+    right <- paste0(tab("below", "Below Average performers states"), "\n\n",
+                    tab("poor", "Poor performers states"))
+    list(left = left, right = right)
+  }
+
+  ph_tables  <- series_tables(hd$ph,  hd$tier_ph,  "Public Housing",
+                              pr_row$pct_cni_hoh_pubhousing_dis)
+  hcv_tables <- series_tables(hd$hcv, hd$tier_hcv, "Housing Choice Vouchers",
+                              pr_row$pct_cni_hoh_hcv_dis)
+
+  ph_ranges  <- fs_ranges_open_high(ph_breaks,  digits = 0)
+  hcv_ranges <- fs_ranges_open_high(hcv_breaks, digits = 0)
+
+  ph_js <- fs_map_js(
+    obj_name = "PH_DATA", container_id = "map-ph", desc_id = "ph-map-desc",
+    data = hd |> filter(!is.na(tier_ph)) |>
+      transmute(fips, tier = tier_ph, display = fmt_pct(ph, 1)),
+    value_label = "Public housing share",
+    svg_title = "Share of public housing heads of household with a disability, by U.S. state",
+    svg_desc = paste0("Choropleth of the 50 states and DC shaded by the share of ",
+      "public housing heads of household who have a disability. Full data is in ",
+      "the table below."))
+
+  hcv_js <- fs_map_js(
+    obj_name = "HCV_DATA", container_id = "map-hcv", desc_id = "hcv-map-desc",
+    data = hd |> filter(!is.na(tier_hcv)) |>
+      transmute(fips, tier = tier_hcv, display = fmt_pct(hcv, 1)),
+    value_label = "Housing Choice Voucher share",
+    svg_title = "Share of Housing Choice Voucher heads of household with a disability, by U.S. state",
+    svg_desc = paste0("Choropleth of the 50 states and DC shaded by the share of ",
+      "Housing Choice Voucher heads of household who have a disability. Full data ",
+      "is in the table below."))
+
+  extra_css <-
+'    .maps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+    .map-figure { margin: 0; }
+    .tier-chip.na { background: #e0e0e0; color: #444; }
+    @media (max-width: 680px) { .maps-grid, .tables-grid { grid-template-columns: 1fr; } }
+    @media print { .maps-grid, .tables-grid { grid-template-columns: 1fr 1fr; } }'
+
+  head_html <- fs_html_head(
+    title = "Community Living: Access to Housing | ADA-PARC Factsheet",
+    description = paste0("ADA-PARC factsheet on the share of public housing and ",
+      "Housing Choice Voucher heads of household who have a disability, by state."),
+    extra_css = extra_css)
+
+  header_html <- fs_header("Access to Housing", "Community Living")
+
+  main_html <- paste0(
+'
+', fs_population_note(
+  "Heads of household receiving federal housing assistance",
+  paste0("The universe is assisted households, not people. Percentages are the ",
+         "share of Public Housing or Housing Choice Voucher heads of household ",
+         "who have a disability, so they describe who the programs reach, not ",
+         "what share of people with disabilities are housed.")), '
+', fs_intro(cfg$intro), '
+
+    <h2 class="section-heading">State Maps</h2>
+    <p>Maps show the percentage of housing support going to heads of households with a disability, by state. Higher percentages indicate better performance. All map data is in the tables below. Puerto Rico data, where available, is in the tables but not shown on the maps.</p>
+
+    <div class="direction-note" role="note">
+      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw share. <em>Darker maroon</em> marks the most favorable outcomes (Excellent), here the highest share of heads of household with a disability. <em>Lighter gold</em> marks the least favorable outcomes (Poor), the lowest share.
+    </div>
+
+    <div class="maps-grid">
+      <figure class="map-figure">
+        <h3 class="map-title" id="ph-map-heading">Public Housing: % of Heads of Household with a Disability</h3>
+        <div id="map-ph" class="map-container" role="img" aria-labelledby="ph-map-heading ph-map-desc">
+          <p id="ph-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+          <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+        </div>
+        <div class="map-legend" aria-label="Map color legend: higher percentage of public housing heads of household with a disability">
+          <span class="tier-chip excellent">Excellent (', ph_ranges[["excellent"]], ')</span>
+          <span class="tier-chip above">Above Average (', ph_ranges[["above"]], ')</span>
+          <span class="tier-chip below">Below Average (', ph_ranges[["below"]], ')</span>
+          <span class="tier-chip poor">Poor (', ph_ranges[["poor"]], ')</span>
+        </div>
+        <figcaption class="map-caption">Darker maroon = higher percentage of public housing heads of household with a disability (better).</figcaption>
+      </figure>
+
+      <figure class="map-figure">
+        <h3 class="map-title" id="hcv-map-heading">Housing Choice Vouchers: % of Heads of Household with a Disability</h3>
+        <div id="map-hcv" class="map-container" role="img" aria-labelledby="hcv-map-heading hcv-map-desc">
+          <p id="hcv-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+          <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+        </div>
+        <div class="map-legend" aria-label="Map color legend: higher percentage of HCV heads of household with a disability">
+          <span class="tier-chip excellent">Excellent (', hcv_ranges[["excellent"]], ')</span>
+          <span class="tier-chip above">Above Average (', hcv_ranges[["above"]], ')</span>
+          <span class="tier-chip below">Below Average (', hcv_ranges[["below"]], ')</span>
+          <span class="tier-chip poor">Poor (', hcv_ranges[["poor"]], ')</span>
+        </div>
+        <figcaption class="map-caption">Darker maroon = higher percentage of Housing Choice Voucher recipients with a disability as head of household (better).</figcaption>
+      </figure>
+    </div>
+
+    <h2 class="section-heading">Public Housing: % of Heads of Household with a Disability</h2>
+    <p>Higher percentages indicate more disability representation in public housing. Excellent = highest representation; Poor = lowest.</p>
+    <div class="tables-grid">
+      <div>
+', ph_tables$left, '
+      </div>
+      <div>
+', ph_tables$right, '
+      </div>
+    </div>
+
+    <h2 class="section-heading">Housing Choice Vouchers: % of Heads of Household with a Disability</h2>
+    <p>Higher percentages indicate more disability representation in the HCV program. Excellent = highest; Poor = lowest.</p>
+    <div class="tables-grid">
+      <div>
+', hcv_tables$left, '
+      </div>
+      <div>
+', hcv_tables$right, '
+      </div>
+    </div>
+
+', fs_footnotes(cfg$footnotes, aria_label = "Data source"), '
+')
+
+  footer_html  <- fs_footer()
+  scripts_html <- fs_scripts(paste0(ph_js, "\n\n", hcv_js))
+
+  fs_write_file(
+    path = file.path(out_dir, "factsheet-housing.html"),
+    head_html = head_html, header_html = header_html,
+    main_html = main_html, footer_html = footer_html,
+    scripts_html = scripts_html)
+}
+
+housing_path <- build_housing(hd, pr_row, ph_breaks, hcv_breaks, acs_year, content$housing)
+housing_path
+```
+
+```{r housing-validate}
+#| label: housing-validate
+#| echo: false
+cat("Wrote:", housing_path, "\n")
+cat("File size:", file.info(housing_path)$size, "bytes\n\n")
+cat("Public Housing breaks: ",
+    paste(formatC(ph_breaks, format = "f", digits = 1), collapse = ", "), "\n", sep = "")
+cat("HCV breaks: ",
+    paste(formatC(hcv_breaks, format = "f", digits = 1), collapse = ", "), "\n", sep = "")
+```
+
+# HCBS factsheet
+
+The HCBS factsheet draws on the CMS TAF *Medicaid LTSS Users and Expenditures,
+2023* release, **not** the ACS pipeline. Both source files are kept in
+`factsheets/_generate/data/` so the generator is self-contained and
+reproducible. The indicator (v2) is **HCBS spending per recipient** by state:
+total HCBS expenditure from `A2_LTSSExpDlvrySystm_2023.xlsx`, tab
+`A.2.3 All-HCBS`, column `HCBS (total)`, divided by the unduplicated count of
+HCBS recipients from `A1_LTSSUsrDlvrySystm_2023.xlsx`, tab `A.1.3 All-HCBS`,
+column `HCBS (total)`. Both numerator and denominator are "All" (fee-for-service
+plus managed care), same source and vintage, so managed-care-heavy states are
+represented correctly. Direction is `high_good` (highest spending per recipient
+= Excellent); a single map and four dollar-formatted tier tables.
+
+What this measures, and what it does not: per-recipient spending is an
+**intensity** measure (dollars per person already receiving HCBS), not a
+**reach** measure (whether disabled people can access HCBS at all). A true
+per-disabled-enrollee denominator would capture reach, but the TAF release
+contains no disabled-Medicaid-enrollee population count, only recipients, so
+that variant is deferred to a possible later vintage. The denominator here
+covers all HCBS recipients (the large majority are non-elderly disability
+groups); a descriptive note on the factsheet reports the subpopulation mix, read
+from `C1_LTSSUsrChar_2023.xlsx`, tab `C.1.21 HCBSBySubpop`.
+
+```{r hcbs-data}
+#| label: hcbs-data
+hcbs_dir <- here::here("factsheets", "_generate", "data")
+
+# Numerator: total HCBS expenditure by state (All = FFS + managed care).
+hcbs_spend_raw <- readxl::read_excel(
+  file.path(hcbs_dir, "A2_LTSSExpDlvrySystm_2023.xlsx"),
+  sheet = "A.2.3 All-HCBS", skip = 1)
+
+# Denominator: unduplicated HCBS recipients by state, same TAF 2023 release.
+hcbs_users_raw <- readxl::read_excel(
+  file.path(hcbs_dir, "A1_LTSSUsrDlvrySystm_2023.xlsx"),
+  sheet = "A.1.3 All-HCBS", skip = 1)
+
+# Institutional expenditure by state, same TAF 2023 release (columns 1 and 2 are
+# State and "Institutional (total)"). Used for the community-vs-institutional
+# ratio: HCBS / (HCBS + institutional). Because LTSS = HCBS + institutional, this
+# equals HCBS as a share of total Medicaid LTSS expenditure.
+hcbs_inst_raw <- readxl::read_excel(
+  file.path(hcbs_dir, "A2_LTSSExpDlvrySystm_2023.xlsx"),
+  sheet = "A.2.2 All-Inst", skip = 1)
+
+# In the HCBS tabs, columns 1 and 2 are State and "HCBS (total)"; in the
+# institutional tab they are State and "Institutional (total)". Join spend to
+# recipients and institutional spend on state, then attach FIPS via the
+# pipeline's NAME (the inner_join drops National + footer rows, leaving 50
+# states + DC, no PR/territories).
+hcbs <- tibble::tibble(
+    name  = hcbs_spend_raw[[1]],
+    spend = suppressWarnings(as.numeric(hcbs_spend_raw[[2]]))
+  ) |>
+  inner_join(
+    tibble::tibble(
+      name  = hcbs_users_raw[[1]],
+      users = suppressWarnings(as.numeric(hcbs_users_raw[[2]]))
+    ),
+    by = "name"
+  ) |>
+  inner_join(
+    tibble::tibble(
+      name       = hcbs_inst_raw[[1]],
+      spend_inst = suppressWarnings(as.numeric(hcbs_inst_raw[[2]]))
+    ),
+    by = "name"
+  ) |>
+  inner_join(states_df |> select(name = NAME, fips, ABBR), by = "name") |>
+  mutate(
+    per_recipient = spend / users,
+    tier          = fs_assign_tiers(per_recipient, direction = "high_good"),
+    # Community share of LTSS spending (0-100). Higher = more community-oriented.
+    hcbs_share    = spend / (spend + spend_inst) * 100,
+    tier_ratio    = fs_assign_tiers(hcbs_share, direction = "high_good")
+  )
+
+# Guard: 51 states, all finite, a wide sanity band on $/recipient, and a valid
+# 0-100 community share, so a future vintage with a changed file structure fails
+# loudly (observed 2023 ranges: ~$3,600-$48,900 per recipient; ~36%-95% share).
+stopifnot(
+  nrow(hcbs) == 51,
+  all(is.finite(hcbs$per_recipient)),
+  all(hcbs$per_recipient > 1000 & hcbs$per_recipient < 75000),
+  all(is.finite(hcbs$hcbs_share)),
+  all(hcbs$hcbs_share >= 0 & hcbs$hcbs_share <= 100)
+)
+list(per_recipient = hcbs |> count(tier),
+     community_share = hcbs |> count(tier_ratio))
+```
+
+```{r hcbs-subpop}
+#| label: hcbs-subpop
+#| echo: false
+# Descriptive context only (not the denominator): national composition of HCBS
+# recipients by disability subpopulation, from C1.21 HCBSBySubpop. The "% of
+# HCBS" columns are CMS-published shares; groups overlap, so they sum to >100%.
+hcbs_subpop_raw <- readxl::read_excel(
+  file.path(hcbs_dir, "C1_LTSSUsrChar_2023.xlsx"),
+  sheet = "C.1.21 HCBSBySubpop", skip = 1)
+
+hcbs_subpop_natl <- hcbs_subpop_raw[hcbs_subpop_raw[[1]] == "National", ]
+sp <- function(col) round(suppressWarnings(as.numeric(hcbs_subpop_natl[[col]])))
+
+# Column order: 2 HCBS total | 3-4 IDD/ASD | 5-6 MH/SUD | 7-8 older adults |
+# 9-10 under-65 disabling | 11-12 other (each pair = total, then % of HCBS).
+hcbs_subpop_note <- paste0(
+  "Among people receiving HCBS nationally, recipients span multiple disability ",
+  "groups: about ", sp(6), "% have mental health conditions or substance use ",
+  "disorders, ", sp(4), "% have autism, intellectual, or developmental ",
+  "disabilities, ", sp(10), "% are adults under 65 with other potentially ",
+  "disabling conditions, and ", sp(8), "% are older adults. People can belong ",
+  "to more than one group, so shares add to more than 100%.")
+hcbs_subpop_note
+```
+
+```{r hcbs-build}
+#| label: hcbs-build
+build_hcbs <- function(hcbs, cfg, source_year = 2023, subpop_note = NULL) {
+  direction <- "high_good"
+
+  map_df <- hcbs |>
+    transmute(fips, tier,
+              display = vapply(per_recipient, fmt_dollars_full, character(1)))
+
+  map_js <- fs_map_js(
+    obj_name = "HCBS_DATA", container_id = "map-hcbs", desc_id = "hcbs-map-desc",
+    data = map_df, value_label = "Spending per recipient",
+    svg_title = "HCBS spending per recipient for community living, by U.S. state",
+    svg_desc = paste0("Choropleth of the 50 states and DC shaded by performance tier. ",
+      "Darker maroon (Excellent) marks the highest Medicaid HCBS spending per ",
+      "recipient; lighter gold (Poor) marks the lowest. Full data is in the tables below."))
+
+  tier_table_for <- function(t) {
+    sub <- hcbs |> filter(tier == t)
+    ord <- fs_within_tier_order(sub$per_recipient, direction)
+    sub <- sub[ord, ]
+    fs_tier_table(
+      tier = t, col_headers = c("State", "Spending per Recipient"),
+      state_names = sub$name,
+      cells = list(vapply(sub$per_recipient, fmt_dollars_full, character(1))),
+      aria_label = paste0("HCBS spending per recipient - ",
+        c(excellent = "Excellent performers states (highest spending per recipient)",
+          above = "Above Average performers states",
+          below = "Below Average performers states",
+          poor  = "Poor performers states (lowest spending per recipient)")[[t]]))
+  }
+
+  left  <- paste0(tier_table_for("excellent"), "\n\n", tier_table_for("above"))
+  right <- paste0(tier_table_for("below"), "\n\n", tier_table_for("poor"))
+
+  # Dynamic best / worst callouts for the caption.
+  best  <- hcbs |> arrange(desc(per_recipient)) |> slice_head(n = 4) |> pull(name)
+  worst <- hcbs |> arrange(per_recipient) |> slice_head(n = 5) |> pull(name)
+  best_txt  <- paste0(paste(best[-length(best)], collapse = ", "),
+                      ", and ", best[length(best)])
+  worst_txt <- paste0(paste(worst[-length(worst)], collapse = ", "),
+                      ", and ", worst[length(worst)])
+
+  # ---- community-vs-institutional ratio: map data object ----
+  map_df_ratio <- hcbs |>
+    transmute(fips, tier = tier_ratio, display = fmt_pct(hcbs_share, 1))
+
+  map_js_ratio <- fs_map_js(
+    obj_name = "HCBS_RATIO_DATA", container_id = "map-hcbs-ratio",
+    desc_id = "hcbs-ratio-map-desc", data = map_df_ratio,
+    value_label = "Community share of LTSS spending",
+    svg_title = "Community share of Medicaid LTSS spending, by U.S. state",
+    svg_desc = paste0("Choropleth of the 50 states and DC shaded by performance tier. ",
+      "Darker maroon (Excellent) marks the highest community (HCBS) share of ",
+      "long-term care spending; lighter gold (Poor) marks the lowest, meaning more ",
+      "spending on institutions. Full data is in the tables below."))
+
+  # ---- ratio tier tables ----
+  tier_table_ratio_for <- function(t) {
+    sub <- hcbs |> filter(tier_ratio == t)
+    ord <- fs_within_tier_order(sub$hcbs_share, direction)
+    sub <- sub[ord, ]
+    fs_tier_table(
+      tier = t, col_headers = c("State", "Community Share of LTSS Spending"),
+      state_names = sub$name,
+      cells = list(fmt_pct(sub$hcbs_share, 1)),
+      aria_label = paste0("Community share of LTSS spending - ",
+        c(excellent = "Excellent performers states (highest community share)",
+          above = "Above Average performers states",
+          below = "Below Average performers states",
+          poor  = "Poor performers states (lowest community share)")[[t]]))
+  }
+
+  left_ratio  <- paste0(tier_table_ratio_for("excellent"), "\n\n", tier_table_ratio_for("above"))
+  right_ratio <- paste0(tier_table_ratio_for("below"), "\n\n", tier_table_ratio_for("poor"))
+
+  # Dynamic best / worst callouts for the ratio caption.
+  best_r  <- hcbs |> arrange(desc(hcbs_share)) |> slice_head(n = 4) |> pull(name)
+  worst_r <- hcbs |> arrange(hcbs_share) |> slice_head(n = 5) |> pull(name)
+  best_r_txt  <- paste0(paste(best_r[-length(best_r)], collapse = ", "),
+                        ", and ", best_r[length(best_r)])
+  worst_r_txt <- paste0(paste(worst_r[-length(worst_r)], collapse = ", "),
+                        ", and ", worst_r[length(worst_r)])
+
+  # Per-factsheet CSS: the "About These Data" note box (maroon canon accent).
+  extra_css <-
+'    .about-data { background: #f7f0ef; border-left: 4px solid var(--tier-excellent-bg); border-radius: 0 6px 6px 0; padding: 1rem 1.25rem; margin: 1.75rem 0 0; }
+    .about-data-title { font-size: 1.15rem; font-weight: 700; color: var(--navy); margin: 0 0 .4rem; }
+    .about-data p { margin: 0; font-size: .95rem; line-height: 1.6; }'
+
+  head_html <- fs_html_head(
+    title = "State Spending on Community Living | ADA-PARC Factsheet",
+    description = paste0("ADA-PARC factsheet on state Medicaid HCBS spending ",
+      "per recipient and the community versus institutional share of Medicaid ",
+      "long-term care spending for people with disabilities, by state."),
+    extra_css = extra_css)
+
+  header_html <- fs_header("Spending on Home &amp; Community Based Services",
+                          "Community Living")
+
+  main_html <- paste0(
+'
+', fs_population_note(
+  "Medicaid long-term services and supports recipients",
+  paste0("The universe is people receiving Medicaid LTSS in each state, not ",
+         "all people with disabilities. Spending per recipient therefore says ",
+         "how far a state&rsquo;s dollars go for the people it already serves, ",
+         "not how many people it serves.")), '
+', fs_intro(cfg$intro, source_year = source_year), '
+
+    <h2 class="section-heading">State Map</h2>
+
+    <div class="direction-note" role="note">
+      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw dollars. <em>Darker maroon</em> marks the most favorable outcomes (Excellent), here the highest community living spending per recipient. <em>Lighter gold</em> marks the least favorable outcomes (Poor), the lowest spending per recipient.
+    </div>
+
+    <figure class="map-figure">
+      <h3 class="map-title" id="hcbs-map-heading">Annual HCBS Spending per Recipient on Community Living, by State</h3>
+      <div id="map-hcbs" class="map-container" aria-labelledby="hcbs-map-heading hcbs-map-desc">
+        <p id="hcbs-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+        <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+      </div>
+      <div class="map-legend" aria-label="Map color legend: higher spending per recipient = better performance">
+        <span class="tier-chip excellent">Excellent (highest per recipient)</span>
+        <span class="tier-chip above">Above Average</span>
+        <span class="tier-chip below">Below Average</span>
+        <span class="tier-chip poor">Poor (lowest per recipient)</span>
+      </div>
+      <figcaption class="map-caption">Darker maroon indicates higher annual HCBS spending per recipient on community living (better). This measures spending intensity per person receiving HCBS, not how many people are reached. Best-performing states include ', best_txt, '. Worst-performing states include ', worst_txt, '. Data for Puerto Rico and territories is not shown. Source: CMS, Medicaid LTSS Users &amp; Expenditures, ', source_year, '.</figcaption>
+    </figure>
+
+    ', if (!is.null(subpop_note)) paste0(
+    '<div class="direction-note" role="note">
+      <strong>Who receives HCBS.</strong> ', subpop_note, '
+    </div>') else "", '
+
+    <h2 class="section-heading">Annual HCBS Spending per Recipient on Community Living, HCBS Recipients</h2>
+
+    <div class="tables-grid">
+      <div>
+', left, '
+      </div>
+
+      <div>
+', right, '
+      </div>
+    </div>
+
+    <h2 class="section-heading">Community vs. Institutional Spending</h2>
+
+    ', paste0("<p>", unlist(cfg$ratio_lead), "</p>", collapse = "\n"), '
+
+    <div class="direction-note" role="note">
+      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw share. <em>Darker maroon</em> marks the most favorable outcomes (Excellent), here the highest community (HCBS) share of long-term care spending. <em>Lighter gold</em> marks the least favorable outcomes (Poor), where more spending goes to institutions.
+    </div>
+
+    <figure class="map-figure">
+      <h3 class="map-title" id="hcbs-ratio-map-heading">Community Share of Medicaid Long-Term Care Spending, by State</h3>
+      <div id="map-hcbs-ratio" class="map-container" aria-labelledby="hcbs-ratio-map-heading hcbs-ratio-map-desc">
+        <p id="hcbs-ratio-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+        <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+      </div>
+      <div class="map-legend" aria-label="Map color legend: higher community share of long-term care spending = better performance">
+        <span class="tier-chip excellent">Excellent (highest community share)</span>
+        <span class="tier-chip above">Above Average</span>
+        <span class="tier-chip below">Below Average</span>
+        <span class="tier-chip poor">Poor (most institutional)</span>
+      </div>
+      <figcaption class="map-caption">Darker maroon indicates a higher share of Medicaid long-term care spending going to home- and community-based services rather than institutions (better). Most community-oriented states include ', best_r_txt, '. Most institution-oriented states include ', worst_r_txt, '. Data for Puerto Rico and territories is not shown. Source: Mathematica, Medicaid LTSS Users &amp; Expenditures, ', source_year, '.</figcaption>
+    </figure>
+
+    <h2 class="section-heading">Community Share of Medicaid Long-Term Care Spending, by State</h2>
+    <p>Higher percentages mean a state spends more of its Medicaid long-term care budget on community living and less on institutions. Excellent = highest community share; Poor = lowest.</p>
+
+    <div class="tables-grid">
+      <div>
+', left_ratio, '
+      </div>
+
+      <div>
+', right_ratio, '
+      </div>
+    </div>
+
+', fs_about(cfg$about), '
+
+', fs_footnotes(cfg$footnotes, source_year = source_year,
+               aria_label = "Data sources and notes"), '
+')
+
+  footer_html  <- fs_footer()
+  scripts_html <- fs_scripts(paste0(map_js, "\n\n", map_js_ratio))
+
+  fs_write_file(
+    path = file.path(out_dir, "factsheet-hcbs.html"),
+    head_html = head_html, header_html = header_html,
+    main_html = main_html, footer_html = footer_html,
+    scripts_html = scripts_html)
+}
+
+hcbs_path <- build_hcbs(hcbs, content$hcbs, source_year = 2023,
+                        subpop_note = hcbs_subpop_note)
+hcbs_path
+```
+
+```{r hcbs-validate}
+#| label: hcbs-validate
+#| echo: false
+cat("Wrote:", hcbs_path, "\n")
+cat("File size:", file.info(hcbs_path)$size, "bytes\n\n")
+cat("Per-recipient tier counts (2023 LTSS vintage):\n")
+print(hcbs |> count(tier))
+cat("\nCommunity-share tier counts (2023 LTSS vintage):\n")
+print(hcbs |> count(tier_ratio))
+cat("\nCommunity share range: ",
+    formatC(min(hcbs$hcbs_share), format = "f", digits = 1), "% - ",
+    formatC(max(hcbs$hcbs_share), format = "f", digits = 1), "%\n", sep = "")
+```
+
+# Health Insurance Access factsheet
+
+Three mapped sections for ages 19 to 64, plus two tables. All eight topics the
+National Data tab offers are present; three are mapped and five are tabulated,
+for reasons the data forces rather than for space.
+
+**Only "no coverage" is tiered.** It is the one measure on the sheet with a
+defensible direction. Public and private coverage are mapped by magnitude with
+neutral quartile labels, because a high public share can mean a state has
+extended Medicaid widely or that disabled residents are shut out of employer
+plans, and the private share carries the mirror-image ambiguity. Tiering either
+would assert something the data does not support.
+
+**Covered is not mapped at all.** It is the exact arithmetic complement of no
+coverage, so a second map would be the first one inverted. It appears in a table
+with both age bands.
+
+**The 65+ band is not mapped.** Medicare makes coverage close to universal, so
+across all 51 jurisdictions the uninsured share runs 0.13 to 1.48 percent and
+coverage 98.5 to 99.9 percent. Quartiling a spread of roughly one percentage
+point would label a state "Poor" for a difference that is not meaningful. Those
+four measures appear in a table with a note saying so.
+
+**Public and private overlap.** They exceed the covered total by 7 to 14 points
+at ages 19 to 64 and by 40 to 62 points at 65 and over, because a person can
+hold both. `fs_hins_measures()` asserts that this overlap is present, so a
+future vintage that made the categories exclusive would fail the build rather
+than silently invalidate the prose.
+
+```{r hins-data}
+#| label: hins-data
+hins <- states_df |>
+  fs_hins_measures() |>
+  mutate(
+    name = NAME,
+    tier_none    = fs_assign_tiers(hins_none_a19to64_dis,    "low_good"),
+    tier_public  = fs_assign_tiers(hins_public_a19to64_dis,  "magnitude"),
+    tier_private = fs_assign_tiers(hins_private_a19to64_dis, "magnitude")
+  )
+
+# Population-weighted national shares. The introduction in
+# docs/factsheet-prose.docx quotes 9.9, 12.0, 51.8, 15.0, 49.1 and 76.1 percent
+# as typed text; check them against this table when the vintage moves.
+hins_national <- local({
+  band <- function(an) {
+    bd <- hins[[paste0("hins_n_covered_", an, "_dis")]] +
+          hins[[paste0("hins_n_none_", an, "_dis")]]
+    bn <- hins[[paste0("hins_n_covered_", an, "_nodis")]] +
+          hins[[paste0("hins_n_none_", an, "_nodis")]]
+    tibble::tibble(
+      band    = an,
+      measure = c("No coverage", "Covered", "Public", "Private"),
+      pwd = vapply(c("none", "covered", "public", "private"), function(m)
+        sum(hins[[paste0("hins_n_", m, "_", an, "_dis")]]) / sum(bd) * 100,
+        numeric(1)),
+      no_disability = vapply(c("none", "covered", "public", "private"), function(m)
+        sum(hins[[paste0("hins_n_", m, "_", an, "_nodis")]]) / sum(bn) * 100,
+        numeric(1)))
+  }
+  dplyr::bind_rows(band("a19to64"), band("a65plus"))
+})
+
+hins_national |> mutate(across(where(is.numeric), \(x) round(x, 2)))
+```
+
+```{r hins-build}
+#| label: hins-build
+build_health_insurance <- function(hins, acs_year, cfg) {
+
+  pct1 <- function(x) fmt_pct(x, 1)
+
+  specs <- list(
+    list(
+      id = "hins-none", heading = NULL,
+      map_title     = "People with Disabilities Ages 19 to 64 with No Health Insurance, by State",
+      table_heading = "People with Disabilities Ages 19 to 64 with No Health Insurance, by State",
+      value_col = "hins_none_a19to64_dis", tier_col = "tier_none",
+      direction = "low_good",
+      value_label = "Uninsured rate",
+      svg_title = paste0("Working-age people with disabilities with no health ",
+                         "insurance, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the lowest share of working-age people with ",
+        "disabilities who are uninsured; lighter gold (Poor) marks the highest. ",
+        "Full data is in the tables below."),
+      legend_best = "lowest uninsured", legend_worst = "highest uninsured",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the most favorable outcomes (Excellent), here the ",
+        "lowest share of working-age people with disabilities without health ",
+        "insurance. <em>Lighter gold</em> marks the least favorable (Poor)."),
+      caption = paste0(
+        "Darker maroon = a lower percentage of people with disabilities aged 19 ",
+        "to 64 with no health insurance of any kind (better). Source: U.S. ",
+        "Census Bureau, American Community Survey 5-year estimates (",
+        acs_year - 4, "&ndash;", acs_year, "), Table B18135."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("hins_none_a19to64_dis", "hins_n_none_a19to64_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      table_note = paste0(
+        "Excellent = the smallest share without coverage. Poor = the largest ",
+        "share without coverage."),
+      lead = cfg$none_19to64_lead),
+
+    list(
+      id = "hins-public", heading = "Public Coverage, Ages 19 to 64",
+      map_title     = "People with Disabilities Ages 19 to 64 with Public Health Insurance, by State",
+      table_heading = "People with Disabilities Ages 19 to 64 with Public Health Insurance, by State",
+      value_col = "hins_public_a19to64_dis", tier_col = "tier_public",
+      direction = "magnitude",
+      value_label = "Public coverage share",
+      svg_title = paste0("Working-age people with disabilities with public ",
+                         "health insurance, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by size of share, not by ",
+        "performance. Darker maroon marks the largest shares of working-age ",
+        "people with disabilities covered by Medicaid, Medicare or another ",
+        "public plan; lighter gold marks the smallest. A high share can reflect ",
+        "broad public coverage or exclusion from employer plans, so neither end ",
+        "is a better outcome on its own."),
+      direction_note = paste0(
+        "This map is shaded by <strong>how large the share is</strong>, not by ",
+        "performance. A high public coverage rate can mean a state has extended ",
+        "Medicaid widely, and it can mean disabled residents have little access ",
+        "to employer-sponsored insurance. <em>Darker maroon</em> marks the ",
+        "largest shares, <em>lighter gold</em> the smallest."),
+      caption = paste0(
+        "Darker maroon = a larger percentage of people with disabilities aged ",
+        "19 to 64 covered by Medicaid, Medicare or another public plan. This ",
+        "map carries no performance judgment; read it alongside the uninsured ",
+        "map. People can hold public and private coverage at the same time. ",
+        "Source: U.S. Census Bureau, American Community Survey 5-year estimates (",
+        acs_year - 4, "&ndash;", acs_year, "), Table B18135."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("hins_public_a19to64_dis", "hins_n_public_a19to64_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      lead = cfg$public_19to64_lead),
+
+    list(
+      id = "hins-private", heading = "Private Coverage, Ages 19 to 64",
+      map_title     = "People with Disabilities Ages 19 to 64 with Private Health Insurance, by State",
+      table_heading = "People with Disabilities Ages 19 to 64 with Private Health Insurance, by State",
+      value_col = "hins_private_a19to64_dis", tier_col = "tier_private",
+      direction = "magnitude",
+      value_label = "Private coverage share",
+      svg_title = paste0("Working-age people with disabilities with private ",
+                         "health insurance, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by size of share, not by ",
+        "performance. Darker maroon marks the largest shares of working-age ",
+        "people with disabilities holding private insurance; lighter gold marks ",
+        "the smallest."),
+      direction_note = paste0(
+        "This map is shaded by <strong>how large the share is</strong>, not by ",
+        "performance. A high private coverage rate can reflect good access to ",
+        "jobs carrying benefits, and a low one can reflect public programs ",
+        "filling the gap successfully. <em>Darker maroon</em> marks the largest ",
+        "shares, <em>lighter gold</em> the smallest."),
+      caption = paste0(
+        "Darker maroon = a larger percentage of people with disabilities aged ",
+        "19 to 64 with private health insurance, most often through an ",
+        "employer. This map carries no performance judgment. People can hold ",
+        "private and public coverage at the same time, so this measure and the ",
+        "one above overlap. Source: U.S. Census Bureau, American Community ",
+        "Survey 5-year estimates (", acs_year - 4, "&ndash;", acs_year,
+        "), Table B18135."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("hins_private_a19to64_dis", "hins_n_private_a19to64_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      lead = cfg$private_19to64_lead)
+  )
+
+  built    <- lapply(specs, fs_indicator_section, data = hins)
+  sections <- paste(vapply(built, `[[`, character(1), "html"), collapse = "\n")
+  map_js   <- paste(vapply(built, `[[`, character(1), "js"),   collapse = "\n\n")
+
+  ord <- order(hins$name)
+
+  # Disabled / non-disabled comparison on the headline measure.
+  compare <- fs_compare_table(
+    caption = "No health insurance, ages 19 to 64, by state",
+    aria_label = paste0("Percentage with no health insurance aged 19 to 64, ",
+                        "people with disabilities compared with people without ",
+                        "disabilities"),
+    names = hins$name[ord],
+    dis   = hins$hins_none_a19to64_dis[ord],
+    nod   = hins$hins_none_a19to64_nodis[ord])
+
+  # Coverage, both bands. Reported rather than mapped: it is the exact
+  # complement of the uninsured measure above.
+  covered_table <- fs_compare_table(
+    caption = paste0("People with disabilities who have health insurance, by ",
+                     "state and age group"),
+    aria_label = paste0("Percentage of people with disabilities who have health ",
+                        "insurance, ages 19 to 64 compared with age 65 and over"),
+    names   = hins$name[ord],
+    dis     = hins$hins_covered_a19to64_dis[ord],
+    nod     = hins$hins_covered_a65plus_dis[ord],
+    col_dis = "Ages 19 to 64",
+    col_nod = "Age 65 and Over")
+
+  # The 65+ band. Two tables rather than one four-column table, so that the
+  # coverage measures and the coverage-type measures are not read as a single
+  # set; they answer different questions and, in the case of public and private,
+  # overlap with each other.
+  age65_status <- fs_compare_table(
+    caption = paste0("Age 65 and over, coverage status. Note the narrow range: ",
+                     "Medicare makes coverage close to universal, so these ",
+                     "figures are not a basis for ranking states."),
+    aria_label = paste0("Health insurance status at age 65 and over among people ",
+                        "with disabilities, uninsured compared with insured"),
+    names   = hins$name[ord],
+    dis     = hins$hins_none_a65plus_dis[ord],
+    nod     = hins$hins_covered_a65plus_dis[ord],
+    col_dis = "No Coverage",
+    col_nod = "Covered")
+
+  age65_type <- fs_compare_table(
+    caption = paste0("Age 65 and over, coverage type. Public and private ",
+                     "overlap, because a private plan is often held as a ",
+                     "supplement to Medicare, so these two columns are not ",
+                     "parts of a whole and do not sum to the insured total."),
+    aria_label = paste0("Health insurance type at age 65 and over among people ",
+                        "with disabilities, public compared with private"),
+    names   = hins$name[ord],
+    dis     = hins$hins_public_a65plus_dis[ord],
+    nod     = hins$hins_private_a65plus_dis[ord],
+    col_dis = "Public",
+    col_nod = "Private")
+
+  head_html <- fs_html_head(
+    title = "Health Insurance Access | ADA-PARC Factsheet",
+    description = paste0(
+      "ADA-PARC factsheet on health insurance among people with disabilities, ",
+      "covering uninsured rates and public and private coverage for ages 19 to ",
+      "64 and 65 and over, with state-by-state data."),
+    extra_css = "")
+
+  header_html <- fs_header("Health Insurance Access", "Community Participation")
+
+  main_html <- paste0(
+'
+', fs_population_note(
+  "The civilian noninstitutionalized population ages 19 to 64, and ages 65 and over",
+  paste0("The maps cover the 19 to 64 band only. Medicare makes coverage close ",
+         "to universal at 65 and over, so that band is reported in a table ",
+         "rather than mapped: ranking states on a spread of about one ",
+         "percentage point would manufacture a difference that is not there.")), '
+', fs_intro(cfg$intro, acs_year = acs_year), '
+
+', sections, '
+
+    <h2 class="section-heading">Uninsured, With and Without Disability</h2>
+    <p>The same measure for both populations, ages 19 to 64, listed alphabetically. This is the comparison behind the finding in the introduction.</p>
+
+', compare, '
+
+    <h2 class="section-heading">Health Insurance Coverage, Both Age Groups</h2>
+
+', paste0("    <p>", unlist(cfg$covered_table_lead), "</p>", collapse = "\n"), '
+
+', covered_table, '
+
+    <h2 class="section-heading">Health Insurance at Age 65 and Over</h2>
+
+', paste0("    <p>", unlist(cfg$age65_table_lead), "</p>", collapse = "\n"), '
+
+', age65_status, '
+
+', age65_type, '
+
+', fs_footnotes(cfg$footnotes, acs_year = acs_year), '
+')
+
+  fs_write_file(
+    path = file.path(out_dir, "factsheet-health-insurance.html"),
+    head_html = head_html, header_html = header_html,
+    main_html = main_html, footer_html = fs_footer(),
+    scripts_html = fs_scripts(map_js))
+}
+
+hins_path <- build_health_insurance(hins, acs_year, content$health_insurance)
+hins_path
+```
+
+```{r hins-validate}
+#| label: hins-validate
+#| echo: false
+cat("Wrote:", hins_path, "\n")
+cat("File size:", file.info(hins_path)$size, "bytes\n\n")
+cat("Tier counts (", acs_year, " vintage):\n", sep = "")
+print(hins |> count(tier_none,    name = "uninsured_19to64"))
+print(hins |> count(tier_public,  name = "public_19to64"))
+print(hins |> count(tier_private, name = "private_19to64"))
+
+cat("\nCheck: covered is the complement of no coverage.\n")
+for (an in c("a19to64", "a65plus")) {
+  tot <- hins[[paste0("hins_none_", an, "_dis")]] +
+         hins[[paste0("hins_covered_", an, "_dis")]]
+  cat("  ", an, ": max |none + covered - 100| = ", max(abs(tot - 100)), "\n", sep = "")
+}
+
+cat("\nCheck: public and private overlap, so they exceed the covered total.\n")
+for (an in c("a19to64", "a65plus")) {
+  ex <- hins[[paste0("hins_public_", an, "_dis")]] +
+        hins[[paste0("hins_private_", an, "_dis")]] -
+        hins[[paste0("hins_covered_", an, "_dis")]]
+  cat("  ", an, ": excess ", round(min(ex), 2), " to ", round(max(ex), 2),
+      " points\n", sep = "")
+}
+
+cat("\nWhy the 65+ band is tabulated rather than mapped:\n")
+print(hins |>
+  summarise(
+    `65+ uninsured, min` = min(hins_none_a65plus_dis),
+    `65+ uninsured, max` = max(hins_none_a65plus_dis),
+    `19-64 uninsured, min` = min(hins_none_a19to64_dis),
+    `19-64 uninsured, max` = max(hins_none_a19to64_dis)) |>
+  mutate(across(everything(), \(x) round(x, 2))))
+```
+
+# Commuting to Work factsheet
+
+Two mapped sections, both by magnitude, plus a table making the denominator
+visible.
+
+**The universe is workers aged 16 and over.** Every percentage on the maps
+describes disabled workers, not disabled people. Nationally only 23 percent of
+people with disabilities are in that universe, against 51 percent of people
+without, so the maps speak for under a quarter of the population the rest of
+this fact sheet series covers. That figure is reported in its own table rather
+than left implicit.
+
+**Neither mode is tiered.** High transit use can mean accessible transit worth
+using or no alternative for someone who cannot drive; high drive-alone can mean
+independence or the absence of any usable transit. Both are shaded by magnitude
+with neutral quartile labels.
+
+**The two modes do not partition the commute.** Together they account for 55 to
+79 percent of journeys depending on the state, with carpooling, walking, cycling
+and remote work making up the rest. `fs_commute_measures()` fails the build if a
+future vintage ever makes them exhaustive, since the prose describes a remainder.
+
+A note on an assumption that turned out to be wrong. The audit warned that a
+state might look strong on transit simply because few of its disabled residents
+were employed, making the mode split an artifact of employment. Checked against
+this vintage, transit share correlates with the employment rate at **-0.05** and
+drive-alone at **-0.12**. The mode split is driven by urban density, not by
+employment. What *is* strongly related to employment (+0.93) is the worker share
+of the population, which is precisely why it is tabulated separately and pointed
+at the Employment sheet rather than folded into the maps.
+
+```{r cm-data}
+#| label: cm-data
+cm <- states_df |>
+  fs_commute_measures() |>
+  mutate(
+    name = NAME,
+    tier_transit    = fs_assign_tiers(cm_transit_dis,    "magnitude"),
+    tier_drivealone = fs_assign_tiers(cm_drivealone_dis, "magnitude")
+  )
+
+# Worker-weighted national shares, plus the worker share of each population.
+# The introduction in docs/factsheet-prose.docx quotes 23, 51, 3.8 and 65.4
+# percent as typed text; check them against this table when the vintage moves.
+cm_national <- tibble::tibble(
+  measure = c("Commuting workers, share of population",
+              "Public transit, share of workers",
+              "Drove alone, share of workers"),
+  pwd = c(
+    sum(cm$cm_workers_dis) / sum(cm$pop_grp_total_dis) * 100,
+    sum(cm$pop_cni_16plus_transit_dis)    / sum(cm$cm_workers_dis) * 100,
+    sum(cm$pop_cni_16plus_drivealone_dis) / sum(cm$cm_workers_dis) * 100),
+  no_disability = c(
+    sum(cm$cm_workers_nodis) / sum(cm$pop_grp_total_nodis) * 100,
+    sum(cm$pop_cni_16plus_transit_nodis)    / sum(cm$cm_workers_nodis) * 100,
+    sum(cm$pop_cni_16plus_drivealone_nodis) / sum(cm$cm_workers_nodis) * 100))
+
+cm_national |> mutate(across(where(is.numeric), \(x) round(x, 2)))
+
+# The correlations quoted in the prose above, recomputed so a future vintage
+# that changes them is visible in the render log rather than silently wrong.
+tibble::tibble(
+  measure = c("transit share", "drive-alone share", "worker share of population"),
+  corr_with_employment_rate = c(
+    cor(cm$cm_transit_dis,       cm$pct_cni_18to64_employed_dis),
+    cor(cm$cm_drivealone_dis,    cm$pct_cni_18to64_employed_dis),
+    cor(cm$cm_worker_share_dis,  cm$pct_cni_18to64_employed_dis))) |>
+  mutate(across(where(is.numeric), \(x) round(x, 3)))
+```
+
+```{r cm-build}
+#| label: cm-build
+build_commuting <- function(cm, acs_year, cfg) {
+
+  pct1 <- function(x) fmt_pct(x, 1)
+
+  specs <- list(
+    list(
+      id = "cm-transit", heading = NULL,
+      map_title     = "Workers with Disabilities Who Commute by Public Transit, by State",
+      table_heading = "Workers with Disabilities Who Commute by Public Transit, by State",
+      value_col = "cm_transit_dis", tier_col = "tier_transit",
+      direction = "magnitude",
+      value_label = "Transit commute share",
+      svg_title = paste0("Workers with disabilities who commute by public ",
+                         "transit, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by size of share, not by ",
+        "performance. Darker maroon marks the largest shares of workers with ",
+        "disabilities commuting by public transit; lighter gold marks the ",
+        "smallest. A high share can reflect usable accessible transit or the ",
+        "absence of any alternative, so neither end is a better outcome on its ",
+        "own. Full data is in the tables below."),
+      direction_note = paste0(
+        "This map is shaded by <strong>how large the share is</strong>, not by ",
+        "performance. A high transit share can mean a state has accessible ",
+        "transit people can rely on, and it can mean workers have no ",
+        "alternative because they cannot drive. Most of what the map shows is ",
+        "urban density. <em>Darker maroon</em> marks the largest shares, ",
+        "<em>lighter gold</em> the smallest."),
+      caption = paste0(
+        "Darker maroon = a larger percentage of <strong>workers</strong> with ",
+        "disabilities commuting by public transit. This map carries no ",
+        "performance judgment, and it describes workers only, not all people ",
+        "with disabilities. Source: U.S. Census Bureau, American Community ",
+        "Survey 5-year estimates (", acs_year - 4, "&ndash;", acs_year,
+        "), Table S1811."),
+      col_headers = c("State", "Percent of Workers", "Workers"),
+      cell_cols = c("cm_transit_dis", "pop_cni_16plus_transit_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      lead = cfg$transit_lead),
+
+    list(
+      id = "cm-drive", heading = "Commute by Driving Alone",
+      map_title     = "Workers with Disabilities Who Drive Alone to Work, by State",
+      table_heading = "Workers with Disabilities Who Drive Alone to Work, by State",
+      value_col = "cm_drivealone_dis", tier_col = "tier_drivealone",
+      direction = "magnitude",
+      value_label = "Drive-alone commute share",
+      svg_title = paste0("Workers with disabilities who drive alone to work, ",
+                         "by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by size of share, not by ",
+        "performance. Darker maroon marks the largest shares of workers with ",
+        "disabilities driving alone to work; lighter gold marks the smallest."),
+      direction_note = paste0(
+        "This map is shaded by <strong>how large the share is</strong>, not by ",
+        "performance. Driving alone can reflect independence and a vehicle ",
+        "adapted to a person's needs, and it can reflect the absence of any ",
+        "usable transit. <em>Darker maroon</em> marks the largest shares, ",
+        "<em>lighter gold</em> the smallest."),
+      caption = paste0(
+        "Darker maroon = a larger percentage of <strong>workers</strong> with ",
+        "disabilities driving alone to work. This map carries no performance ",
+        "judgment, and it describes workers only. Transit and driving alone do ",
+        "not account for every commute; carpooling, walking, cycling and remote ",
+        "work make up the remainder. Source: U.S. Census Bureau, American ",
+        "Community Survey 5-year estimates (", acs_year - 4, "&ndash;",
+        acs_year, "), Table S1811."),
+      col_headers = c("State", "Percent of Workers", "Workers"),
+      cell_cols = c("cm_drivealone_dis", "pop_cni_16plus_drivealone_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      lead = cfg$drivealone_lead)
+  )
+
+  built    <- lapply(specs, fs_indicator_section, data = cm)
+  sections <- paste(vapply(built, `[[`, character(1), "html"), collapse = "\n")
+  map_js   <- paste(vapply(built, `[[`, character(1), "js"),   collapse = "\n\n")
+
+  ord <- order(cm$name)
+
+  # Mode comparison, workers with and without disabilities.
+  transit_compare <- fs_compare_table(
+    caption = "Commute by public transit, share of workers, by state",
+    aria_label = paste0("Percentage of workers commuting by public transit, ",
+                        "workers with disabilities compared with workers ",
+                        "without disabilities"),
+    names = cm$name[ord],
+    dis   = cm$cm_transit_dis[ord],
+    nod   = cm$cm_drivealone_dis[ord],
+    col_dis = "Public Transit",
+    col_nod = "Drove Alone")
+
+  # The denominator, made visible. This is the sheet's largest disparity and the
+  # maps cannot show it, because it is a property of the universe they sit in.
+  workers_table <- fs_compare_table(
+    caption = paste0("Share of each population that is a commuting worker aged ",
+                     "16 and over. This is the denominator behind every ",
+                     "percentage on this factsheet."),
+    aria_label = paste0("Share of each population who are commuting workers, ",
+                        "people with disabilities compared with people without ",
+                        "disabilities"),
+    names   = cm$name[ord],
+    dis     = cm$cm_worker_share_dis[ord],
+    nod     = cm$cm_worker_share_nodis[ord])
+
+  head_html <- fs_html_head(
+    title = "Commuting to Work | ADA-PARC Factsheet",
+    description = paste0(
+      "ADA-PARC factsheet on how workers with disabilities travel to work, ",
+      "covering public transit and driving alone, with state-by-state data and ",
+      "the share of each population counted as commuting workers."),
+    extra_css = "")
+
+  header_html <- fs_header("Commuting to Work", "Community Participation")
+
+  main_html <- paste0(
+'
+', fs_population_note(
+  "Workers age 16 and over",
+  paste0("Every percentage on this sheet describes workers with a disability, ",
+         "not all people with a disability. Only about a quarter of people ",
+         "with disabilities are in this universe at all, against roughly half ",
+         "of people without; the final table reports that gap directly.")), '
+', fs_intro(cfg$intro, acs_year = acs_year), '
+
+', sections, '
+
+    <h2 class="section-heading">How Workers with Disabilities Travel</h2>
+    <p>The two mapped modes side by side for each state. These are shares of workers, and they do not sum to 100 percent; carpooling, walking, cycling and remote work make up the remainder.</p>
+
+', transit_compare, '
+
+    <h2 class="section-heading">Who Is Counted as a Commuter</h2>
+
+', paste0("    <p>", unlist(cfg$workers_table_lead), "</p>", collapse = "\n"), '
+
+', workers_table, '
+
+', fs_footnotes(cfg$footnotes, acs_year = acs_year), '
+')
+
+  fs_write_file(
+    path = file.path(out_dir, "factsheet-commuting.html"),
+    head_html = head_html, header_html = header_html,
+    main_html = main_html, footer_html = fs_footer(),
+    scripts_html = fs_scripts(map_js))
+}
+
+cm_path <- build_commuting(cm, acs_year, content$commuting)
+cm_path
+```
+
+```{r cm-validate}
+#| label: cm-validate
+#| echo: false
+cat("Wrote:", cm_path, "\n")
+cat("File size:", file.info(cm_path)$size, "bytes\n\n")
+cat("Tier counts (", acs_year, " vintage):\n", sep = "")
+print(cm |> count(tier_transit,    name = "transit"))
+print(cm |> count(tier_drivealone, name = "drive_alone"))
+
+cat("\nCheck: the two modes do not account for every commute.\n")
+tot <- cm$cm_transit_dis + cm$cm_drivealone_dis
+cat("  transit + drive alone: ", round(min(tot), 1), "% to ", round(max(tot), 1),
+    "%\n", sep = "")
+cat("  remainder (carpool, walk, cycle, remote): ",
+    round(100 - max(tot), 1), "% to ", round(100 - min(tot), 1), "%\n", sep = "")
+
+cat("\nCheck: the worker universe this sheet describes.\n")
+print(cm |>
+  summarise(
+    `PWD worker share, min` = min(cm_worker_share_dis),
+    `PWD worker share, max` = max(cm_worker_share_dis),
+    `no-disability, min`    = min(cm_worker_share_nodis),
+    `no-disability, max`    = max(cm_worker_share_nodis)) |>
+  mutate(across(everything(), \(x) round(x, 1))))
+```
+
+# Educational Attainment factsheet
+
+Three mapped sections plus a table reporting what the three leave out.
+
+**The three categories are not exhaustive.** Adults whose highest attainment is
+some college without a degree, or an associate's degree, fall into none of them.
+That is 29 percent of adults with disabilities nationally, so the three
+published shares sum to between 63 and 79 percent depending on the state.
+`fs_edu_measures()` derives the remainder exactly as 100 less the three, and it
+gets its own table so a third of the population is not silently missing.
+
+**Directions differ by measure.** Less than high school is low-is-better and
+bachelor's or higher is high-is-better; both are tiered. High school or
+equivalent is shown by magnitude, because a large share there can mean more
+disabled residents finishing high school or more of them stopping at it, and the
+data does not distinguish the two.
+
+**A coincidence that looks like a bug.** California reports 23.0 percent both
+for "less than high school" and for "bachelor's or higher" among adults with
+disabilities, and the derived counts come out bit-identical because they share a
+base. This was checked against the aggregate identity: reconstructing the
+all-population share from the disabled and non-disabled shares reproduces the
+published figure to within 0.06 points on both measures. It is one-decimal
+rounding, not a copied value. Four of the 8,407 places in the city file show the
+same coincidence. Documented here so nobody re-investigates it.
+
+```{r edu-data}
+#| label: edu-data
+edu <- states_df |>
+  fs_edu_measures() |>
+  mutate(
+    name = NAME,
+    tier_nohs      = fs_assign_tiers(edu_nohs_dis,      "low_good"),
+    tier_hs        = fs_assign_tiers(edu_hs_dis,        "magnitude"),
+    tier_bachelors = fs_assign_tiers(edu_bachelors_dis, "high_good")
+  )
+
+# Population-weighted national shares. The introduction in
+# docs/factsheet-prose.docx quotes 17.0, 8.9, 20.9, 39.1 and 29 percent as typed
+# text; check them against this table when the vintage moves.
+edu_national <- tibble::tibble(
+  measure = c("Less than high school", "High school or equivalent",
+              "Bachelor's degree or higher", "Some college or associate's (derived)"),
+  pwd = c(
+    sum(edu$pop_cni_25plus_noGED_dis)     / sum(edu$edu_base_dis) * 100,
+    sum(edu$pop_cni_25plus_GED_dis)       / sum(edu$edu_base_dis) * 100,
+    sum(edu$pop_cni_25plus_bachelors_dis) / sum(edu$edu_base_dis) * 100,
+    sum(edu$edu_other_n_dis)              / sum(edu$edu_base_dis) * 100),
+  no_disability = c(
+    sum(edu$pop_cni_25plus_noGED_nodis)     / sum(edu$edu_base_nodis) * 100,
+    sum(edu$pop_cni_25plus_GED_nodis)       / sum(edu$edu_base_nodis) * 100,
+    sum(edu$pop_cni_25plus_bachelors_nodis) / sum(edu$edu_base_nodis) * 100,
+    NA))
+
+edu_national$no_disability[4] <- 100 - sum(edu_national$no_disability[1:3])
+edu_national |> mutate(across(where(is.numeric), \(x) round(x, 2)))
+```
+
+```{r edu-build}
+#| label: edu-build
+build_education <- function(edu, acs_year, cfg) {
+
+  pct1 <- function(x) fmt_pct(x, 1)
+
+  specs <- list(
+    list(
+      id = "edu-nohs", heading = NULL,
+      map_title     = "Adults with Disabilities Who Did Not Complete High School, by State",
+      table_heading = "Adults with Disabilities Who Did Not Complete High School, by State",
+      value_col = "edu_nohs_dis", tier_col = "tier_nohs",
+      direction = "low_good",
+      value_label = "Below high school",
+      svg_title = paste0("Adults aged 25 and over with disabilities who did not ",
+                         "complete high school, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the lowest share of adults with disabilities ",
+        "whose education ended before a high school diploma; lighter gold ",
+        "(Poor) marks the highest. Full data is in the tables below."),
+      legend_best = "lowest share", legend_worst = "highest share",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the most favorable outcomes (Excellent), here the ",
+        "lowest share of adults with disabilities who did not complete high ",
+        "school. <em>Lighter gold</em> marks the least favorable (Poor)."),
+      caption = paste0(
+        "Darker maroon = a lower percentage of adults aged 25 and over with ",
+        "disabilities whose formal education ended before a high school diploma ",
+        "or equivalent (better). Source: U.S. Census Bureau, American Community ",
+        "Survey 5-year estimates (", acs_year - 4, "&ndash;", acs_year,
+        "), Table S1811."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("edu_nohs_dis", "pop_cni_25plus_noGED_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      table_note = paste0(
+        "Excellent = the smallest share without a high school qualification. ",
+        "Poor = the largest share."),
+      lead = cfg$no_hs_lead),
+
+    list(
+      id = "edu-hs", heading = "High School Diploma or Equivalent",
+      map_title     = "Adults with Disabilities Whose Highest Qualification Is High School, by State",
+      table_heading = "Adults with Disabilities Whose Highest Qualification Is High School, by State",
+      value_col = "edu_hs_dis", tier_col = "tier_hs",
+      direction = "magnitude",
+      value_label = "High school as highest qualification",
+      svg_title = paste0("Adults aged 25 and over with disabilities whose ",
+                         "highest qualification is a high school diploma or ",
+                         "equivalent, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by size of share, not by ",
+        "performance. Darker maroon marks the largest shares of adults with ",
+        "disabilities whose highest qualification is high school; lighter gold ",
+        "marks the smallest. A large share can mean more people completing high ",
+        "school or more people stopping there, so neither end is a better ",
+        "outcome on its own."),
+      direction_note = paste0(
+        "This map is shaded by <strong>how large the share is</strong>, not by ",
+        "performance. A large share can mean a state gets more of its disabled ",
+        "residents through high school, and it can mean more of them stop ",
+        "there. Read it against the two maps either side, which do carry a ",
+        "direction. <em>Darker maroon</em> marks the largest shares, ",
+        "<em>lighter gold</em> the smallest."),
+      caption = paste0(
+        "Darker maroon = a larger percentage of adults aged 25 and over with ",
+        "disabilities whose highest qualification is a high school diploma or ",
+        "GED. This map carries no performance judgment. Source: U.S. Census ",
+        "Bureau, American Community Survey 5-year estimates (",
+        acs_year - 4, "&ndash;", acs_year, "), Table S1811."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("edu_hs_dis", "pop_cni_25plus_GED_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      lead = cfg$hs_lead),
+
+    list(
+      id = "edu-bach", heading = "Bachelor's Degree or Higher",
+      map_title     = "Adults with Disabilities Holding a Bachelor's Degree or Higher, by State",
+      table_heading = "Adults with Disabilities Holding a Bachelor's Degree or Higher, by State",
+      value_col = "edu_bachelors_dis", tier_col = "tier_bachelors",
+      direction = "high_good",
+      value_label = "Bachelor's degree or higher",
+      svg_title = paste0("Adults aged 25 and over with disabilities holding a ",
+                         "bachelor's degree or higher, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the highest share of adults with disabilities ",
+        "holding a bachelor's degree or higher; lighter gold (Poor) marks the ",
+        "lowest."),
+      legend_best = "highest share", legend_worst = "lowest share",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the most favorable outcomes (Excellent), here the ",
+        "highest share of adults with disabilities holding a degree. ",
+        "<em>Lighter gold</em> marks the least favorable (Poor)."),
+      caption = paste0(
+        "Darker maroon = a higher percentage of adults aged 25 and over with ",
+        "disabilities holding a bachelor's degree or a higher qualification ",
+        "(better). Source: U.S. Census Bureau, American Community Survey 5-year ",
+        "estimates (", acs_year - 4, "&ndash;", acs_year, "), Table S1811."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("edu_bachelors_dis", "pop_cni_25plus_bachelors_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      table_note = paste0(
+        "Excellent = the largest share holding a degree. Poor = the smallest ",
+        "share."),
+      lead = cfg$bachelors_lead)
+  )
+
+  built    <- lapply(specs, fs_indicator_section, data = edu)
+  sections <- paste(vapply(built, `[[`, character(1), "html"), collapse = "\n")
+  map_js   <- paste(vapply(built, `[[`, character(1), "js"),   collapse = "\n\n")
+
+  ord <- order(edu$name)
+
+  # The two directional measures, disabled against non-disabled.
+  nohs_compare <- fs_compare_table(
+    caption = "Did not complete high school, adults aged 25 and over, by state",
+    aria_label = paste0("Percentage of adults who did not complete high school, ",
+                        "people with disabilities compared with people without ",
+                        "disabilities"),
+    names = edu$name[ord],
+    dis   = edu$edu_nohs_dis[ord],
+    nod   = edu$edu_nohs_nodis[ord])
+
+  bach_compare <- fs_compare_table(
+    caption = paste0("Bachelor's degree or higher, adults aged 25 and over, ",
+                     "by state"),
+    aria_label = paste0("Percentage of adults holding a bachelor's degree or ",
+                        "higher, people with disabilities compared with people ",
+                        "without disabilities"),
+    names = edu$name[ord],
+    dis   = edu$edu_bachelors_dis[ord],
+    nod   = edu$edu_bachelors_nodis[ord])
+
+  # The uncounted middle, derived as the exact complement of the three published
+  # categories. This is the sheet's honesty check: without it, roughly a third
+  # of adults would be missing from the page with no explanation.
+  other_table <- fs_compare_table(
+    caption = paste0("Some college without a degree, or an associate's degree. ",
+                     "Derived as 100 percent less the three categories above, ",
+                     "so it is exact rather than estimated."),
+    aria_label = paste0("Percentage of adults whose highest attainment is some ",
+                        "college or an associate's degree, people with ",
+                        "disabilities compared with people without disabilities"),
+    names = edu$name[ord],
+    dis   = edu$edu_other_dis[ord],
+    nod   = edu$edu_other_nodis[ord])
+
+  head_html <- fs_html_head(
+    title = "Educational Attainment | ADA-PARC Factsheet",
+    description = paste0(
+      "ADA-PARC factsheet on educational attainment among adults aged 25 and ",
+      "over with disabilities, covering those below high school, at high school ",
+      "level, and holding a bachelor's degree or higher, with state-by-state ",
+      "data."),
+    extra_css = "")
+
+  header_html <- fs_header("Educational Attainment", "Community Participation")
+
+  main_html <- paste0(
+'
+', fs_population_note(
+  "Adults age 25 and over",
+  paste0("Attainment is measured at 25 and over so that most people have had ",
+         "the chance to finish the education they are going to complete. ",
+         "Children and younger adults still in school are outside this ",
+         "universe.")), '
+', fs_intro(cfg$intro, acs_year = acs_year), '
+
+', sections, '
+
+    <h2 class="section-heading">Attainment, With and Without Disability</h2>
+    <p>The two measures that carry a direction, shown for both populations and listed alphabetically. These are the comparisons behind the figures in the introduction.</p>
+
+', nohs_compare, '
+
+', bach_compare, '
+
+    <h2 class="section-heading">The Uncounted Middle</h2>
+
+', paste0("    <p>", unlist(cfg$remainder_table_lead), "</p>", collapse = "\n"), '
+
+', other_table, '
+
+', fs_footnotes(cfg$footnotes, acs_year = acs_year), '
+')
+
+  fs_write_file(
+    path = file.path(out_dir, "factsheet-education.html"),
+    head_html = head_html, header_html = header_html,
+    main_html = main_html, footer_html = fs_footer(),
+    scripts_html = fs_scripts(map_js))
+}
+
+edu_path <- build_education(edu, acs_year, content$education)
+edu_path
+```
+
+```{r edu-validate}
+#| label: edu-validate
+#| echo: false
+cat("Wrote:", edu_path, "\n")
+cat("File size:", file.info(edu_path)$size, "bytes\n\n")
+cat("Tier counts (", acs_year, " vintage):\n", sep = "")
+print(edu |> count(tier_nohs,      name = "below_high_school"))
+print(edu |> count(tier_hs,        name = "high_school"))
+print(edu |> count(tier_bachelors, name = "bachelors_plus"))
+
+cat("\nCheck: the three published categories are not exhaustive.\n")
+tot <- edu$edu_nohs_dis + edu$edu_hs_dis + edu$edu_bachelors_dis
+cat("  three shares sum to ", round(min(tot), 1), "% to ", round(max(tot), 1),
+    "%\n", sep = "")
+cat("  derived remainder:  ", round(min(edu$edu_other_dis), 1), "% to ",
+    round(max(edu$edu_other_dis), 1), "%\n", sep = "")
+cat("  any negative remainder: ", sum(edu$edu_other_dis < 0), " state(s)\n", sep = "")
+
+cat("\nThe California coincidence, confirmed as rounding rather than a copied value:\n")
+print(edu |>
+  filter(name == "California") |>
+  transmute(name,
+            below_high_school = edu_nohs_dis,
+            bachelors_plus    = edu_bachelors_dis,
+            reconstructed_all_nohs =
+              (edu_nohs_dis / 100 * edu_base_dis +
+               edu_nohs_nodis / 100 * edu_base_nodis) /
+              (edu_base_dis + edu_base_nodis) * 100,
+            published_all_nohs = pct_cni_25plus_noGED_all) |>
+  mutate(across(where(is.numeric), \(x) round(x, 2))))
+```
+
+
+

@@ -1,3 +1,42 @@
+/* ── Design tokens ──────────────────────────────────────────────────────────
+   FALLBACKS, NOT THE SOURCE. Phase 5 of docs/palette-v1-build-plan.qmd,
+   2026-08-03.
+
+   These values live in ADAPARC_DOC_TOKENS in scripts/palettes.R. Each rendered
+   scorecard injects a generated :root block through pal_doc_header(), carrying
+   whichever contrast mode it was rendered in. This copy is what applies when
+   the stylesheet is opened on its own, and it is the STANDARD mode exactly;
+   `python3 scripts/check_palette.py` fails if the two drift.
+
+   The four `.rp-qual` tier rules further down ARE tokens as of 2026-08-03.
+   They were the heritage on_white ramp, which does not follow the palette
+   selection and cannot; they are now filled chips reading --tier-*-bg and
+   --tier-*-text, with the heritage fill and on_fill as fallbacks. See the note
+   above those rules.
+
+   --identity-* REPLACED --dom-* IN PHASE 3.2 OF docs/palette-v2-build-plan.qmd,
+   and the rename is not cosmetic. --dom-cl and --dom-cp came from
+   ADAPARC_DOC_TOKENS, which follows the CONTRAST MODE only, and there was no
+   --dom-we at all: the Work & Economic surfaces borrowed --doc-accent, the
+   document's general accent colour, which is why every scorecard looked maroon
+   whatever palette the reader chose. --identity-* comes from the selected
+   palette's `identity` role, all three domains are now first-class, and none of
+   them is the document accent.
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  --doc-ink        : #111111;
+  --doc-ink-soft   : #3d3630;
+  --doc-cream      : #faf7f3;
+  --doc-rule       : #e5ddd3;
+  --doc-accent     : #7b1717;
+  --identity-cl    : #d07048;
+  --identity-cp    : #a81808;
+  --identity-we    : #480008;
+  --on-identity-cl : #111111;
+  --on-identity-cp : #ffffff;
+  --on-identity-we : #ffffff;
+}
+
 /* ── Font note ───────────────────────────────────────────────────────────── */
 /* EB Garamond is loaded via font-loader.html (include-in-header in the      */
 /* QMD YAML). DO NOT add @import url() here: pandoc's self-contained mode    */
@@ -22,8 +61,13 @@ tspan {
 /* ── Base ───────────────────────────────────────────────────────────────── */
 body {
   font-family: 'EB Garamond', Garamond, Georgia, serif;
-  color: #1c2b3a;
-  background: #f0f2f6;
+  color: var(--doc-ink);
+  /* History: #f0f2f6 -> #f5f6f9 (lightened so the page read as a light gray
+     rather than a muddy mid-gray behind the white cards) -> #f7f6f4 on
+     2026-07-27, taking the last of the blue out of the axis. Same lightness,
+     so card separation is unchanged; it simply no longer tints every warm
+     neutral above it toward cool by comparison. */
+  background: #f7f6f4;
   font-size: 17px;
   line-height: 1.6;
 }
@@ -41,7 +85,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 /* ── Banner ─────────────────────────────────────────────────────────────── */
 .state-banner {
   background: #ffffff;
-  color: #1c2b3a;
+  color: var(--doc-ink);
   padding: 2.6rem 3rem 2.2rem;
   border-radius: 12px;
   margin-bottom: 2rem;
@@ -50,7 +94,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
   align-items: center;
   flex-wrap: wrap;
   gap: 2rem;
-  border: 1px solid #e4e8ef;
+  border: 1px solid var(--doc-rule);
   box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
 
@@ -60,14 +104,14 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
   font-family: 'EB Garamond', Garamond, Georgia, serif;
   font-size: 3.4rem;
   font-weight: 700;
-  color: #1c2b3a;
+  color: var(--doc-ink);
   margin: 0 0 0.2rem;
   line-height: 1;
   letter-spacing: -0.01em;
 }
 
 .banner-left .banner-sub {
-  color: #1c2b3a;
+  color: var(--doc-ink);
   font-size: 1.05rem;
   margin: 0.3rem 0 0;
   font-weight: 400;
@@ -79,10 +123,10 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 }
 
 .overall-lbl {
-  font-size: 0.82rem;
-  color: #1c2b3a;
+  font-size: 0.85rem;
+  color: var(--doc-ink);
   text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.07em;
   font-weight: 600;
   font-family: 'EB Garamond', Garamond, Georgia, serif;
   margin-top: 0.4rem;
@@ -97,18 +141,27 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border-top: 6px solid #ccc;
 }
-.domain-card.cl { border-top-color: #c2410c; }
-.domain-card.cp { border-top-color: #a16207; }
-.domain-card.we { border-top-color: #7b1717; }
+.domain-card.cl { border-top-color: var(--identity-cl); }
+.domain-card.cp { border-top-color: var(--identity-cp); }
+.domain-card.we { border-top-color: var(--identity-we); }
 
 /* ── Domain header row ──────────────────────────────────────────────────── */
+/* Stacked and centred: heading, accent rule, description, score badge. The
+   earlier two-column version pinned the heading top-left and the badge
+   top-right, which left the whole left column empty below the heading. */
 .domain-header-row {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1.5rem;
-  margin-bottom: 0.8rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.1rem;
+  margin-bottom: 1.2rem;
+}
+
+/* Both children stretch to the card so their own centring governs, rather
+   than the flex box shrink-wrapping to the widest line of text. */
+.domain-header-row > * {
+  width: 100%;
 }
 
 h2.domain-heading,
@@ -116,31 +169,58 @@ h2.domain-heading,
   font-family: 'EB Garamond', Garamond, Georgia, serif;
   font-size: 2rem;
   font-weight: 700;
-  margin: 0 0 0.3rem;
+  margin: 0;
   line-height: 1.1;
   letter-spacing: -0.01em;
+  border-bottom: none;   /* beats the Bootstrap/Quarto h2 underline */
 }
-.domain-heading.cl { color: #c2410c; }
-.domain-heading.cp { color: #a16207; }
-.domain-heading.we { color: #7b1717; }
+.domain-heading.cl { color: var(--identity-cl); }
+.domain-heading.cp { color: var(--identity-cp); }
+.domain-heading.we { color: var(--identity-we); }
 
+/* Short accent rule under the heading. currentColor inherits the domain
+   colour, so the three cards stay in sync with no extra markup. */
+.domain-header-row h2.domain-heading::after {
+  content: "";
+  display: block;
+  width: 62px;
+  height: 3px;
+  margin: 0.6rem auto 0;
+  background: currentColor;
+}
+
+/* The About section reuses .domain-heading for its <dt> headings; keep those
+   plain and left-aligned. */
+.about-cat-head::after {
+  content: none !important;
+}
+
+/* Plain-language framing for each domain, shown beside the heading. This fills
+   the column that previously sat empty next to the score badge, and answers
+   "what am I looking at" at the point of need rather than in the About section
+   at the foot of the page. */
 .domain-desc {
-  font-size: 0.95rem;
-  color: #1c2b3a;
-  margin: 0;
-  max-width: 500px;
-  line-height: 1.55;
+  font-size: 1rem;
+  color: var(--doc-ink);
+  margin: 0.85rem auto 0;
+  max-width: 640px;   /* keeps the centred measure readable, ~80 characters */
+  line-height: 1.6;
+  text-align: center;
 }
 
 /* ── Score badge ────────────────────────────────────────────────────────── */
+/* Centred beneath the description. `width: fit-content` plus auto margins is
+   what keeps it a compact square rather than a full-width band, now that the
+   parent stretches its children. */
 .domain-score-badge {
   text-align: center;
-  background: #f4f6fa;
+  background: var(--doc-cream);
   border-radius: 10px;
-  padding: 0.9rem 1.8rem 0.8rem;
-  min-width: 140px;
-  flex-shrink: 0;
-  border: 1px solid #e4e8ef;
+  padding: 1rem 2rem 0.9rem;
+  min-width: 200px;
+  width: fit-content;
+  margin: 0 auto;
+  border: 1px solid var(--doc-rule);
 }
 .domain-score-badge .score-val {
   font-family: 'EB Garamond', Garamond, Georgia, serif;
@@ -149,52 +229,201 @@ h2.domain-heading,
   line-height: 1;
   letter-spacing: -0.02em;
 }
-.domain-score-badge.cl .score-val { color: #c2410c; }
-.domain-score-badge.cp .score-val { color: #a16207; }
-.domain-score-badge.we .score-val { color: #7b1717; }
+.domain-score-badge.cl .score-val { color: var(--identity-cl); }
+.domain-score-badge.cp .score-val { color: var(--identity-cp); }
+.domain-score-badge.we .score-val { color: var(--identity-we); }
 
 .domain-score-badge .score-lbl {
-  font-size: 0.8rem;
-  color: #1c2b3a;
+  font-size: 0.85rem;
+  color: var(--doc-ink);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   font-weight: 600;
   margin-top: 0.3rem;
 }
 .domain-score-badge .score-nat {
-  font-size: 0.82rem;
-  color: #1c2b3a;
+  font-size: 0.85rem;
+  color: var(--doc-ink);
   margin-top: 0.2rem;
 }
 .domain-score-badge .score-rank {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #1c2b3a;
+  color: var(--doc-ink);
   margin-top: 0.4rem;
   padding-top: 0.35rem;
-  border-top: 1px solid #e4e8ef;
+  border-top: 1px solid var(--doc-rule);
   letter-spacing: 0.01em;
+}
+
+/* Tier chip inside the rank line. Background and colour are set inline from
+   tier_bg() and tier_ink() in the qmd, so the pair always comes from the same
+   palette entry. The colour is redundant to the word, never the sole channel
+   (WCAG 1.4.1). */
+.domain-score-badge .rank-tier {
+  font-weight: 700;
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--tier-stroke, #1c2b3a);
+}
+
+/* ── Sub-index bars ─────────────────────────────────────────────────────── */
+/* Native HTML/CSS, built by make_subindex_bars() in state_scorecard.qmd.
+   This replaced a rasterised ggplot PNG on 2026-07-27. The 30-line block of
+   !important overrides that used to live here existed only to force that
+   <img> to fill its card under self-contained rendering; with real elements
+   the layout is fluid by default and the overrides are gone. */
+
+.subindex-bars {
+  margin: 0.4rem 0 0;
+}
+
+/* Fixed outer columns keep the label edge, the 0 baseline and the rank
+   column aligned across every row and across all three domain cards. */
+.sib-row {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) 172px;
+  align-items: center;
+  column-gap: 14px;
+  padding: 5px 0;
+}
+
+.sib-label {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 1.05rem;
+  color: var(--doc-ink);
+  text-align: right;
+  line-height: 1.25;
+}
+
+.sib-track {
+  position: relative;
+  height: 34px;
+  background-color: #f0ebe4;
+  /* Quarter gridlines, replacing the ggplot panel grid */
+  background-image: linear-gradient(to right, var(--doc-rule) 1px, transparent 1px);
+  background-size: 25% 100%;
+  border-right: 1px solid var(--doc-rule);
+}
+
+.sib-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 2px;
+}
+
+.sib-value {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* White on the domain fill. All three domain colours clear 5:1 against white. */
+.sib-value-in {
+  color: #ffffff;
+  padding-right: 10px;
+}
+
+/* Flip point for short bars, set in R at score < 16 */
+.sib-value-out {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--doc-ink);
+}
+
+.sib-meta {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.sib-rank {
+  color: var(--doc-ink);
+  font-weight: 600;
+  /* Block so the tier chip below starts a new line. .sib-tier used to be
+     display:block and carried the break itself; as an inline-block chip it no
+     longer can, and .sib-meta is white-space:nowrap, so without this the rank
+     and the chip would share one line and widen the column. */
+  display: block;
+}
+
+.sib-tier {
+  font-weight: 700;
+  /* inline-block, not block: the chip should be the width of its word. The
+     background and colour are set inline from tier_bg() and tier_ink(). */
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  margin-top: 0.15rem;
+  border: 1px solid var(--tier-stroke, #1c2b3a);
+}
+
+.sib-axis {
+  padding-top: 2px;
+}
+
+/* Tick labels are positioned absolutely so each one sits exactly on its
+   gridline. Flexbox space-between would drift the inner labels off the 25/50/75
+   rules, which is the kind of small lie a research-centre chart should not tell. */
+.sib-axis-scale {
+  position: relative;
+  height: 1.15rem;
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 0.85rem;
+  color: var(--doc-ink-soft);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.sib-axis-scale span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.sib-axis-scale span:nth-child(1) { left: 0;    transform: none; }
+.sib-axis-scale span:nth-child(2) { left: 25%; }
+.sib-axis-scale span:nth-child(3) { left: 50%; }
+.sib-axis-scale span:nth-child(4) { left: 75%; }
+.sib-axis-scale span:nth-child(5) { left: 100%; transform: translateX(-100%); }
+
+.sib-empty {
+  font-size: 1rem;
+  color: var(--doc-ink-soft);
+  margin: 0.6rem 0;
+}
+
+/* Keep the scorecard at its intended reading width even if a render environment
+   (Bootstrap grid / page-columns) tries to stretch the content column. Without
+   this cap the whole card spans the full iframe width and the chart, even at
+   100%, becomes disproportionately large or stranded. */
+.page-wrap {
+  max-width: 880px !important;
 }
 
 /* ── Sub-index section label ────────────────────────────────────────────── */
 h3.chart-label,
 .chart-label {
   font-family: 'EB Garamond', Garamond, Georgia, serif;
-  font-size: 0.82rem;
+  font-size: 1rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #1c2b3a;
+  letter-spacing: 0.02em;
+  color: var(--doc-ink);
   margin: 1.6rem 0 0.3rem;
   padding-bottom: 0.4rem;
-  border-bottom: 1px solid #eaecf0;
+  border-bottom: 1px solid #ece5db;
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 .footer-note {
   font-size: 0.88rem;
-  color: #1c2b3a;
-  border-top: 1px solid #dde2ea;
+  color: var(--doc-ink);
+  border-top: 1px solid var(--doc-rule);
   padding-top: 1.2rem;
   margin-top: 2rem;
   line-height: 1.65;
@@ -218,8 +447,8 @@ h3.chart-label,
 }
 
 .rank-pill {
-  background: #f4f6fa;
-  border: 1px solid #e4e8ef;
+  background: var(--doc-cream);
+  border: 1px solid var(--doc-rule);
   border-radius: 8px;
   padding: 0.65rem 1.1rem 0.6rem;
   min-width: 130px;
@@ -228,10 +457,10 @@ h3.chart-label,
 }
 
 .rank-pill .rp-domain {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.13em;
-  color: #1c2b3a;
+  letter-spacing: 0.09em;
+  color: var(--doc-ink);
   font-weight: 600;
   margin-bottom: 0.15rem;
   font-family: 'EB Garamond', Garamond, Georgia, serif;
@@ -241,27 +470,56 @@ h3.chart-label,
   font-family: 'EB Garamond', Garamond, Georgia, serif;
   font-size: 2.4rem;
   font-weight: 700;
-  color: #1c2b3a;
+  color: var(--doc-ink);
   line-height: 1;
 }
 
 .rank-pill .rp-of {
-  font-size: 0.78rem;
-  color: #1c2b3a;
+  font-size: 0.85rem;
+  color: var(--doc-ink);
   margin-top: 0.1rem;
 }
 
 .rank-pill .rp-qual {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 700;
   margin-top: 0.25rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
+  /* Chip geometry. display:inline-block so the padding takes effect and the
+     chip shrink-wraps its word rather than filling the pill. */
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  border-radius: 4px;
+  /* WHY EVERY TIER CHIP IS BORDERED. High Contrast Mono's `poor` fill is pure
+     white, so an unbordered chip disappears against the card. The catalogue
+     note in scripts/palettes.R states the rule: any surface drawing this ramp
+     on a white background needs a border, which is why the map strokes every
+     polygon. A chip is the same case. --tier-stroke is the same token the map
+     outline uses and goes to pure black in high contrast. */
+  border: 1px solid var(--tier-stroke, #1c2b3a);
 }
-.rank-pill .rp-qual.excellent  { color: #630801; }  /* deep maroon — ADA-PARC map top tier */
-.rank-pill .rp-qual.above-avg  { color: #9b1a0a; }  /* dark red — ADA-PARC map third tier */
-.rank-pill .rp-qual.below-avg  { color: #c75000; }  /* dark orange — ADA-PARC map second tier */
-.rank-pill .rp-qual.poor       { color: #92530a; }  /* deep amber — ADA-PARC map base tier */
+/* Tier chips. Changed 2026-08-03 from COLOURED TEXT to a FILLED CHIP.
+
+   These four rules used to set `color` from the heritage `on_white` ramp, which
+   does not follow the reader's palette and cannot: a per-palette on_white ramp
+   collapses to between 0.8 and 7.3 CIEDE2000 of separation and High Contrast
+   Mono has no solution at all. So the tier words stayed maroon and amber on a
+   Cividis scorecard. See the note on pal_on_white() in scripts/palettes.R.
+
+   Painting the tier as a chip moves the colour onto a FILL, and `fill` and
+   `on_fill` do follow the palette and are admitted at 15 CIEDE2000 across all
+   four vision types. Same information, a role that can carry it.
+
+   The var() values come from the generated :root that pal_doc_header() injects,
+   so these rules need no R involvement to track the selection. The fallbacks
+   are the heritage fill and on_fill and are verified by
+     python3 scripts/check_palette.py
+   Do not edit them by hand; edit scripts/palettes.R and re-run the check. */
+.rank-pill .rp-qual.excellent { background: var(--tier-excellent-bg, #560000); color: var(--tier-excellent-text, #ffffff); }
+.rank-pill .rp-qual.above-avg { background: var(--tier-above-bg, #a52f1a); color: var(--tier-above-text, #ffffff); }
+.rank-pill .rp-qual.below-avg { background: var(--tier-below-bg, #d88036); color: var(--tier-below-text, #111111); }
+.rank-pill .rp-qual.poor      { background: var(--tier-poor-bg, #fdd182); color: var(--tier-poor-text, #111111); }
 
 /* ── Summary table wrapper ──────────────────────────────────────────────── */
 .summary-section {
@@ -270,6 +528,83 @@ h3.chart-label,
   padding: 1.8rem 2.4rem 1.6rem;
   margin-bottom: 1.8rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ── Score Summary table ────────────────────────────────────────────────── */
+/* Lining tabular figures. EB Garamond ships proportional figures by default,
+   which leaves columns of numbers visibly ragged; "tnum" fixes the advance
+   width so decimals stack cleanly down each column. */
+.summary-section .gt_table td,
+.summary-section .gt_table th {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Column headings: letter-spacing and text-transform are handled here rather
+   than through tab_options so the rules survive gt version differences. */
+.summary-section .gt_table .gt_col_heading {
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1.25;
+}
+
+/* Kill inherited row striping. Quarto's Bootstrap layer and gt's own
+   .gt_striped default both paint a cool blue-grey band; row shading in this
+   table comes exclusively from cell_fill() in state_scorecard.qmd, which
+   lands on the <td> and therefore still wins over these <tr> rules. */
+.summary-section .gt_table tbody tr,
+.summary-section .gt_table tbody tr:nth-child(even),
+.summary-section .gt_table tbody tr:nth-child(odd),
+.summary-section .gt_table .gt_striped {
+  background-color: #ffffff;
+  --bs-table-striped-bg: transparent;
+  --bs-table-accent-bg: transparent;
+}
+
+/* Source note: gt's source_notes.padding is version-sensitive; set it here. */
+.summary-section .gt_table .gt_sourcenote {
+  padding: 10px 8px 2px;
+}
+
+/* Tier cell: colour square is decorative and redundant to the label, so the
+   label alone carries the meaning for screen readers and greyscale print. */
+.summary-section .tier-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 7px;
+  vertical-align: 1px;
+  flex: none;
+  /* Same reason as the tier chips above: this swatch now carries the tier FILL
+     rather than the on_white text colour, and Mono's lightest fill is #ffffff. */
+  border: 1px solid var(--tier-stroke, #1c2b3a);
+}
+
+.summary-section .tier-label {
+  color: var(--doc-ink);
+  font-weight: 700;
+  font-size: 0.84rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Source note sits flush under the closing rule, not as a tinted band */
+.summary-section .gt_table .gt_sourcenote {
+  border-top: none;
+  line-height: 1.55;
+  color: var(--doc-ink-soft);
+}
+
+@media (max-width: 640px) {
+  .summary-section .gt_table td,
+  .summary-section .gt_table th {
+    font-size: 0.9rem;
+  }
+
+  .summary-section .tier-label {
+    font-size: 0.78rem;
+  }
 }
 
 /* ── Measure descriptions ───────────────────────────────────────────────── */
@@ -281,7 +616,7 @@ h3.chart-label,
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   font-size: 0.95rem;
   line-height: 1.65;
-  color: #1c2b3a;
+  color: var(--doc-ink);
 }
 
 .measure-desc ul {
@@ -318,12 +653,12 @@ h3.chart-label,
 }
 
 .about-cat-desc {
-  font-size: 0.95rem;
-  color: #1c2b3a;
-  line-height: 1.6;
+  font-size: 1rem;
+  color: var(--doc-ink);
+  line-height: 1.7;
   margin: 0 0 0 0;
   padding-bottom: 0.9rem;
-  border-bottom: 1px solid #eaecf0;
+  border-bottom: 1px solid #ece5db;
 }
 
 .about-categories-list dd:last-of-type {
@@ -333,7 +668,7 @@ h3.chart-label,
 
 /* ── Focus visibility (WCAG 2.4.7 / 2.4.11) ────────────────────────────── */
 :focus-visible {
-  outline: 3px solid #1c2b3a !important;
+  outline: 3px solid var(--doc-ink) !important;
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -341,9 +676,9 @@ h3.chart-label,
 a:focus-visible,
 button:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid #1c2b3a !important;
+  outline: 3px solid var(--doc-ink) !important;
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(28, 43, 58, 0.25) !important;
+  box-shadow: 0 0 0 4px rgba(17, 17, 17, 0.25) !important;
   border-radius: 2px;
 }
 
@@ -388,6 +723,37 @@ button:focus-visible,
     padding: 1.25rem 1rem 1rem;
   }
 
+  /* Sub-index bars: stack label above the bar, rank below it, so the track
+     keeps usable width instead of being squeezed by two side columns. */
+  .sib-row {
+    grid-template-columns: 1fr;
+    row-gap: 4px;
+    padding: 9px 0;
+  }
+
+  .sib-label {
+    text-align: left;
+    font-weight: 700;
+  }
+
+  .sib-meta {
+    white-space: normal;
+  }
+
+  .sib-tier {
+    display: inline;
+    margin-left: 0.4rem;
+  }
+
+  .sib-axis .sib-axis-scale {
+    margin-top: 2px;
+  }
+
+  .sib-axis > div:first-child,
+  .sib-axis > div:last-child {
+    display: none;
+  }
+
   /* Summary section: reduce padding */
   .summary-section {
     padding: 1.25rem 1rem 1rem;
@@ -402,12 +768,23 @@ button:focus-visible,
     break-inside: avoid;
     page-break-inside: avoid;
     box-shadow: none;
-    border: 1px solid #dde2ea;
+    border: 1px solid var(--doc-rule);
     border-top-width: 6px;
   }
   .state-banner {
     background: #ffffff !important;
-    border: 1px solid #e4e8ef;
+    border: 1px solid var(--doc-rule);
     border-radius: 6px;
   }
+}
+
+/* ── Bootstrap striping must not paint over gt cell fills ────────────────── */
+/* See the fuller note in scorecard_v3.css. Quarto's table post-processing can
+   add Bootstrap's `table-striped` to a gt table, and Bootstrap draws striping
+   as a translucent `box-shadow: inset` that paints over any inline cell
+   background. The state summary table colours its tier swatches rather than its
+   cells, so nothing is visibly wrong today; this rule is here so the two
+   scorecards behave identically and a future coloured cell cannot regress. */
+.gt_table > :not(caption) > * > * {
+  box-shadow: none !important;
 }

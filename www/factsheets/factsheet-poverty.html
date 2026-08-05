@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Working-Age People with Disabilities Living in Poverty | ADA-PARC Factsheet</title>
-  <meta name="description" content="ADA-PARC factsheet on working-age people with disabilities living in poverty, comparing poverty rates for people with and without disabilities across all U.S. states.">
+  <title>Working-Age People Living in Poverty | ADA-PARC Factsheet</title>
+  <meta name="description" content="ADA-PARC factsheet on poverty rates among working-age people with and without disabilities (ages 18-64), with state-by-state data.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
+:root {
       --navy:        #1c2b3a;
       --navy-dark:   #152233;
       --gold-banner: #f5c842;
@@ -16,17 +16,29 @@
       --bg-card:     #ffffff;
       --border:      #e4e8ef;
       --text-body:   #1c2b3a;
-      /* ADA-PARC canonical tier palette (matches scorecard):
+      /* ADA-PARC HERITAGE tier palette, adopted 2026-07-28.
          Excellent = deep maroon (best performance)
-         Poor      = pale gold   (worst performance) */
-      --tier-excellent-bg:   #630801;
+         Poor      = warm gold   (worst performance)
+
+         This is static CSS and cannot call R, so these values MIRROR
+         ADA_PARC_PALETTE in scripts/palettes.R, which is the single source of
+         truth shared with the national map, the city map and both scorecards.
+
+         Do not edit these by hand. Edit scripts/palettes.R, then run
+           python3 scripts/check_palette.py
+         which fails if this file has drifted, then regenerate the fact sheets.
+
+         Each *-text value is the better of near-black and white against its
+         paired background and clears WCAG 2.2 SC 1.4.3 AA. Measured ratios:
+         excellent 15.05:1 | above 6.95:1 | below 6.35:1 | poor 13.15:1. */
+      --tier-excellent-bg:   #560000;
       --tier-excellent-text: #ffffff;
-      --tier-above-bg:       #c41306;
+      --tier-above-bg:       #a52f1a;
       --tier-above-text:     #ffffff;
-      --tier-below-bg:       #fa8e57;
-      --tier-below-text:     #1c2b3a;
-      --tier-poor-bg:        #e8c84a;
-      --tier-poor-text:      #1c2b3a;
+      --tier-below-bg:       #d88036;
+      --tier-below-text:     #111111;
+      --tier-poor-bg:        #fdd182;
+      --tier-poor-text:      #111111;
       --tier-na-bg:          #e0e0e0;
       --tier-na-text:        #444444;
       /* Backwards-compatible aliases so legacy .best/.good/.fair/.worst
@@ -60,41 +72,43 @@
     .intro-section p { margin-bottom: 1rem; }
     .intro-section p:last-child { margin-bottom: 0; }
     .section-heading { font-size: 1.25rem; font-weight: 700; color: var(--navy); margin: 2rem 0 .75rem; padding-bottom: .4rem; border-bottom: 2px solid var(--border); }
-    /* Summary stats */
-    .summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.25rem 0; }
-    .summary-stat { background: #f5f7fa; border: 1px solid var(--border); border-radius: 6px; padding: .9rem 1.1rem; text-align: center; }
-    .summary-stat .stat-number { font-size: 2rem; font-weight: 700; color: #c2410c; line-height: 1.1; }
-    .summary-stat .stat-label { font-size: .85rem; color: #4a5a67; margin-top: .25rem; line-height: 1.35; }
-    /* Maps grid */
-    .maps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
-    .map-figure { margin: 0; }
+    /* Direction note */
+    .direction-note { background: #e8f0e8; border-left: 4px solid #166534; border-radius: 0 6px 6px 0; padding: .75rem 1.1rem; margin-bottom: 1.25rem; font-size: .95rem; }
+    .direction-note strong { color: #166534; }
+    /* Map */
+    .map-figure { margin: 1rem 0; }
     .map-title { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: .6rem; line-height: 1.3; }
-    .map-container { background: #f0f4f9; border-radius: 6px; min-height: 220px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .map-container { background: #f0f4f9; border-radius: 6px; min-height: 260px; display: flex; align-items: center; justify-content: center; position: relative; }
     .map-container svg { display: block; }
     .map-loading { color: #4a5a67; font-size: .9rem; font-style: italic; padding: 1rem; }
     .map-error { color: #b91c1c; font-size: .9rem; padding: 1rem; }
     .map-noscript { font-size: .9rem; color: #4a5a67; padding: 1rem; }
     /* Legend */
-    .map-legend { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 .4rem; align-items: center; }
-    .map-caption { font-size: .82rem; color: #4a5a67; line-height: 1.45; margin-top: .4rem; }
-    /* Range chips */
-    .range-chip { display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 4px; font-size: .78rem; font-weight: 700; letter-spacing: .02em; border: 1px solid rgba(0,0,0,.12); }
+    .map-legend { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 .5rem; align-items: center; }
+    .map-caption { font-size: .82rem; color: #4a5a67; line-height: 1.45; margin-top: .5rem; }
+    .map-caption a { color: #0d3b8e; }
+    /* Tier chips */
+    .tier-chip { display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 100px; font-size: .8rem; font-weight: 700; letter-spacing: .03em; }
+    .tier-chip.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
+    .tier-chip.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
+    .tier-chip.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
+    .tier-chip.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
     /* Tables */
-    .stat-callout { background: #f0f4f9; border-left: 5px solid var(--navy); border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin: 1.25rem 0; }
-    .stat-callout strong { font-size: 1.1rem; color: var(--navy); }
-    .table-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
-    .state-table-wrapper { overflow-x: auto; }
+    .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
+    .tier-table-group { margin-bottom: 1.25rem; }
+    .tier-header { display: block; padding: .4rem .75rem; font-weight: 700; font-size: 1rem; letter-spacing: .04em; text-transform: uppercase; border-radius: 4px 4px 0 0; }
+    .tier-header.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
+    .tier-header.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
+    .tier-header.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
+    .tier-header.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
     table { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--bg-card); }
-    table caption { font-size: .87rem; font-style: italic; color: #4a5a67; caption-side: top; text-align: left; padding-bottom: .5rem; font-weight: 600; }
     thead tr { background: var(--navy); color: #fff; }
-    thead th { padding: .5rem .75rem; text-align: left; font-weight: 600; font-size: .85rem; letter-spacing: .03em; white-space: nowrap; }
+    thead th { padding: .5rem .75rem; text-align: left; font-weight: 600; font-size: .85rem; letter-spacing: .03em; }
     thead th:not(:first-child) { text-align: right; }
-    thead th.disability-col { background: #2e4a64; }
     tbody tr:nth-child(even) { background: #fafbfd; }
-    tbody td { padding: .42rem .75rem; border-bottom: 1px solid var(--border); }
+    tbody td { padding: .4rem .75rem; border-bottom: 1px solid var(--border); }
     tbody td:not(:first-child) { text-align: right; }
     tbody tr:last-child td { border-bottom: none; }
-    td.high-poverty { color: #b91c1c; font-weight: 600; }
     /* Footnotes */
     .footnotes { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .82rem; color: #4a5a67; line-height: 1.5; }
     .footnotes ol { padding-left: 1.2rem; }
@@ -111,7 +125,7 @@
     .state-path:hover { opacity: .8; }
     /* Responsive */
     @media (max-width: 680px) {
-      .maps-grid, .table-columns { grid-template-columns: 1fr; }
+      .tables-grid { grid-template-columns: 1fr; }
       .factsheet-body { padding: 1.25rem; }
       .factsheet-header { grid-template-columns: 1fr; text-align: center; }
     }
@@ -120,7 +134,7 @@
       .page-wrapper { box-shadow: none; max-width: 100%; }
       .skip-link { display: none; }
       .factsheet-body { padding: 1rem; }
-      .maps-grid, .table-columns { grid-template-columns: 1fr 1fr; }
+      .tables-grid { grid-template-columns: 1fr 1fr; }
     }
   
     /* ─── ADA-PARC tier classes (new canonical names) ─── */
@@ -134,10 +148,15 @@
     .tier-header.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
     .tier-header.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
     /* ─── Enhanced SVG state interactivity (hover + keyboard focus) ─── */
-    .state-path { transition: filter .15s ease, stroke .15s ease, stroke-width .15s ease; cursor: pointer; outline: none; }
+    /* These rules set stroke-WIDTH only. A stroke COLOUR here would overwrite
+       the per-state border ink adaparc-map.js sets from each state's own fill,
+       and a #1c2b3a outline on a #560000 fill is about 1.3:1, i.e. no visible
+       hover state on precisely the best-performing states. Width plus the
+       brightness lift carries the affordance on every tier. */
+    .state-path { transition: filter .15s ease, stroke-width .15s ease; cursor: pointer; outline: none; }
     .state-path:hover,
-    .state-path:focus-visible { stroke: #1c2b3a; stroke-width: 2.25; filter: brightness(1.06); }
-    .state-path.is-active { stroke: #1c2b3a; stroke-width: 2.5; }
+    .state-path:focus-visible { stroke-width: 2.25; filter: brightness(1.06); }
+    .state-path.is-active { stroke-width: 2.5; }
     /* ─── Floating tooltip for hover / keyboard focus ─── */
     .map-tooltip {
       position: absolute;
@@ -176,6 +195,21 @@
       .map-tooltip { transition: none; }
       .skip-link   { transition: none; }
     }
+
+    /* ---- per-factsheet overrides ---- */
+    .summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.25rem 0; }
+    .summary-stat { background: #f5f7fa; border: 1px solid var(--border); border-radius: 6px; padding: .9rem 1.1rem; text-align: center; }
+    .summary-stat .stat-number { font-size: 2rem; font-weight: 700; color: #c2410c; line-height: 1.1; }
+    .summary-stat .stat-label { font-size: .85rem; color: #4a5a67; margin-top: .25rem; line-height: 1.35; }
+    .maps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+    .map-figure { margin: 0; }
+    .table-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+    .state-table-wrapper { overflow-x: auto; }
+    table caption { font-size: .87rem; font-style: italic; color: #4a5a67; caption-side: top; text-align: left; padding-bottom: .5rem; font-weight: 600; }
+    thead th.disability-col { background: #2e4a64; }
+    td.high-poverty { color: #b91c1c; font-weight: 600; }
+    @media (max-width: 680px) { .maps-grid, .table-columns { grid-template-columns: 1fr; } }
+    @media print { .maps-grid, .table-columns { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
 <body>
@@ -191,7 +225,7 @@
     </div>
     <div class="header-title">
       <h1>Working-Age People Living in Poverty</h1>
-      <p class="published">Published by ADA-PARC, September 2025</p>
+      <p class="published">Printed by ADA-PARC, September 2025</p>
     </div>
     <div class="logo-ada-national" aria-label="ADA National Network">
       <span aria-hidden="true">ada</span>
@@ -203,15 +237,14 @@
     <section class="intro-section" aria-label="Introduction">
       <p>The Americans with Disabilities Act (ADA) rests on the idea that people with disabilities should be assured equal opportunity and economic self-sufficiency.<sup>1</sup> Yet, people with disabilities remain over twice as likely to live in poverty.<sup>2</sup></p>
 
-      <p>Despite the ADA's call for economic freedom and equal opportunity, some states are doing better than others to ensure that people with disabilities are not living in poverty. The maps and tables below display <strong>state percentages for working-aged people with disabilities (ages 18–64) who are below the poverty line</strong>. Higher percentages mean more disabled people are living below the poverty line.</p>
+      <p>Despite the ADA's call for economic freedom and equal opportunity, some states are doing better than others to ensure that people with disabilities are not living in poverty. The maps and tables below display <strong>state percentages for working-aged people with disabilities (ages 18&ndash;64) who are below the poverty line</strong>. Higher percentages mean more disabled people are living below the poverty line.</p>
 
       <p>The strain of economic hardship highlights the ways in which disability and poverty remain intertwined. People with disabilities make up less than 13% of the United States population, but over 50% of its people live in long-term poverty.<sup>3</sup> Every state has the responsibility to ensure people with disabilities can live free from poverty.</p>
     </section>
 
-    <!-- Key summary stats -->
     <div class="summary-stats" aria-label="Key statistics">
       <div class="summary-stat">
-        <div class="stat-number">2×</div>
+        <div class="stat-number">2&times;</div>
         <div class="stat-label">People with disabilities are more than twice as likely to live in poverty</div>
       </div>
       <div class="summary-stat">
@@ -225,46 +258,47 @@
     </div>
 
     <h2 class="section-heading">State Maps</h2>
-    <p>Maps compare poverty rates for working-age people <em>with</em> disabilities (left) and <em>without</em> disabilities (right). Darker shading indicates higher poverty rates. Puerto Rico data appears in the table but is not shown on the maps.</p>
+    <p>Maps compare poverty rates for working-age people <em>with</em> disabilities (left) and <em>without</em> disabilities (right). Puerto Rico data appears in the table but is not shown on the maps.</p>
+
+    <div class="direction-note" role="note">
+      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the most favorable outcomes (Excellent), here the lowest poverty rates. <em>Lighter gold</em> marks the least favorable outcomes (Poor), the highest rates.
+    </div>
 
     <div class="map-legend" aria-label="Performance tiers for poverty rate, from Excellent (lowest rate) to Poor (highest rate)" style="margin-bottom:.75rem;">
       <span style="font-size:.85rem;font-weight:600;color:var(--navy);margin-right:.25rem;">Poverty rate:</span>
-      <span class="tier-chip excellent">Excellent (5%–10%)</span>
-      <span class="tier-chip above">Above Average (10%–19%)</span>
-      <span class="tier-chip below">Below Average (19%–25%)</span>
-      <span class="tier-chip poor">Poor (25%–51%)</span>
+      <span class="tier-chip excellent">Excellent (5%-10%)</span>
+      <span class="tier-chip above">Above Average (10%-18%)</span>
+      <span class="tier-chip below">Below Average (18%-24%)</span>
+      <span class="tier-chip poor">Poor (24%-49%)</span>
     </div>
 
     <div class="maps-grid">
-
       <figure class="map-figure">
         <h3 class="map-title" id="pwd-map-heading">Poverty Rate, People <em>with</em> Disabilities</h3>
         <div id="map-pwd" class="map-container" aria-labelledby="pwd-map-heading pwd-map-desc">
-          <p id="pwd-map-desc" class="map-loading" aria-live="polite">Loading map…</p>
+          <p id="pwd-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
           <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
         </div>
-        <figcaption class="map-caption">Darker shading = higher poverty rate for working-age people with disabilities. Most states fall in the 19%–25% or 25%–51% ranges. Only Utah (17.8%) is below 19%. Puerto Rico (50.3%) not shown.</figcaption>
+        <figcaption class="map-caption">Darker maroon = lower poverty rate for working-age people with disabilities (better). Puerto Rico (48.9%) is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024).</figcaption>
       </figure>
 
       <figure class="map-figure">
         <h3 class="map-title" id="nod-map-heading">Poverty Rate, People <em>without</em> Disabilities</h3>
         <div id="map-nod" class="map-container" aria-labelledby="nod-map-heading nod-map-desc">
-          <p id="nod-map-desc" class="map-loading" aria-live="polite">Loading map…</p>
+          <p id="nod-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
           <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
         </div>
-        <figcaption class="map-caption">Darker shading = higher poverty rate for working-age people without disabilities. Most states fall in the 5%–10% or 10%–19% ranges, notably lower than disability poverty rates. Puerto Rico (36.3%) not shown.</figcaption>
+        <figcaption class="map-caption">Darker maroon = lower poverty rate for working-age people without disabilities (better). Rates here are notably lower overall than for people with disabilities. Puerto Rico (34.9%) is not shown.</figcaption>
       </figure>
-
     </div>
 
-    <h2 class="section-heading">Percent of People (Ages 18–64) Below the Poverty Line, by State</h2>
+    <h2 class="section-heading">Percent of People (Ages 18&ndash;64) Below the Poverty Line, by State</h2>
     <p>Disability poverty rates bolded in red indicate states where more than 25% of working-age people with disabilities live below the poverty line.</p>
 
     <div class="table-columns">
-      <!-- First half: A–M -->
       <div class="state-table-wrapper">
         <table aria-label="Poverty rates, states A through M">
-          <caption>States A–M: Percent below poverty line, ages 18–64</caption>
+          <caption>States A-M: Percent below poverty line, ages 18-64</caption>
           <thead>
             <tr>
               <th scope="col">State</th>
@@ -273,40 +307,39 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>Alabama</td><td class="high-poverty">26.6%</td><td>12.7%</td></tr>
-            <tr><td>Alaska</td><td>20.5%</td><td>8.7%</td></tr>
-            <tr><td>Arizona</td><td>22.8%</td><td>10.8%</td></tr>
-            <tr><td>Arkansas</td><td class="high-poverty">28.9%</td><td>12.8%</td></tr>
-            <tr><td>California</td><td>22.5%</td><td>9.9%</td></tr>
-            <tr><td>Colorado</td><td>19.9%</td><td>8.2%</td></tr>
-            <tr><td>Connecticut</td><td>24.2%</td><td>8.0%</td></tr>
-            <tr><td>Delaware</td><td>20.4%</td><td>8.9%</td></tr>
-            <tr><td>District of Columbia</td><td class="high-poverty">35.2%</td><td>10.8%</td></tr>
-            <tr><td>Florida</td><td>22.4%</td><td>10.5%</td></tr>
-            <tr><td>Georgia</td><td>23.0%</td><td>10.8%</td></tr>
-            <tr><td>Hawaii</td><td>21.5%</td><td>8.6%</td></tr>
-            <tr><td>Idaho</td><td>20.4%</td><td>9.2%</td></tr>
-            <tr><td>Illinois</td><td>24.5%</td><td>9.5%</td></tr>
-            <tr><td>Indiana</td><td class="high-poverty">25.0%</td><td>10.0%</td></tr>
-            <tr><td>Iowa</td><td class="high-poverty">25.0%</td><td>9.5%</td></tr>
-            <tr><td>Kansas</td><td>24.7%</td><td>9.8%</td></tr>
-            <tr><td>Kentucky</td><td class="high-poverty">30.7%</td><td>12.5%</td></tr>
-            <tr><td>Louisiana</td><td class="high-poverty">30.0%</td><td>15.5%</td></tr>
-            <tr><td>Maine</td><td class="high-poverty">26.6%</td><td>8.2%</td></tr>
-            <tr><td>Maryland</td><td>22.3%</td><td>7.3%</td></tr>
-            <tr><td>Massachusetts</td><td class="high-poverty">25.3%</td><td>7.7%</td></tr>
-            <tr><td>Michigan</td><td class="high-poverty">27.1%</td><td>10.6%</td></tr>
-            <tr><td>Minnesota</td><td>24.5%</td><td>7.3%</td></tr>
-            <tr><td>Mississippi</td><td class="high-poverty">29.9%</td><td>15.3%</td></tr>
-            <tr><td>Missouri</td><td class="high-poverty">27.4%</td><td>9.9%</td></tr>
+            <tr><td>Alabama</td><td class="high-poverty">25.9%</td><td>12.4%</td></tr>
+            <tr><td>Alaska</td><td>20.8%</td><td>8.6%</td></tr>
+            <tr><td>Arizona</td><td>21.7%</td><td>10.5%</td></tr>
+            <tr><td>Arkansas</td><td class="high-poverty">28.8%</td><td>12.4%</td></tr>
+            <tr><td>California</td><td>22.1%</td><td>9.9%</td></tr>
+            <tr><td>Colorado</td><td>19.6%</td><td>8.0%</td></tr>
+            <tr><td>Connecticut</td><td>23.5%</td><td>7.7%</td></tr>
+            <tr><td>Delaware</td><td>19.5%</td><td>8.3%</td></tr>
+            <tr><td>District of Columbia</td><td class="high-poverty">34.3%</td><td>10.7%</td></tr>
+            <tr><td>Florida</td><td>22.0%</td><td>10.3%</td></tr>
+            <tr><td>Georgia</td><td>22.7%</td><td>10.6%</td></tr>
+            <tr><td>Hawaii</td><td>22.3%</td><td>8.6%</td></tr>
+            <tr><td>Idaho</td><td>19.3%</td><td>8.9%</td></tr>
+            <tr><td>Illinois</td><td>24.4%</td><td>9.4%</td></tr>
+            <tr><td>Indiana</td><td>24.5%</td><td>9.8%</td></tr>
+            <tr><td>Iowa</td><td>23.8%</td><td>9.4%</td></tr>
+            <tr><td>Kansas</td><td>24.0%</td><td>9.4%</td></tr>
+            <tr><td>Kentucky</td><td class="high-poverty">30.5%</td><td>12.3%</td></tr>
+            <tr><td>Louisiana</td><td class="high-poverty">29.6%</td><td>15.4%</td></tr>
+            <tr><td>Maine</td><td class="high-poverty">26.0%</td><td>7.9%</td></tr>
+            <tr><td>Maryland</td><td>21.4%</td><td>7.3%</td></tr>
+            <tr><td>Massachusetts</td><td>24.4%</td><td>7.4%</td></tr>
+            <tr><td>Michigan</td><td class="high-poverty">26.6%</td><td>10.6%</td></tr>
+            <tr><td>Minnesota</td><td>24.8%</td><td>7.2%</td></tr>
+            <tr><td>Mississippi</td><td class="high-poverty">29.8%</td><td>14.7%</td></tr>
+            <tr><td>Missouri</td><td class="high-poverty">26.7%</td><td>9.7%</td></tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Second half: M–W + PR -->
       <div class="state-table-wrapper">
         <table aria-label="Poverty rates, states M through W and Puerto Rico">
-          <caption>States M–W &amp; Puerto Rico: Percent below poverty line, ages 18–64</caption>
+          <caption>States M-W &amp; Puerto Rico: Percent below poverty line, ages 18-64</caption>
           <thead>
             <tr>
               <th scope="col">State</th>
@@ -315,32 +348,32 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>Montana</td><td>23.6%</td><td>10.7%</td></tr>
-            <tr><td>Nebraska</td><td>23.0%</td><td>8.7%</td></tr>
-            <tr><td>Nevada</td><td>21.7%</td><td>10.5%</td></tr>
-            <tr><td>New Hampshire</td><td>20.5%</td><td>5.3%</td></tr>
-            <tr><td>New Jersey</td><td>19.7%</td><td>7.6%</td></tr>
-            <tr><td>New Mexico</td><td class="high-poverty">29.1%</td><td>15.5%</td></tr>
+            <tr><td>Montana</td><td>23.0%</td><td>10.0%</td></tr>
+            <tr><td>Nebraska</td><td>22.8%</td><td>8.8%</td></tr>
+            <tr><td>Nevada</td><td>20.3%</td><td>10.4%</td></tr>
+            <tr><td>New Hampshire</td><td>19.6%</td><td>5.2%</td></tr>
+            <tr><td>New Jersey</td><td>19.1%</td><td>7.5%</td></tr>
+            <tr><td>New Mexico</td><td class="high-poverty">28.4%</td><td>15.1%</td></tr>
             <tr><td>New York</td><td class="high-poverty">28.8%</td><td>10.8%</td></tr>
-            <tr><td>North Carolina</td><td class="high-poverty">25.0%</td><td>10.7%</td></tr>
-            <tr><td>North Dakota</td><td>23.9%</td><td>9.6%</td></tr>
-            <tr><td>Ohio</td><td class="high-poverty">28.2%</td><td>10.4%</td></tr>
-            <tr><td>Oklahoma</td><td class="high-poverty">26.1%</td><td>12.8%</td></tr>
-            <tr><td>Oregon</td><td class="high-poverty">26.6%</td><td>10.1%</td></tr>
-            <tr><td>Pennsylvania</td><td class="high-poverty">26.3%</td><td>9.0%</td></tr>
-            <tr><td>Rhode Island</td><td class="high-poverty">25.2%</td><td>8.4%</td></tr>
-            <tr><td>South Carolina</td><td class="high-poverty">25.0%</td><td>11.7%</td></tr>
-            <tr><td>South Dakota</td><td>24.8%</td><td>10.1%</td></tr>
-            <tr><td>Tennessee</td><td class="high-poverty">26.5%</td><td>10.8%</td></tr>
-            <tr><td>Texas</td><td>22.1%</td><td>11.1%</td></tr>
-            <tr><td>Utah</td><td>17.8%</td><td>7.8%</td></tr>
-            <tr><td>Vermont</td><td class="high-poverty">27.2%</td><td>8.6%</td></tr>
-            <tr><td>Virginia</td><td>20.7%</td><td>8.3%</td></tr>
-            <tr><td>Washington</td><td>22.4%</td><td>8.1%</td></tr>
-            <tr><td>West Virginia</td><td class="high-poverty">30.8%</td><td>14.1%</td></tr>
-            <tr><td>Wisconsin</td><td>23.7%</td><td>8.8%</td></tr>
-            <tr><td>Wyoming</td><td>21.4%</td><td>9.6%</td></tr>
-            <tr><td>Puerto Rico</td><td class="high-poverty">50.3%</td><td>36.3%</td></tr>
+            <tr><td>North Carolina</td><td>24.4%</td><td>10.3%</td></tr>
+            <tr><td>North Dakota</td><td>24.0%</td><td>9.3%</td></tr>
+            <tr><td>Ohio</td><td class="high-poverty">27.8%</td><td>10.3%</td></tr>
+            <tr><td>Oklahoma</td><td class="high-poverty">25.5%</td><td>12.5%</td></tr>
+            <tr><td>Oregon</td><td class="high-poverty">26.4%</td><td>9.9%</td></tr>
+            <tr><td>Pennsylvania</td><td class="high-poverty">25.3%</td><td>8.7%</td></tr>
+            <tr><td>Rhode Island</td><td>24.7%</td><td>8.2%</td></tr>
+            <tr><td>South Carolina</td><td>24.5%</td><td>11.4%</td></tr>
+            <tr><td>South Dakota</td><td class="high-poverty">25.1%</td><td>9.8%</td></tr>
+            <tr><td>Tennessee</td><td class="high-poverty">25.9%</td><td>10.6%</td></tr>
+            <tr><td>Texas</td><td>21.9%</td><td>11.0%</td></tr>
+            <tr><td>Utah</td><td>17.2%</td><td>7.6%</td></tr>
+            <tr><td>Vermont</td><td class="high-poverty">25.3%</td><td>7.8%</td></tr>
+            <tr><td>Virginia</td><td>20.4%</td><td>8.0%</td></tr>
+            <tr><td>Washington</td><td>22.4%</td><td>7.9%</td></tr>
+            <tr><td>West Virginia</td><td class="high-poverty">31.0%</td><td>13.7%</td></tr>
+            <tr><td>Wisconsin</td><td>23.0%</td><td>8.6%</td></tr>
+            <tr><td>Wyoming</td><td>21.1%</td><td>9.4%</td></tr>
+            <tr><td>Puerto Rico</td><td class="high-poverty">48.9%</td><td>34.9%</td></tr>
           </tbody>
         </table>
       </div>
@@ -348,10 +381,9 @@
 
     <div class="footnotes" role="note" aria-label="Data sources">
       <ol>
-        <li>Americans With Disabilities Act of 1990. Pub. L. 101-336. § 1. 26 July 1990. 104 Stat. 328.</li>
-        <li>U.S. Census Bureau. American Community Survey 5-year estimates (2019–2023). Table ACSDT5Y2023.C18130.</li>
+        <li>Americans With Disabilities Act of 1990. Pub. L. 101-336. &sect; 1. 26 July 1990. 104 Stat. 328.</li>
+        <li>U.S. Census Bureau. American Community Survey 5-year estimates (2020&ndash;2024). Table ACSDT5Y2024.C18130.</li>
         <li>National Council on Disability (NCD), 2017 Progress Report. National Council on Disability.</li>
-        <li>Percentages are calculated from Table S2602 of the American Community Survey (ACS) 2018 data.</li>
       </ol>
     </div>
 
@@ -359,29 +391,78 @@
 
   <footer class="factsheet-footer" role="contentinfo">
     <p class="funding-note">The ADA-PARC is funded by the National Institute for Disability, Independent Living, and Rehabilitation Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.</p>
-    <p>Americans with Disabilities Act Participatory Action Research Consortium (ADA-PARC) is a collaborative national project to examine participation disparities experienced by people with disabilities. For more information on your state, visit <a href="https://adaparc.org" target="_blank" rel="noopener noreferrer">ADAPARC.ORG</a>. For more information about your rights go to the ADA National Network at <a href="https://adata.org" target="_blank" rel="noopener noreferrer">ADATA.ORG</a>. Please contact <a href="mailto:hammel@uic.edu">hammel@uic.edu</a> with any questions.</p>
+    <p>The Americans with Disabilities Act Participation Action Research Consortium (ADA-PARC) is a collaborative national project to document participation disparities experienced by people with disabilities at the national, state, and city levels. For more information on your state, visit <a href="https://adaparc.org" target="_blank" rel="noopener noreferrer">ADAPARC.ORG</a>. For more information about your rights, go to the ADA National Network at <a href="https://adata.org" target="_blank" rel="noopener noreferrer">ADATA.ORG</a>. Please contact <a href="mailto:hammel@uic.edu">hammel@uic.edu</a> with any questions.</p>
   </footer>
 
 </div>
 
-<!-- ═══ D3 MAP SCRIPTS (ADA-PARC shared) ═══ -->
+<!-- D3 MAP SCRIPTS (ADA-PARC shared) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script>
 // ── ADA-PARC shared map palette & renderer ─────────────────────
+// ADA-PARC HERITAGE tier fills, adopted 2026-07-28.
+//
+// This file runs in the browser and cannot call R, so these values MIRROR
+// ADA_PARC_PALETTE$fill in scripts/palettes.R, which is the single source of
+// truth shared with the national map, the city map and both scorecards.
+//
+// Do not edit these by hand. Edit scripts/palettes.R, then run
+//   python3 scripts/check_palette.py
+// which fails if this file has drifted, then regenerate the fact sheets.
 const ADAPARC_TIER_COLOR = {
-  excellent: "#630801",  // deep maroon  (Excellent, best performance)
-  above:     "#c41306",  // dark red     (Above Average)
-  below:     "#fa8e57",  // orange       (Below Average)
-  poor:      "#e8c84a",  // pale gold    (Poor, worst performance)
+  excellent: "#560000",  // deep maroon  (Excellent, best performance)
+  above:     "#a52f1a",  // dark red     (Above Average)
+  below:     "#d88036",  // burnt orange (Below Average)
+  poor:      "#fdd182",  // warm gold    (Poor, worst performance)
   na:        "#e0e0e0"
 };
+
+// Per-state border ink, adopted 2026-08-04. Mirrors ADA_PARC_PALETTE$on_fill
+// (and $na_text for the no-data fill) in scripts/palettes.R, and is checked by
+// scripts/check_palette.py alongside the fills above.
+//
+// The border used to be a fixed white on every state. That is invisible where
+// it meets either of the two light tiers, so neighbouring gold or orange states
+// merged into one undifferentiated patch. Each state now takes the ink that its
+// OWN fill calls for: near-black on the two light tiers, white on the two dark
+// ones. Same rule as border_ink_for_fill() on the national map.
+//
+// on_fill is held to the 4.5:1 AA text floor, which is stricter than the 3:1
+// WCAG 2.2 SC 1.4.11 floor a border has to clear, so reading it here is safe.
+const ADAPARC_TIER_BORDER = {
+  excellent: "#ffffff",
+  above:     "#ffffff",
+  below:     "#111111",
+  poor:      "#111111",
+  na:        "#444444"
+};
+
+// National perimeter. Drawn UNDER the states, wider than the per-state stroke,
+// so each state's fill paints over its inner half and only the outside flank
+// survives. Without it, a dark-tier coastal state's white border vanishes
+// against the white page and the national silhouette breaks up.
+const ADAPARC_MAP_PERIMETER = "#1c2b3a";  // = ADA_PARC_PALETTE$stroke
 
 const ADAPARC_TIER_LABEL = {
   excellent: "Excellent",
   above:     "Above Average",
   below:     "Below Average",
   poor:      "Poor",
+  na:        "No data available"
+};
+
+// Neutral alternative for indicators where a high or low value is not a better
+// or worse outcome, only a larger or smaller one. Non-institutional group
+// quarters is the motivating case: the category mixes group homes, shelters and
+// college dormitories, so calling any quartile "Excellent" would assert
+// something the data does not support. The color ramp still encodes magnitude
+// (darker = higher), but no label carries a value judgment.
+const ADAPARC_TIER_LABEL_MAGNITUDE = {
+  excellent: "Highest quarter",
+  above:     "Second highest quarter",
+  below:     "Second lowest quarter",
+  poor:      "Lowest quarter",
   na:        "No data available"
 };
 
@@ -440,9 +521,14 @@ function __ensureTooltip(container, liveId) {
  * @param {string} opts.svgTitle      accessible <title>
  * @param {string} opts.svgDesc       accessible <desc>
  * @param {string} opts.valueLabel    short label describing the value (e.g. "Poverty rate")
+ * @param {object} [opts.tierLabels]  optional tier -> label map. Defaults to the
+ *                                    performance labels. Pass
+ *                                    ADAPARC_TIER_LABEL_MAGNITUDE for indicators
+ *                                    with no better/worse direction.
  */
 async function adaparcRenderMap(opts) {
   const { containerId, descId, stateData, svgTitle, svgDesc, valueLabel } = opts;
+  const LABELS = opts.tierLabels || ADAPARC_TIER_LABEL;
   const container = document.getElementById(containerId);
   const descEl    = descId ? document.getElementById(descId) : null;
   if (!container) return;
@@ -477,7 +563,7 @@ async function adaparcRenderMap(opts) {
       const row  = stateData[fips];
       const tier = row ? row[0] : "na";
       const val  = row ? row[1] : "N/A";
-      const tierLabel = ADAPARC_TIER_LABEL[tier] || "No data available";
+      const tierLabel = LABELS[tier] || "No data available";
       tip.innerHTML =
           '<span class="mt-name">' + name + '</span>' +
           '<span class="mt-value">' + (valueLabel || "Value") + ': ' + val + '</span>' +
@@ -513,6 +599,20 @@ async function adaparcRenderMap(opts) {
       tip.setAttribute("aria-hidden", "true");
     }
 
+    // National perimeter, appended BEFORE the states so it sits underneath.
+    // topojson.mesh with (a, b) => a === b returns only the arcs that belong to
+    // a single polygon, i.e. the coastline and the international borders.
+    svg.append("path")
+      .datum(topojson.mesh(us, us.objects.states, (a, b) => a === b))
+      .attr("class", "map-perimeter")
+      .attr("fill", "none")
+      .attr("stroke", ADAPARC_MAP_PERIMETER)
+      .attr("stroke-width", 1.4)
+      .attr("stroke-linejoin", "round")
+      .attr("d", pathGen)
+      .attr("aria-hidden", "true")
+      .style("pointer-events", "none");
+
     svg.selectAll("path.state-path")
       .data(states.features)
       .join("path")
@@ -524,7 +624,11 @@ async function adaparcRenderMap(opts) {
         const row  = stateData[fips];
         return row ? ADAPARC_TIER_COLOR[row[0]] : ADAPARC_TIER_COLOR.na;
       })
-      .attr("stroke", "#ffffff")
+      .attr("stroke", d => {
+        const fips = String(d.id).padStart(2, "0");
+        const row  = stateData[fips];
+        return row ? ADAPARC_TIER_BORDER[row[0]] : ADAPARC_TIER_BORDER.na;
+      })
       .attr("stroke-width", 0.6)
       .attr("role", "button")
       .attr("aria-label", d => {
@@ -532,7 +636,7 @@ async function adaparcRenderMap(opts) {
         const name = NAMES[fips] || "Unknown state";
         const row  = stateData[fips];
         const val  = row ? row[1] : "N/A";
-        const tier = row ? ADAPARC_TIER_LABEL[row[0]] : ADAPARC_TIER_LABEL.na;
+        const tier = row ? LABELS[row[0]] : LABELS.na;
         return name + ': ' + (valueLabel || 'value') + ' ' + val + ', ' + tier + '.';
       })
       .each(function(d) {
@@ -541,7 +645,7 @@ async function adaparcRenderMap(opts) {
         const name = NAMES[fips] || "Unknown state";
         const row  = stateData[fips];
         const val  = row ? row[1] : "N/A";
-        const tier = row ? ADAPARC_TIER_LABEL[row[0]] : ADAPARC_TIER_LABEL.na;
+        const tier = row ? LABELS[row[0]] : LABELS.na;
         d3.select(this).append("title")
           .text(name + ': ' + val + ' (' + tier + ')');
       })
@@ -568,14 +672,12 @@ async function adaparcRenderMap(opts) {
         hideInfo();
       });
 
-    svg.append("path")
-      .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
-      .attr("fill", "none")
-      .attr("stroke", "#ffffff")
-      .attr("stroke-width", 0.5)
-      .attr("d", pathGen)
-      .attr("aria-hidden", "true")
-      .style("pointer-events", "none");
+    // NOTE: an interior mesh used to be drawn here, a single white path over
+    // every shared boundary. It is gone deliberately. A mesh is one path and so
+    // can carry only one colour, which is exactly the fixed white the per-state
+    // ink above replaces; leaving it in would paint over every border the ink
+    // just corrected. Interior boundaries are now held by the state strokes
+    // themselves.
 
     if (descEl) descEl.remove();
 
@@ -589,65 +691,133 @@ async function adaparcRenderMap(opts) {
 window.adaparcRenderMap = adaparcRenderMap;
 window.ADAPARC_TIER_COLOR = ADAPARC_TIER_COLOR;
 window.ADAPARC_TIER_LABEL = ADAPARC_TIER_LABEL;
+window.ADAPARC_TIER_LABEL_MAGNITUDE = ADAPARC_TIER_LABEL_MAGNITUDE;
 
-// People WITH disabilities: working-age poverty rate, by U.S. state.
-// Lower poverty rate = Excellent; higher rate = Poor.
-const PWD_DATA = {
-  "01":["poor","26.6%"],"02":["below","20.5%"],"04":["below","22.8%"],
-  "05":["poor","28.9%"],"06":["below","22.5%"],"08":["below","19.9%"],
-  "09":["below","24.2%"],"10":["below","20.4%"],"11":["poor","35.2%"],
-  "12":["below","22.4%"],"13":["below","23.0%"],"15":["below","21.5%"],
-  "16":["below","20.4%"],"17":["below","24.5%"],"18":["poor","25.0%"],
-  "19":["poor","25.0%"],"20":["below","24.7%"],"21":["poor","30.7%"],
-  "22":["poor","30.0%"],"23":["poor","26.6%"],"24":["below","22.3%"],
-  "25":["poor","25.3%"],"26":["poor","27.1%"],"27":["below","24.5%"],
-  "28":["poor","29.9%"],"29":["poor","27.4%"],"30":["below","23.6%"],
-  "31":["below","23.0%"],"32":["below","21.7%"],"33":["below","20.5%"],
-  "34":["below","19.7%"],"35":["poor","29.1%"],"36":["poor","28.8%"],
-  "37":["poor","25.0%"],"38":["below","23.9%"],"39":["poor","28.2%"],
-  "40":["poor","26.1%"],"41":["poor","26.6%"],"42":["poor","26.3%"],
-  "44":["poor","25.2%"],"45":["poor","25.0%"],"46":["below","24.8%"],
-  "47":["poor","26.5%"],"48":["below","22.1%"],"49":["above","17.8%"],
-  "50":["poor","27.2%"],"51":["below","20.7%"],"53":["below","22.4%"],
-  "54":["poor","30.8%"],"55":["below","23.7%"],"56":["below","21.4%"]
-};
 
-// People WITHOUT disabilities (comparison group): working-age poverty rate.
-const NOD_DATA = {
-  "01":["above","12.7%"],"02":["excellent","8.7%"],"04":["above","10.8%"],
-  "05":["above","12.8%"],"06":["excellent","9.9%"],"08":["excellent","8.2%"],
-  "09":["excellent","8.0%"],"10":["excellent","8.9%"],"11":["above","10.8%"],
-  "12":["above","10.5%"],"13":["above","10.8%"],"15":["excellent","8.6%"],
-  "16":["excellent","9.2%"],"17":["excellent","9.5%"],"18":["above","10.0%"],
-  "19":["excellent","9.5%"],"20":["excellent","9.8%"],"21":["above","12.5%"],
-  "22":["above","15.5%"],"23":["excellent","8.2%"],"24":["excellent","7.3%"],
-  "25":["excellent","7.7%"],"26":["above","10.6%"],"27":["excellent","7.3%"],
-  "28":["above","15.3%"],"29":["excellent","9.9%"],"30":["above","10.7%"],
-  "31":["excellent","8.7%"],"32":["above","10.5%"],"33":["excellent","5.3%"],
-  "34":["excellent","7.6%"],"35":["above","15.5%"],"36":["above","10.8%"],
-  "37":["above","10.7%"],"38":["excellent","9.6%"],"39":["above","10.4%"],
-  "40":["above","12.8%"],"41":["above","10.1%"],"42":["excellent","9.0%"],
-  "44":["excellent","8.4%"],"45":["above","11.7%"],"46":["above","10.1%"],
-  "47":["above","10.8%"],"48":["above","11.1%"],"49":["excellent","7.8%"],
-  "50":["excellent","8.6%"],"51":["excellent","8.3%"],"53":["excellent","8.1%"],
-  "54":["above","14.1%"],"55":["excellent","8.8%"],"56":["excellent","9.6%"]
+const POV_PWD = {
+  "01":["poor","25.9%"],
+  "02":["below","20.8%"],
+  "04":["below","21.7%"],
+  "05":["poor","28.8%"],
+  "06":["below","22.1%"],
+  "08":["below","19.6%"],
+  "09":["below","23.5%"],
+  "10":["below","19.5%"],
+  "11":["poor","34.3%"],
+  "12":["below","22.0%"],
+  "13":["below","22.7%"],
+  "15":["below","22.3%"],
+  "16":["below","19.3%"],
+  "17":["poor","24.4%"],
+  "18":["poor","24.5%"],
+  "19":["below","23.8%"],
+  "20":["below","24.0%"],
+  "21":["poor","30.5%"],
+  "22":["poor","29.6%"],
+  "23":["poor","26.0%"],
+  "24":["below","21.4%"],
+  "25":["below","24.4%"],
+  "26":["poor","26.6%"],
+  "27":["poor","24.8%"],
+  "28":["poor","29.8%"],
+  "29":["poor","26.7%"],
+  "30":["below","23.0%"],
+  "31":["below","22.8%"],
+  "32":["below","20.3%"],
+  "33":["below","19.6%"],
+  "34":["below","19.1%"],
+  "35":["poor","28.4%"],
+  "36":["poor","28.8%"],
+  "37":["below","24.4%"],
+  "38":["below","24.0%"],
+  "39":["poor","27.8%"],
+  "40":["poor","25.5%"],
+  "41":["poor","26.4%"],
+  "42":["poor","25.3%"],
+  "44":["poor","24.7%"],
+  "45":["poor","24.5%"],
+  "46":["poor","25.1%"],
+  "47":["poor","25.9%"],
+  "48":["below","21.9%"],
+  "49":["above","17.2%"],
+  "50":["poor","25.3%"],
+  "51":["below","20.4%"],
+  "53":["below","22.4%"],
+  "54":["poor","31.0%"],
+  "55":["below","23.0%"],
+  "56":["below","21.1%"]
 };
 
 adaparcRenderMap({
   containerId: "map-pwd",
   descId:      "pwd-map-desc",
-  stateData:   PWD_DATA,
-  valueLabel:  "Poverty rate",
-  svgTitle:    "Poverty rate among working-age people with disabilities (ages 18–64), by U.S. state",
-  svgDesc:     "Choropleth map of the 50 U.S. states and the District of Columbia shaded by poverty tier. Deep maroon (Excellent) identifies states with the lowest poverty rates among people with disabilities; pale gold (Poor) identifies those with the highest rates. Utah (17.8%) is the only state in the Above Average tier. The District of Columbia (35.2%) has the highest rate; Puerto Rico (50.3%) is not shown. Full data is in the tables below."
+  stateData:   POV_PWD,
+  valueLabel:  "Poverty rate (with disability)",
+  svgTitle:    "Poverty rate among working-age people with disabilities, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC shaded by the share of working-age people with disabilities living below the poverty line. Full data is in the table below."
 });
+
+const POV_NOD = {
+  "01":["above","12.4%"],
+  "02":["excellent","8.6%"],
+  "04":["above","10.5%"],
+  "05":["above","12.4%"],
+  "06":["above","9.9%"],
+  "08":["excellent","8.0%"],
+  "09":["excellent","7.7%"],
+  "10":["excellent","8.3%"],
+  "11":["above","10.7%"],
+  "12":["above","10.3%"],
+  "13":["above","10.6%"],
+  "15":["excellent","8.6%"],
+  "16":["excellent","8.9%"],
+  "17":["excellent","9.4%"],
+  "18":["above","9.8%"],
+  "19":["excellent","9.4%"],
+  "20":["excellent","9.4%"],
+  "21":["above","12.3%"],
+  "22":["above","15.4%"],
+  "23":["excellent","7.9%"],
+  "24":["excellent","7.3%"],
+  "25":["excellent","7.4%"],
+  "26":["above","10.6%"],
+  "27":["excellent","7.2%"],
+  "28":["above","14.7%"],
+  "29":["excellent","9.7%"],
+  "30":["above","10.0%"],
+  "31":["excellent","8.8%"],
+  "32":["above","10.4%"],
+  "33":["excellent","5.2%"],
+  "34":["excellent","7.5%"],
+  "35":["above","15.1%"],
+  "36":["above","10.8%"],
+  "37":["above","10.3%"],
+  "38":["excellent","9.3%"],
+  "39":["above","10.3%"],
+  "40":["above","12.5%"],
+  "41":["above","9.9%"],
+  "42":["excellent","8.7%"],
+  "44":["excellent","8.2%"],
+  "45":["above","11.4%"],
+  "46":["above","9.8%"],
+  "47":["above","10.6%"],
+  "48":["above","11.0%"],
+  "49":["excellent","7.6%"],
+  "50":["excellent","7.8%"],
+  "51":["excellent","8.0%"],
+  "53":["excellent","7.9%"],
+  "54":["above","13.7%"],
+  "55":["excellent","8.6%"],
+  "56":["excellent","9.4%"]
+};
+
 adaparcRenderMap({
   containerId: "map-nod",
   descId:      "nod-map-desc",
-  stateData:   NOD_DATA,
-  valueLabel:  "Poverty rate",
-  svgTitle:    "Poverty rate among working-age people without disabilities (ages 18–64), by U.S. state",
-  svgDesc:     "Comparison choropleth showing poverty rates for people without disabilities. Rates are substantially lower than for people with disabilities across every state. Deep maroon (Excellent) marks the lowest-poverty states; pale gold (Poor) marks the highest. New Mexico and Louisiana (15.5%) have the highest rates shown; Puerto Rico (36.3%) is not shown. Full data is in the tables below."
+  stateData:   POV_NOD,
+  valueLabel:  "Poverty rate (no disability)",
+  svgTitle:    "Poverty rate among working-age people without disabilities, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC shaded by the share of working-age people without disabilities living below the poverty line. Full data is in the table below."
 });
 </script>
 </body>

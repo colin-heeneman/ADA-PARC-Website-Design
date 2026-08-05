@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>State Spending on Community Living | ADA-PARC Factsheet</title>
-  <meta name="description" content="ADA-PARC factsheet on state spending on Home and Community-Based Services (HCBS) for people with disabilities, with state-by-state data on Medicaid community living expenditures.">
+  <meta name="description" content="ADA-PARC factsheet on state Medicaid HCBS spending per recipient and the community versus institutional share of Medicaid long-term care spending for people with disabilities, by state.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
+:root {
       --navy:        #1c2b3a;
       --navy-dark:   #152233;
       --gold-banner: #f5c842;
@@ -16,17 +16,29 @@
       --bg-card:     #ffffff;
       --border:      #e4e8ef;
       --text-body:   #1c2b3a;
-      /* ADA-PARC canonical tier palette (matches scorecard):
+      /* ADA-PARC HERITAGE tier palette, adopted 2026-07-28.
          Excellent = deep maroon (best performance)
-         Poor      = pale gold   (worst performance) */
-      --tier-excellent-bg:   #630801;
+         Poor      = warm gold   (worst performance)
+
+         This is static CSS and cannot call R, so these values MIRROR
+         ADA_PARC_PALETTE in scripts/palettes.R, which is the single source of
+         truth shared with the national map, the city map and both scorecards.
+
+         Do not edit these by hand. Edit scripts/palettes.R, then run
+           python3 scripts/check_palette.py
+         which fails if this file has drifted, then regenerate the fact sheets.
+
+         Each *-text value is the better of near-black and white against its
+         paired background and clears WCAG 2.2 SC 1.4.3 AA. Measured ratios:
+         excellent 15.05:1 | above 6.95:1 | below 6.35:1 | poor 13.15:1. */
+      --tier-excellent-bg:   #560000;
       --tier-excellent-text: #ffffff;
-      --tier-above-bg:       #c41306;
+      --tier-above-bg:       #a52f1a;
       --tier-above-text:     #ffffff;
-      --tier-below-bg:       #fa8e57;
-      --tier-below-text:     #1c2b3a;
-      --tier-poor-bg:        #e8c84a;
-      --tier-poor-text:      #1c2b3a;
+      --tier-below-bg:       #d88036;
+      --tier-below-text:     #111111;
+      --tier-poor-bg:        #fdd182;
+      --tier-poor-text:      #111111;
       --tier-na-bg:          #e0e0e0;
       --tier-na-text:        #444444;
       /* Backwards-compatible aliases so legacy .best/.good/.fair/.worst
@@ -136,10 +148,15 @@
     .tier-header.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
     .tier-header.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
     /* ─── Enhanced SVG state interactivity (hover + keyboard focus) ─── */
-    .state-path { transition: filter .15s ease, stroke .15s ease, stroke-width .15s ease; cursor: pointer; outline: none; }
+    /* These rules set stroke-WIDTH only. A stroke COLOUR here would overwrite
+       the per-state border ink adaparc-map.js sets from each state's own fill,
+       and a #1c2b3a outline on a #560000 fill is about 1.3:1, i.e. no visible
+       hover state on precisely the best-performing states. Width plus the
+       brightness lift carries the affordance on every tier. */
+    .state-path { transition: filter .15s ease, stroke-width .15s ease; cursor: pointer; outline: none; }
     .state-path:hover,
-    .state-path:focus-visible { stroke: #1c2b3a; stroke-width: 2.25; filter: brightness(1.06); }
-    .state-path.is-active { stroke: #1c2b3a; stroke-width: 2.5; }
+    .state-path:focus-visible { stroke-width: 2.25; filter: brightness(1.06); }
+    .state-path.is-active { stroke-width: 2.5; }
     /* ─── Floating tooltip for hover / keyboard focus ─── */
     .map-tooltip {
       position: absolute;
@@ -178,6 +195,11 @@
       .map-tooltip { transition: none; }
       .skip-link   { transition: none; }
     }
+
+    /* ---- per-factsheet overrides ---- */
+    .about-data { background: #f7f0ef; border-left: 4px solid var(--tier-excellent-bg); border-radius: 0 6px 6px 0; padding: 1rem 1.25rem; margin: 1.75rem 0 0; }
+    .about-data-title { font-size: 1.15rem; font-weight: 700; color: var(--navy); margin: 0 0 .4rem; }
+    .about-data p { margin: 0; font-size: .95rem; line-height: 1.6; }
   </style>
 </head>
 <body>
@@ -193,7 +215,7 @@
     </div>
     <div class="header-title">
       <h1>State Spending on Community Living<br>for People with Disabilities</h1>
-      <p class="published">Published by ADA-PARC, September 2025</p>
+      <p class="published">Printed by ADA-PARC, September 2025</p>
     </div>
     <div class="logo-ada-national" aria-label="ADA National Network">
       <span aria-hidden="true">ada</span>
@@ -205,153 +227,300 @@
     <section class="intro-section" aria-label="Introduction">
       <p>The Americans with Disabilities Act (ADA) mandates the right to live in the community with supports instead of living in a nursing home or long-term care institution. This right was upheld by the U.S. Supreme Court in the landmark <em>Olmstead</em> decision in 1999.<sup>1</sup></p>
 
-      <p>Despite this right to live in the community, some states are doing worse on overall community spending, and some are doing better to support people with disabilities to live in the community. The map and tables below display <strong>total state spending per Medicaid recipient</strong>, inclusive of all waiver types (Community First Choice, Section 1915(i), Section 1915(c), Section 1515), for people with disabilities (all ages) living in the community.<sup>2</sup></p>
+      <p>Despite this right to live in the community, some states invest more than others in each person they serve. The map and tables below display <strong>state Medicaid spending per recipient on home- and community-based services (HCBS)</strong>, inclusive of all waiver types (Community First Choice, Section 1915(i), Section 1915(c), Section 1515), for people with disabilities (all ages) living in the community. This is the total HCBS expenditure divided by the number of people receiving HCBS.<sup>2</sup></p>
 
-      <p>Lower spending means fewer financial resources for people with disabilities to live in the community, or more spent on institutions like nursing homes. Higher spending means better financial support for community living. Rebalancing money toward community living remains an ADA-related disparity issue for many people with disabilities, putting them at higher risk for institutionalization. Currently, this community living support is highly dependent on the zip code and state in which you live.</p>
+      <p>Lower spending per recipient means fewer financial resources reaching each person with a disability who relies on community services. Higher spending per recipient means stronger financial support for each person's community living. This measure reflects how generously a state supports each recipient, not how many people it reaches. Rebalancing money toward community living remains an ADA-related disparity issue for many people with disabilities, putting them at higher risk for institutionalization. Currently, this community living support is highly dependent on the zip code and state in which you live.</p>
     </section>
 
     <h2 class="section-heading">State Map</h2>
 
     <div class="direction-note" role="note">
-      <strong>Note on map color direction:</strong> For this indicator, <em>lighter colors indicate more spending</em> (better performance), and <em>darker colors indicate less spending</em> (worse performance). This is the reverse of typical maps where darker = more.
+      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw dollars. <em>Darker maroon</em> marks the most favorable outcomes (Excellent), here the highest community living spending per recipient. <em>Lighter gold</em> marks the least favorable outcomes (Poor), the lowest spending per recipient.
     </div>
 
     <figure class="map-figure">
-      <h3 class="map-title" id="hcbs-map-heading">Total Annual Community Living Spending per Medicaid Recipient, by State</h3>
+      <h3 class="map-title" id="hcbs-map-heading">Annual HCBS Spending per Recipient on Community Living, by State</h3>
       <div id="map-hcbs" class="map-container" aria-labelledby="hcbs-map-heading hcbs-map-desc">
-        <p id="hcbs-map-desc" class="map-loading" aria-live="polite">Loading map…</p>
+        <p id="hcbs-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
         <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
       </div>
-      <div class="map-legend" aria-label="Map color legend: higher spending = better performance">
-        <span class="tier-chip excellent">Excellent (highest spending)</span>
+      <div class="map-legend" aria-label="Map color legend: higher spending per recipient = better performance">
+        <span class="tier-chip excellent">Excellent (highest per recipient)</span>
         <span class="tier-chip above">Above Average</span>
         <span class="tier-chip below">Below Average</span>
-        <span class="tier-chip poor">Poor (lowest spending)</span>
+        <span class="tier-chip poor">Poor (lowest per recipient)</span>
       </div>
-      <figcaption class="map-caption">Lighter colors indicate higher total annual community living spending per Medicaid recipient (better). Best-performing states include New York, Pennsylvania, California, and Texas. Worst-performing states include Wyoming, South Dakota, Hawaii, Montana, and North Dakota. Data for Puerto Rico and territories is not shown.</figcaption>
+      <figcaption class="map-caption">Darker maroon indicates higher annual HCBS spending per recipient on community living (better). This measures spending intensity per person receiving HCBS, not how many people are reached. Best-performing states include District of Columbia, Nebraska, Maine, and Kentucky. Worst-performing states include Oregon, West Virginia, Hawaii, Wisconsin, and Nevada. Data for Puerto Rico and territories is not shown. Source: CMS, Medicaid LTSS Users &amp; Expenditures, 2023.</figcaption>
     </figure>
 
-    <h2 class="section-heading">Total Annual Community Living Spending per Medicaid Recipient, People with Disabilities (All Ages)</h2>
+    <div class="direction-note" role="note">
+      <strong>Who receives HCBS.</strong> Among people receiving HCBS nationally, recipients span multiple disability groups: about 42% have mental health conditions or substance use disorders, 24% have autism, intellectual, or developmental disabilities, 11% are adults under 65 with other potentially disabling conditions, and 20% are older adults. People can belong to more than one group, so shares add to more than 100%.
+    </div>
+
+    <h2 class="section-heading">Annual HCBS Spending per Recipient on Community Living, HCBS Recipients</h2>
 
     <div class="tables-grid">
-      <!-- BEST + GOOD -->
       <div>
         <div class="tier-table-group">
           <span class="tier-header excellent" aria-hidden="true">Excellent</span>
-          <table aria-label="Community living spending - Excellent performers states (highest total spending)">
+          <table aria-label="HCBS spending per recipient - Excellent performers states (highest spending per recipient)">
             <thead>
-              <tr>
-                <th scope="col">State</th>
-                <th scope="col">Total Spending</th>
-              </tr>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Spending per Recipient</th>
+            </tr>
             </thead>
             <tbody>
-              <tr><td>New York</td><td>$24,352,337,631</td></tr>
-              <tr><td>Pennsylvania</td><td>$11,501,811,134</td></tr>
-              <tr><td>California</td><td>$8,410,312,977</td></tr>
-              <tr><td>Texas</td><td>$7,618,132,390</td></tr>
-              <tr><td>Minnesota</td><td>$6,173,071,844</td></tr>
-              <tr><td>Ohio</td><td>$5,001,553,920</td></tr>
-              <tr><td>Massachusetts</td><td>$4,556,312,732</td></tr>
-              <tr><td>Washington</td><td>$4,305,820,298</td></tr>
-              <tr><td>New Jersey</td><td>$3,824,623,422</td></tr>
-              <tr><td>Florida</td><td>$3,251,864,825</td></tr>
-              <tr><td>Virginia</td><td>$3,219,386,718</td></tr>
-              <tr><td>Illinois</td><td>$3,058,280,786</td></tr>
-              <tr><td>Michigan</td><td>$3,027,565,788</td></tr>
+              <tr><td>District of Columbia</td><td>$48,887</td></tr>
+              <tr><td>Nebraska</td><td>$41,551</td></tr>
+              <tr><td>Maine</td><td>$40,388</td></tr>
+              <tr><td>Kentucky</td><td>$40,309</td></tr>
+              <tr><td>Indiana</td><td>$38,421</td></tr>
+              <tr><td>Vermont</td><td>$37,173</td></tr>
+              <tr><td>Washington</td><td>$36,417</td></tr>
+              <tr><td>Connecticut</td><td>$35,453</td></tr>
+              <tr><td>Massachusetts</td><td>$33,481</td></tr>
+              <tr><td>South Dakota</td><td>$33,081</td></tr>
+              <tr><td>Missouri</td><td>$32,268</td></tr>
+              <tr><td>Virginia</td><td>$29,744</td></tr>
+              <tr><td>Colorado</td><td>$29,084</td></tr>
             </tbody>
           </table>
         </div>
 
         <div class="tier-table-group">
           <span class="tier-header above" aria-hidden="true">Above Average</span>
-          <table aria-label="Community living spending - Above Average performers states">
+          <table aria-label="HCBS spending per recipient - Above Average performers states">
             <thead>
-              <tr>
-                <th scope="col">State</th>
-                <th scope="col">Total Spending</th>
-              </tr>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Spending per Recipient</th>
+            </tr>
             </thead>
             <tbody>
-              <tr><td>Colorado</td><td>$2,754,594,931</td></tr>
-              <tr><td>Maryland</td><td>$2,711,437,156</td></tr>
-              <tr><td>Missouri</td><td>$2,688,024,106</td></tr>
-              <tr><td>North Carolina</td><td>$2,505,258,245</td></tr>
-              <tr><td>Indiana</td><td>$2,208,076,707</td></tr>
-              <tr><td>Georgia</td><td>$2,190,963,186</td></tr>
-              <tr><td>Connecticut</td><td>$2,091,930,016</td></tr>
-              <tr><td>Arizona</td><td>$1,920,769,216</td></tr>
-              <tr><td>Oregon</td><td>$1,775,850,967</td></tr>
-              <tr><td>Tennessee</td><td>$1,562,038,023</td></tr>
-              <tr><td>Wisconsin</td><td>$1,424,775,390</td></tr>
-              <tr><td>Kentucky</td><td>$1,334,581,396</td></tr>
-              <tr><td>Iowa</td><td>$1,197,226,211</td></tr>
+              <tr><td>Delaware</td><td>$29,046</td></tr>
+              <tr><td>Minnesota</td><td>$28,787</td></tr>
+              <tr><td>Idaho</td><td>$27,442</td></tr>
+              <tr><td>Utah</td><td>$26,754</td></tr>
+              <tr><td>Alaska</td><td>$25,259</td></tr>
+              <tr><td>Mississippi</td><td>$23,619</td></tr>
+              <tr><td>Wyoming</td><td>$23,575</td></tr>
+              <tr><td>California</td><td>$23,079</td></tr>
+              <tr><td>Maryland</td><td>$22,975</td></tr>
+              <tr><td>Iowa</td><td>$22,663</td></tr>
+              <tr><td>New York</td><td>$21,894</td></tr>
+              <tr><td>Florida</td><td>$21,885</td></tr>
+              <tr><td>New Hampshire</td><td>$21,702</td></tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- FAIR + WORST -->
       <div>
         <div class="tier-table-group">
           <span class="tier-header below" aria-hidden="true">Below Average</span>
-          <table aria-label="Community living spending - Below Average performers states">
+          <table aria-label="HCBS spending per recipient - Below Average performers states">
             <thead>
-              <tr>
-                <th scope="col">State</th>
-                <th scope="col">Total Spending</th>
-              </tr>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Spending per Recipient</th>
+            </tr>
             </thead>
             <tbody>
-              <tr><td>New Mexico</td><td>$1,158,087,103</td></tr>
-              <tr><td>Louisiana</td><td>$1,103,252,098</td></tr>
-              <tr><td>South Carolina</td><td>$1,075,741,097</td></tr>
-              <tr><td>Maine</td><td>$857,414,381</td></tr>
-              <tr><td>West Virginia</td><td>$805,667,743</td></tr>
-              <tr><td>Kansas</td><td>$761,048,229</td></tr>
-              <tr><td>District of Columbia</td><td>$740,371,226</td></tr>
-              <tr><td>Nebraska</td><td>$679,752,487</td></tr>
-              <tr><td>Oklahoma</td><td>$670,926,590</td></tr>
-              <tr><td>Alabama</td><td>$650,206,150</td></tr>
-              <tr><td>Arkansas</td><td>$623,457,863</td></tr>
-              <tr><td>Mississippi</td><td>$585,345,772</td></tr>
+              <tr><td>Pennsylvania</td><td>$21,650</td></tr>
+              <tr><td>Montana</td><td>$21,260</td></tr>
+              <tr><td>New Jersey</td><td>$21,195</td></tr>
+              <tr><td>Tennessee</td><td>$20,672</td></tr>
+              <tr><td>Rhode Island</td><td>$20,318</td></tr>
+              <tr><td>North Dakota</td><td>$19,455</td></tr>
+              <tr><td>Arkansas</td><td>$17,874</td></tr>
+              <tr><td>Oklahoma</td><td>$17,734</td></tr>
+              <tr><td>Louisiana</td><td>$16,950</td></tr>
+              <tr><td>Kansas</td><td>$16,448</td></tr>
+              <tr><td>Arizona</td><td>$15,709</td></tr>
+              <tr><td>New Mexico</td><td>$14,006</td></tr>
             </tbody>
           </table>
         </div>
 
         <div class="tier-table-group">
           <span class="tier-header poor" aria-hidden="true">Poor</span>
-          <table aria-label="Community living spending - Poor performers states (lowest total spending)">
+          <table aria-label="HCBS spending per recipient - Poor performers states (lowest spending per recipient)">
             <thead>
-              <tr>
-                <th scope="col">State</th>
-                <th scope="col">Total Spending</th>
-              </tr>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Spending per Recipient</th>
+            </tr>
             </thead>
             <tbody>
-              <tr><td>Idaho</td><td>$572,632,165</td></tr>
-              <tr><td>Delaware</td><td>$566,244,540</td></tr>
-              <tr><td>Rhode Island</td><td>$534,479,276</td></tr>
-              <tr><td>New Hampshire</td><td>$484,934,732</td></tr>
-              <tr><td>Nevada</td><td>$463,175,032</td></tr>
-              <tr><td>Utah</td><td>$442,841,164</td></tr>
-              <tr><td>Vermont</td><td>$385,922,326</td></tr>
-              <tr><td>Alaska</td><td>$369,377,284</td></tr>
-              <tr><td>North Dakota</td><td>$286,403,120</td></tr>
-              <tr><td>Montana</td><td>$274,181,608</td></tr>
-              <tr><td>Hawaii</td><td>$260,491,300</td></tr>
-              <tr><td>South Dakota</td><td>$195,292,498</td></tr>
-              <tr><td>Wyoming</td><td>$161,492,271</td></tr>
+              <tr><td>North Carolina</td><td>$13,345</td></tr>
+              <tr><td>South Carolina</td><td>$11,100</td></tr>
+              <tr><td>Illinois</td><td>$10,850</td></tr>
+              <tr><td>Michigan</td><td>$10,445</td></tr>
+              <tr><td>Alabama</td><td>$9,867</td></tr>
+              <tr><td>Texas</td><td>$9,370</td></tr>
+              <tr><td>Ohio</td><td>$8,701</td></tr>
+              <tr><td>Georgia</td><td>$8,338</td></tr>
+              <tr><td>Nevada</td><td>$8,266</td></tr>
+              <tr><td>Wisconsin</td><td>$8,145</td></tr>
+              <tr><td>Hawaii</td><td>$8,065</td></tr>
+              <tr><td>West Virginia</td><td>$6,537</td></tr>
+              <tr><td>Oregon</td><td>$3,632</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
+    <h2 class="section-heading">Community vs. Institutional Spending</h2>
+
+    <p>Spending per recipient shows how much reaches each person, but not how a state divides its long-term care budget between community and institutional settings. This second measure shows <strong>the share of each state&rsquo;s Medicaid long-term services and supports (LTSS) spending that goes to home- and community-based services (HCBS) rather than to institutions</strong> such as nursing facilities and intermediate care facilities. A higher share means a state directs more of its long-term care dollars toward community living. A lower share means more of its dollars go to institutional care.<sup>3</sup></p>
+
+    <div class="direction-note" role="note">
+      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw share. <em>Darker maroon</em> marks the most favorable outcomes (Excellent), here the highest community (HCBS) share of long-term care spending. <em>Lighter gold</em> marks the least favorable outcomes (Poor), where more spending goes to institutions.
+    </div>
+
+    <figure class="map-figure">
+      <h3 class="map-title" id="hcbs-ratio-map-heading">Community Share of Medicaid Long-Term Care Spending, by State</h3>
+      <div id="map-hcbs-ratio" class="map-container" aria-labelledby="hcbs-ratio-map-heading hcbs-ratio-map-desc">
+        <p id="hcbs-ratio-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+        <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+      </div>
+      <div class="map-legend" aria-label="Map color legend: higher community share of long-term care spending = better performance">
+        <span class="tier-chip excellent">Excellent (highest community share)</span>
+        <span class="tier-chip above">Above Average</span>
+        <span class="tier-chip below">Below Average</span>
+        <span class="tier-chip poor">Poor (most institutional)</span>
+      </div>
+      <figcaption class="map-caption">Darker maroon indicates a higher share of Medicaid long-term care spending going to home- and community-based services rather than institutions (better). Most community-oriented states include Wisconsin, Minnesota, Washington, and Colorado. Most institution-oriented states include Arkansas, Alabama, Mississippi, Louisiana, and West Virginia. Data for Puerto Rico and territories is not shown. Source: Mathematica, Medicaid LTSS Users &amp; Expenditures, 2023.</figcaption>
+    </figure>
+
+    <h2 class="section-heading">Community Share of Medicaid Long-Term Care Spending, by State</h2>
+    <p>Higher percentages mean a state spends more of its Medicaid long-term care budget on community living and less on institutions. Excellent = highest community share; Poor = lowest.</p>
+
+    <div class="tables-grid">
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header excellent" aria-hidden="true">Excellent</span>
+          <table aria-label="Community share of LTSS spending - Excellent performers states (highest community share)">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Community Share of LTSS Spending</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Wisconsin</td><td>94.8%</td></tr>
+              <tr><td>Minnesota</td><td>84.0%</td></tr>
+              <tr><td>Washington</td><td>82.7%</td></tr>
+              <tr><td>Colorado</td><td>81.2%</td></tr>
+              <tr><td>Oregon</td><td>80.5%</td></tr>
+              <tr><td>New Mexico</td><td>77.4%</td></tr>
+              <tr><td>Idaho</td><td>77.3%</td></tr>
+              <tr><td>New York</td><td>76.6%</td></tr>
+              <tr><td>Arizona</td><td>73.9%</td></tr>
+              <tr><td>Florida</td><td>69.9%</td></tr>
+              <tr><td>Missouri</td><td>69.7%</td></tr>
+              <tr><td>Delaware</td><td>69.6%</td></tr>
+              <tr><td>Maryland</td><td>69.5%</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tier-table-group">
+          <span class="tier-header above" aria-hidden="true">Above Average</span>
+          <table aria-label="Community share of LTSS spending - Above Average performers states">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Community Share of LTSS Spending</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Massachusetts</td><td>68.5%</td></tr>
+              <tr><td>New Jersey</td><td>68.5%</td></tr>
+              <tr><td>New Hampshire</td><td>67.8%</td></tr>
+              <tr><td>Alaska</td><td>66.4%</td></tr>
+              <tr><td>Michigan</td><td>66.2%</td></tr>
+              <tr><td>Maine</td><td>65.6%</td></tr>
+              <tr><td>Pennsylvania</td><td>65.1%</td></tr>
+              <tr><td>District of Columbia</td><td>65.1%</td></tr>
+              <tr><td>Texas</td><td>64.7%</td></tr>
+              <tr><td>Virginia</td><td>64.6%</td></tr>
+              <tr><td>Vermont</td><td>64.2%</td></tr>
+              <tr><td>Nevada</td><td>64.2%</td></tr>
+              <tr><td>Kansas</td><td>64.0%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="tier-table-group">
+          <span class="tier-header below" aria-hidden="true">Below Average</span>
+          <table aria-label="Community share of LTSS spending - Below Average performers states">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Community Share of LTSS Spending</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Ohio</td><td>62.1%</td></tr>
+              <tr><td>Montana</td><td>61.6%</td></tr>
+              <tr><td>Nebraska</td><td>61.1%</td></tr>
+              <tr><td>Wyoming</td><td>60.4%</td></tr>
+              <tr><td>South Carolina</td><td>59.4%</td></tr>
+              <tr><td>Connecticut</td><td>58.7%</td></tr>
+              <tr><td>Georgia</td><td>58.3%</td></tr>
+              <tr><td>Rhode Island</td><td>56.1%</td></tr>
+              <tr><td>Utah</td><td>54.8%</td></tr>
+              <tr><td>Indiana</td><td>52.8%</td></tr>
+              <tr><td>Iowa</td><td>52.6%</td></tr>
+              <tr><td>Hawaii</td><td>52.3%</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tier-table-group">
+          <span class="tier-header poor" aria-hidden="true">Poor</span>
+          <table aria-label="Community share of LTSS spending - Poor performers states (lowest community share)">
+            <thead>
+            <tr>
+              <th scope="col"NA>State</th>
+              <th scope="col"NA>Community Share of LTSS Spending</th>
+            </tr>
+            </thead>
+            <tbody>
+              <tr><td>Tennessee</td><td>52.1%</td></tr>
+              <tr><td>South Dakota</td><td>52.0%</td></tr>
+              <tr><td>Illinois</td><td>49.4%</td></tr>
+              <tr><td>Kentucky</td><td>48.4%</td></tr>
+              <tr><td>Oklahoma</td><td>48.0%</td></tr>
+              <tr><td>California</td><td>47.5%</td></tr>
+              <tr><td>North Carolina</td><td>41.8%</td></tr>
+              <tr><td>North Dakota</td><td>41.4%</td></tr>
+              <tr><td>West Virginia</td><td>40.8%</td></tr>
+              <tr><td>Louisiana</td><td>39.8%</td></tr>
+              <tr><td>Mississippi</td><td>38.2%</td></tr>
+              <tr><td>Alabama</td><td>38.0%</td></tr>
+              <tr><td>Arkansas</td><td>35.8%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <section class="about-data" role="note" aria-label="About These Data">
+      <h2 class="about-data-title">About These Data</h2>
+      <p>The information shown on this website comes from research conducted by <strong>Mathematica</strong>. We did not collect or create the original data. We organized and presented the information to make it easier for community members, including people with disabilities, to understand and compare. All credit for the original research, data collection, and analysis belongs to Mathematica and the report&rsquo;s authors. Any changes we made were limited to how the information is displayed and did not alter the original data.</p>
+    </section>
+
     <div class="footnotes" role="note" aria-label="Data sources and notes">
       <ol>
         <li>Office for Civil Rights. (2018, June 28). <em>Serving people with disabilities in the most integrated setting: Community living and Olmstead.</em> U.S. Department of Health and Human Services.</li>
-        <li>Centers for Medicare &amp; Medicaid Services (CMS) &amp; Mathematica, <em>Medicaid LTSS Users &amp; Expenditures, 2022 Data Tables</em>, A2_LTSSExpDlvrySystm_2022.xlsx ('A.2.3 All-HCBS'); see CMS LTSS Reports &amp; Evaluations. Methodology and definitions from Mathematica (2024) <em>Users &amp; Expenditures by Service Category, 2022</em> and <em>Methodology for Identifying Medicaid LTSS Expenditures and Users, 2022.</em></li>
+        <li>Mathematica, prepared for the Centers for Medicare &amp; Medicaid Services (CMS). <em>Medicaid LTSS Users &amp; Expenditures, 2023 Data Tables</em> (T-MSIS Analytic Files). Spending per recipient = total HCBS expenditure (A2_LTSSExpDlvrySystm_2023.xlsx, tab &ldquo;A.2.3 All-HCBS&rdquo;, column &ldquo;HCBS (total)&rdquo;) divided by HCBS recipients (A1_LTSSUsrDlvrySystm_2023.xlsx, tab &ldquo;A.1.3 All-HCBS&rdquo;, column &ldquo;HCBS (total)&rdquo;); both inclusive of fee-for-service and managed care. Subpopulation context from C1_LTSSUsrChar_2023.xlsx, tab &ldquo;C.1.21 HCBSBySubpop.&rdquo; See CMS LTSS Reports &amp; Evaluations.</li>
+        <li>Carpenter, A., Stepanczuk, C., Murray, C., &amp; Wysocki, A. (2025, October 17). <em>Trends in users and expenditures for home and community-based services as a share of total Medicaid long-term services and supports users and expenditures, 2023.</em> Mathematica. <a href="https://www.medicaid.gov/medicaid/long-term-services-supports/downloads/ltss-rebalancing-brief-2023.pdf" target="_blank" rel="noopener noreferrer">Report PDF</a>. Community share of LTSS spending = HCBS expenditure (tab &ldquo;A.2.3 All-HCBS,&rdquo; column &ldquo;HCBS (total)&rdquo;) divided by the sum of HCBS and institutional expenditure (tab &ldquo;A.2.2 All-Inst,&rdquo; column &ldquo;Institutional (total)&rdquo;) from A2_LTSSExpDlvrySystm_2023.xlsx. Because LTSS equals HCBS plus institutional spending, this equals HCBS as a share of total Medicaid LTSS expenditure.</li>
       </ol>
     </div>
 
@@ -364,24 +533,73 @@
 
 </div>
 
-<!-- ═══ D3 MAP SCRIPTS (ADA-PARC shared) ═══ -->
+<!-- D3 MAP SCRIPTS (ADA-PARC shared) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script>
 // ── ADA-PARC shared map palette & renderer ─────────────────────
+// ADA-PARC HERITAGE tier fills, adopted 2026-07-28.
+//
+// This file runs in the browser and cannot call R, so these values MIRROR
+// ADA_PARC_PALETTE$fill in scripts/palettes.R, which is the single source of
+// truth shared with the national map, the city map and both scorecards.
+//
+// Do not edit these by hand. Edit scripts/palettes.R, then run
+//   python3 scripts/check_palette.py
+// which fails if this file has drifted, then regenerate the fact sheets.
 const ADAPARC_TIER_COLOR = {
-  excellent: "#630801",  // deep maroon  (Excellent, best performance)
-  above:     "#c41306",  // dark red     (Above Average)
-  below:     "#fa8e57",  // orange       (Below Average)
-  poor:      "#e8c84a",  // pale gold    (Poor, worst performance)
+  excellent: "#560000",  // deep maroon  (Excellent, best performance)
+  above:     "#a52f1a",  // dark red     (Above Average)
+  below:     "#d88036",  // burnt orange (Below Average)
+  poor:      "#fdd182",  // warm gold    (Poor, worst performance)
   na:        "#e0e0e0"
 };
+
+// Per-state border ink, adopted 2026-08-04. Mirrors ADA_PARC_PALETTE$on_fill
+// (and $na_text for the no-data fill) in scripts/palettes.R, and is checked by
+// scripts/check_palette.py alongside the fills above.
+//
+// The border used to be a fixed white on every state. That is invisible where
+// it meets either of the two light tiers, so neighbouring gold or orange states
+// merged into one undifferentiated patch. Each state now takes the ink that its
+// OWN fill calls for: near-black on the two light tiers, white on the two dark
+// ones. Same rule as border_ink_for_fill() on the national map.
+//
+// on_fill is held to the 4.5:1 AA text floor, which is stricter than the 3:1
+// WCAG 2.2 SC 1.4.11 floor a border has to clear, so reading it here is safe.
+const ADAPARC_TIER_BORDER = {
+  excellent: "#ffffff",
+  above:     "#ffffff",
+  below:     "#111111",
+  poor:      "#111111",
+  na:        "#444444"
+};
+
+// National perimeter. Drawn UNDER the states, wider than the per-state stroke,
+// so each state's fill paints over its inner half and only the outside flank
+// survives. Without it, a dark-tier coastal state's white border vanishes
+// against the white page and the national silhouette breaks up.
+const ADAPARC_MAP_PERIMETER = "#1c2b3a";  // = ADA_PARC_PALETTE$stroke
 
 const ADAPARC_TIER_LABEL = {
   excellent: "Excellent",
   above:     "Above Average",
   below:     "Below Average",
   poor:      "Poor",
+  na:        "No data available"
+};
+
+// Neutral alternative for indicators where a high or low value is not a better
+// or worse outcome, only a larger or smaller one. Non-institutional group
+// quarters is the motivating case: the category mixes group homes, shelters and
+// college dormitories, so calling any quartile "Excellent" would assert
+// something the data does not support. The color ramp still encodes magnitude
+// (darker = higher), but no label carries a value judgment.
+const ADAPARC_TIER_LABEL_MAGNITUDE = {
+  excellent: "Highest quarter",
+  above:     "Second highest quarter",
+  below:     "Second lowest quarter",
+  poor:      "Lowest quarter",
   na:        "No data available"
 };
 
@@ -440,9 +658,14 @@ function __ensureTooltip(container, liveId) {
  * @param {string} opts.svgTitle      accessible <title>
  * @param {string} opts.svgDesc       accessible <desc>
  * @param {string} opts.valueLabel    short label describing the value (e.g. "Poverty rate")
+ * @param {object} [opts.tierLabels]  optional tier -> label map. Defaults to the
+ *                                    performance labels. Pass
+ *                                    ADAPARC_TIER_LABEL_MAGNITUDE for indicators
+ *                                    with no better/worse direction.
  */
 async function adaparcRenderMap(opts) {
   const { containerId, descId, stateData, svgTitle, svgDesc, valueLabel } = opts;
+  const LABELS = opts.tierLabels || ADAPARC_TIER_LABEL;
   const container = document.getElementById(containerId);
   const descEl    = descId ? document.getElementById(descId) : null;
   if (!container) return;
@@ -477,7 +700,7 @@ async function adaparcRenderMap(opts) {
       const row  = stateData[fips];
       const tier = row ? row[0] : "na";
       const val  = row ? row[1] : "N/A";
-      const tierLabel = ADAPARC_TIER_LABEL[tier] || "No data available";
+      const tierLabel = LABELS[tier] || "No data available";
       tip.innerHTML =
           '<span class="mt-name">' + name + '</span>' +
           '<span class="mt-value">' + (valueLabel || "Value") + ': ' + val + '</span>' +
@@ -513,6 +736,20 @@ async function adaparcRenderMap(opts) {
       tip.setAttribute("aria-hidden", "true");
     }
 
+    // National perimeter, appended BEFORE the states so it sits underneath.
+    // topojson.mesh with (a, b) => a === b returns only the arcs that belong to
+    // a single polygon, i.e. the coastline and the international borders.
+    svg.append("path")
+      .datum(topojson.mesh(us, us.objects.states, (a, b) => a === b))
+      .attr("class", "map-perimeter")
+      .attr("fill", "none")
+      .attr("stroke", ADAPARC_MAP_PERIMETER)
+      .attr("stroke-width", 1.4)
+      .attr("stroke-linejoin", "round")
+      .attr("d", pathGen)
+      .attr("aria-hidden", "true")
+      .style("pointer-events", "none");
+
     svg.selectAll("path.state-path")
       .data(states.features)
       .join("path")
@@ -524,7 +761,11 @@ async function adaparcRenderMap(opts) {
         const row  = stateData[fips];
         return row ? ADAPARC_TIER_COLOR[row[0]] : ADAPARC_TIER_COLOR.na;
       })
-      .attr("stroke", "#ffffff")
+      .attr("stroke", d => {
+        const fips = String(d.id).padStart(2, "0");
+        const row  = stateData[fips];
+        return row ? ADAPARC_TIER_BORDER[row[0]] : ADAPARC_TIER_BORDER.na;
+      })
       .attr("stroke-width", 0.6)
       .attr("role", "button")
       .attr("aria-label", d => {
@@ -532,7 +773,7 @@ async function adaparcRenderMap(opts) {
         const name = NAMES[fips] || "Unknown state";
         const row  = stateData[fips];
         const val  = row ? row[1] : "N/A";
-        const tier = row ? ADAPARC_TIER_LABEL[row[0]] : ADAPARC_TIER_LABEL.na;
+        const tier = row ? LABELS[row[0]] : LABELS.na;
         return name + ': ' + (valueLabel || 'value') + ' ' + val + ', ' + tier + '.';
       })
       .each(function(d) {
@@ -541,7 +782,7 @@ async function adaparcRenderMap(opts) {
         const name = NAMES[fips] || "Unknown state";
         const row  = stateData[fips];
         const val  = row ? row[1] : "N/A";
-        const tier = row ? ADAPARC_TIER_LABEL[row[0]] : ADAPARC_TIER_LABEL.na;
+        const tier = row ? LABELS[row[0]] : LABELS.na;
         d3.select(this).append("title")
           .text(name + ': ' + val + ' (' + tier + ')');
       })
@@ -568,14 +809,12 @@ async function adaparcRenderMap(opts) {
         hideInfo();
       });
 
-    svg.append("path")
-      .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
-      .attr("fill", "none")
-      .attr("stroke", "#ffffff")
-      .attr("stroke-width", 0.5)
-      .attr("d", pathGen)
-      .attr("aria-hidden", "true")
-      .style("pointer-events", "none");
+    // NOTE: an interior mesh used to be drawn here, a single white path over
+    // every shared boundary. It is gone deliberately. A mesh is one path and so
+    // can carry only one colour, which is exactly the fixed white the per-state
+    // ink above replaces; leaving it in would paint over every border the ink
+    // just corrected. Interior boundaries are now held by the state strokes
+    // themselves.
 
     if (descEl) descEl.remove();
 
@@ -589,36 +828,133 @@ async function adaparcRenderMap(opts) {
 window.adaparcRenderMap = adaparcRenderMap;
 window.ADAPARC_TIER_COLOR = ADAPARC_TIER_COLOR;
 window.ADAPARC_TIER_LABEL = ADAPARC_TIER_LABEL;
+window.ADAPARC_TIER_LABEL_MAGNITUDE = ADAPARC_TIER_LABEL_MAGNITUDE;
 
-// HCBS spending: total annual community living spend per Medicaid recipient.
-// Higher spending = better performance (Excellent).
+
 const HCBS_DATA = {
-  "01":["below","$650M"],"02":["poor","$369M"],"04":["above","$1.9B"],
-  "05":["below","$623M"],"06":["excellent","$8.4B"],"08":["above","$2.8B"],
-  "09":["above","$2.1B"],"10":["poor","$566M"],"11":["below","$740M"],
-  "12":["excellent","$3.3B"],"13":["above","$2.2B"],"15":["poor","$260M"],
-  "16":["poor","$573M"],"17":["excellent","$3.1B"],"18":["above","$2.2B"],
-  "19":["above","$1.2B"],"20":["below","$761M"],"21":["above","$1.3B"],
-  "22":["below","$1.1B"],"23":["below","$857M"],"24":["above","$2.7B"],
-  "25":["excellent","$4.6B"],"26":["excellent","$3.0B"],"27":["excellent","$6.2B"],
-  "28":["below","$585M"],"29":["above","$2.7B"],"30":["poor","$274M"],
-  "31":["below","$680M"],"32":["poor","$463M"],"33":["poor","$485M"],
-  "34":["excellent","$3.8B"],"35":["below","$1.2B"],"36":["excellent","$24.4B"],
-  "37":["above","$2.5B"],"38":["poor","$286M"],"39":["excellent","$5.0B"],
-  "40":["below","$671M"],"41":["above","$1.8B"],"42":["excellent","$11.5B"],
-  "44":["poor","$534M"],"45":["below","$1.1B"],"46":["poor","$195M"],
-  "47":["above","$1.6B"],"48":["excellent","$7.6B"],"49":["poor","$443M"],
-  "50":["poor","$386M"],"51":["excellent","$3.2B"],"53":["excellent","$4.3B"],
-  "54":["below","$806M"],"55":["above","$1.4B"],"56":["poor","$161M"]
+  "01":["poor","$9,867"],
+  "02":["above","$25,259"],
+  "04":["below","$15,709"],
+  "05":["below","$17,874"],
+  "06":["above","$23,079"],
+  "08":["excellent","$29,084"],
+  "09":["excellent","$35,453"],
+  "10":["above","$29,046"],
+  "11":["excellent","$48,887"],
+  "12":["above","$21,885"],
+  "13":["poor","$8,338"],
+  "15":["poor","$8,065"],
+  "16":["above","$27,442"],
+  "17":["poor","$10,850"],
+  "18":["excellent","$38,421"],
+  "19":["above","$22,663"],
+  "20":["below","$16,448"],
+  "21":["excellent","$40,309"],
+  "22":["below","$16,950"],
+  "23":["excellent","$40,388"],
+  "24":["above","$22,975"],
+  "25":["excellent","$33,481"],
+  "26":["poor","$10,445"],
+  "27":["above","$28,787"],
+  "28":["above","$23,619"],
+  "29":["excellent","$32,268"],
+  "30":["below","$21,260"],
+  "31":["excellent","$41,551"],
+  "32":["poor","$8,266"],
+  "33":["above","$21,702"],
+  "34":["below","$21,195"],
+  "35":["below","$14,006"],
+  "36":["above","$21,894"],
+  "37":["poor","$13,345"],
+  "38":["below","$19,455"],
+  "39":["poor","$8,701"],
+  "40":["below","$17,734"],
+  "41":["poor","$3,632"],
+  "42":["below","$21,650"],
+  "44":["below","$20,318"],
+  "45":["poor","$11,100"],
+  "46":["excellent","$33,081"],
+  "47":["below","$20,672"],
+  "48":["poor","$9,370"],
+  "49":["above","$26,754"],
+  "50":["excellent","$37,173"],
+  "51":["excellent","$29,744"],
+  "53":["excellent","$36,417"],
+  "54":["poor","$6,537"],
+  "55":["poor","$8,145"],
+  "56":["above","$23,575"]
 };
 
 adaparcRenderMap({
   containerId: "map-hcbs",
   descId:      "hcbs-map-desc",
   stateData:   HCBS_DATA,
-  valueLabel:  "Total spend",
-  svgTitle:    "Total annual community living (HCBS) spending per Medicaid recipient, by U.S. state",
-  svgDesc:     "Choropleth map of the 50 U.S. states and the District of Columbia shaded by HCBS spending tier. Deep maroon (Excellent) marks the highest-spending states: New York ($24.4B), Pennsylvania ($11.5B), California ($8.4B), Texas ($7.6B) and Minnesota ($6.2B). Pale gold (Poor) marks the lowest-spending states: Wyoming ($161M), South Dakota ($195M), Hawaii ($260M), Montana ($274M) and North Dakota ($286M). Full data is in the tables below."
+  valueLabel:  "Spending per recipient",
+  svgTitle:    "HCBS spending per recipient for community living, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC shaded by performance tier. Darker maroon (Excellent) marks the highest Medicaid HCBS spending per recipient; lighter gold (Poor) marks the lowest. Full data is in the tables below."
+});
+
+const HCBS_RATIO_DATA = {
+  "01":["poor","38.0%"],
+  "02":["above","66.4%"],
+  "04":["excellent","73.9%"],
+  "05":["poor","35.8%"],
+  "06":["poor","47.5%"],
+  "08":["excellent","81.2%"],
+  "09":["below","58.7%"],
+  "10":["excellent","69.6%"],
+  "11":["above","65.1%"],
+  "12":["excellent","69.9%"],
+  "13":["below","58.3%"],
+  "15":["below","52.3%"],
+  "16":["excellent","77.3%"],
+  "17":["poor","49.4%"],
+  "18":["below","52.8%"],
+  "19":["below","52.6%"],
+  "20":["above","64.0%"],
+  "21":["poor","48.4%"],
+  "22":["poor","39.8%"],
+  "23":["above","65.6%"],
+  "24":["excellent","69.5%"],
+  "25":["above","68.5%"],
+  "26":["above","66.2%"],
+  "27":["excellent","84.0%"],
+  "28":["poor","38.2%"],
+  "29":["excellent","69.7%"],
+  "30":["below","61.6%"],
+  "31":["below","61.1%"],
+  "32":["above","64.2%"],
+  "33":["above","67.8%"],
+  "34":["above","68.5%"],
+  "35":["excellent","77.4%"],
+  "36":["excellent","76.6%"],
+  "37":["poor","41.8%"],
+  "38":["poor","41.4%"],
+  "39":["below","62.1%"],
+  "40":["poor","48.0%"],
+  "41":["excellent","80.5%"],
+  "42":["above","65.1%"],
+  "44":["below","56.1%"],
+  "45":["below","59.4%"],
+  "46":["poor","52.0%"],
+  "47":["poor","52.1%"],
+  "48":["above","64.7%"],
+  "49":["below","54.8%"],
+  "50":["above","64.2%"],
+  "51":["above","64.6%"],
+  "53":["excellent","82.7%"],
+  "54":["poor","40.8%"],
+  "55":["excellent","94.8%"],
+  "56":["below","60.4%"]
+};
+
+adaparcRenderMap({
+  containerId: "map-hcbs-ratio",
+  descId:      "hcbs-ratio-map-desc",
+  stateData:   HCBS_RATIO_DATA,
+  valueLabel:  "Community share of LTSS spending",
+  svgTitle:    "Community share of Medicaid LTSS spending, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC shaded by performance tier. Darker maroon (Excellent) marks the highest community (HCBS) share of long-term care spending; lighter gold (Poor) marks the lowest, meaning more spending on institutions. Full data is in the tables below."
 });
 </script>
 </body>

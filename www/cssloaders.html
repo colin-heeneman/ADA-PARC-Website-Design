@@ -113,6 +113,29 @@ svg text, svg tspan, text, tspan {
     opacity: 0.6;
   }
 }
+
+/* Skip-to-content link: visually hidden until focused (WCAG 2.4.1). */
+.skip-to-main {
+  position: absolute;
+  left: 0;
+  top: -60px;
+  z-index: 2000;
+  background: #111111;
+  color: #ffffff;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0 0 6px 0;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: top 0.15s ease-in-out;
+}
+.skip-to-main:focus {
+  top: 0;
+  outline: 3px solid #C9A227;
+  outline-offset: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skip-to-main { transition: none; }
+}
 </style>
 <script>
 (function() {
@@ -163,4 +186,834 @@ $(document).on('shiny:value shiny:error', function(event) {
   update_spinner(event.target.id);
 });
 }());
+</script>
+<script>
+/* Accessibility: set document language (WCAG 3.1.1) and inject a
+   skip-to-content link as the first focusable element (WCAG 2.4.1).
+   flexdashboard does not add either automatically. */
+(function() {
+  function initA11y() {
+    if (!document.documentElement.getAttribute('lang')) {
+      document.documentElement.setAttribute('lang', 'en');
+    }
+    if (document.querySelector('.skip-to-main')) { return; }
+    var main = document.querySelector('[role="main"]')
+            || document.querySelector('.dashboard-page-content')
+            || document.querySelector('.main-container')
+            || document.querySelector('main');
+    if (!main) { return; }
+    if (!main.id) { main.id = 'main-content'; }
+    if (!main.hasAttribute('tabindex')) { main.setAttribute('tabindex', '-1'); }
+    var link = document.createElement('a');
+    link.className = 'skip-to-main';
+    link.href = '#' + main.id;
+    link.textContent = 'Skip to main content';
+    link.addEventListener('click', function() {
+      main.focus({ preventScroll: false });
+    });
+    document.body.insertBefore(link, document.body.firstChild);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initA11y);
+  } else {
+    initA11y();
+  }
+  /* Re-assert lang after Shiny finishes wiring up the page. */
+  $(document).on('shiny:connected', initA11y);
+})();
+</script>
+<script>
+/* ── Cross-frame page navigation ───────────────────────────────────────────
+   The Home page nav cards need to switch the flexdashboard top-level page.
+   Home is an embedded shinyApp(), so it renders inside an <iframe> and does
+   not own the navbar. Reaching up into top.document from inside that frame
+   only works while the two documents share an origin, and it fails silently
+   the moment they do not (which is what left the cards doing nothing).
+
+   This listener lives in the document that DOES own the navbar, so the
+   child only has to post a message. postMessage crosses origins, so the
+   navigation no longer depends on frame origin at all. The child still
+   attempts the direct click first; this is the path that catches it when
+   that attempt fails.
+
+   Message contract: { adaparc: 'navigate', page: '<navbar label or slug>' }
+   Only messages from this document's own child frames are honoured, and the
+   only effect is a tab switch, so nothing here reads or forwards data. */
+(function() {
+  var SLUGS = {
+    'Home':           'home',
+    'National Data':  'national-data',
+    'City Data':      'city-data',
+    'Scorecards':     'scorecards',
+    'Scorecard':      'scorecards',
+    'Fact Sheets':    'fact-sheets',
+    'Help':           'help'
+  };
+
+  function navLinks() {
+    return document.querySelectorAll('.navbar-nav a, .navbar .nav a');
+  }
+
+  function findLink(page) {
+    var slug = SLUGS[page] || String(page).toLowerCase().replace(/\s+/g, '-');
+    /* 1) by anchor slug, which is how flexdashboard wires its page tabs */
+    var byHref = document.querySelectorAll(
+      '.navbar-nav a[href$="#' + slug + '"], .navbar .nav a[href$="#' + slug + '"]'
+    );
+    if (byHref.length) { return byHref[0]; }
+    /* 2) by data-value, which flexdashboard sets to the page title */
+    var byValue = document.querySelectorAll('.navbar-nav a[data-value="' + page + '"]');
+    if (byValue.length) { return byValue[0]; }
+    /* 3) by visible label */
+    var links = navLinks(), want = String(page).trim().toLowerCase();
+    for (var i = 0; i < links.length; i++) {
+      if ((links[i].textContent || '').trim().toLowerCase() === want) { return links[i]; }
+    }
+    return null;
+  }
+
+  function showPage(page) {
+    var link = findLink(page);
+    if (!link) { return false; }
+    /* Drive the change through Bootstrap's own tab API where available, so
+       flexdashboard and Shiny both see the switch the way they expect. A
+       synthetic click is the fallback. */
+    try {
+      if (window.jQuery && window.jQuery(link).tab) { window.jQuery(link).tab('show'); }
+      else { link.click(); }
+    } catch (e) {
+      try { link.click(); } catch (e2) { return false; }
+    }
+    try { window.scrollTo(0, 0); } catch (e) {}
+    return true;
+  }
+
+  /* Expose for the same-origin fast path and for manual debugging. */
+  window.adaparcShowPage = showPage;
+
+  function isOwnFrame(source) {
+    for (var i = 0; i < window.frames.length; i++) {
+      if (source === window.frames[i]) { return true; }
+    }
+    return false;
+  }
+
+  window.addEventListener('message', function(evt) {
+    var msg = evt.data;
+    if (!msg || msg.adaparc !== 'navigate' || !msg.page) { return; }
+    if (!isOwnFrame(evt.source)) { return; }
+    showPage(msg.page);
+  });
+})();
+</script>
+<script>
+/* Accessibility: flexdashboard renders its top navbar page tabs (Home,
+   National Data, City Data, Scorecards, Fact Sheets, Help) as a plain list
+   of Bootstrap 3 links with no tablist semantics and no roving tabindex.
+   The same is true of any inner Bootstrap 3 .nav-tabs (e.g. the Scorecards
+   tabset). As a result keyboard users get inconsistent Left/Right behaviour
+   and the focused tab can desync from the active tab, so arrow navigation
+   sometimes lands on the wrong tab (WCAG 2.1.1 Keyboard, 4.1.2 Name/Role/Value).
+
+   This upgrades each tab group to the WAI-ARIA Tabs pattern:
+   role=tablist / role=tab, aria-selected, aria-controls, a single roving
+   tabindex, and Left/Right/Up/Down/Home/End keyboard navigation with
+   automatic activation. It is idempotent (marks processed containers) and
+   defensive (no-ops when the elements are absent), and it drives tab changes
+   through Bootstrap's own .tab('show') so Shiny stays in sync. */
+(function() {
+  var KEY = { END: 35, HOME: 36, LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40 };
+
+  function ownTabLinks(container) {
+    var all = container.querySelectorAll('a[data-toggle="tab"], a[data-bs-toggle="tab"]');
+    return Array.prototype.filter.call(all, function(a) {
+      return a.closest('.navbar-nav, .nav-tabs') === container;
+    });
+  }
+
+  function isActive(link) {
+    var li = link.parentNode;
+    return !!(li && li.classList && li.classList.contains('active'));
+  }
+
+  function syncSelection(links) {
+    links.forEach(function(l) {
+      var sel = isActive(l);
+      l.setAttribute('aria-selected', sel ? 'true' : 'false');
+      l.tabIndex = sel ? 0 : -1;
+    });
+  }
+
+  function selectOnly(link, links) {
+    links.forEach(function(l) {
+      var sel = (l === link);
+      l.setAttribute('aria-selected', sel ? 'true' : 'false');
+      l.tabIndex = sel ? 0 : -1;
+    });
+  }
+
+  function activate(link, links) {
+    try {
+      if (window.jQuery && window.jQuery(link).tab) { window.jQuery(link).tab('show'); }
+      else { link.click(); }
+    } catch (e) { link.click(); }
+    /* Set selection deterministically on the intended target (independent of
+       Bootstrap's timing), then move focus to it. */
+    selectOnly(link, links);
+    link.focus();
+  }
+
+  function enhance(container) {
+    if (!container || container.getAttribute('data-a11y-tabs') === 'done') { return; }
+    var links = ownTabLinks(container);
+    if (links.length < 2) { return; }
+    container.setAttribute('data-a11y-tabs', 'done');
+    if (!container.getAttribute('role')) { container.setAttribute('role', 'tablist'); }
+
+    links.forEach(function(link) {
+      if (link.parentNode && link.parentNode.tagName === 'LI' &&
+          !link.parentNode.getAttribute('role')) {
+        link.parentNode.setAttribute('role', 'presentation');
+      }
+      if (!link.getAttribute('role')) { link.setAttribute('role', 'tab'); }
+      var href = link.getAttribute('href') || '';
+      if (href.charAt(0) === '#' && href.length > 1 && !link.getAttribute('aria-controls')) {
+        link.setAttribute('aria-controls', href.slice(1));
+      }
+      link.addEventListener('click', function() {
+        setTimeout(function() { syncSelection(links); }, 0);
+      });
+    });
+    syncSelection(links);
+
+    container.addEventListener('keydown', function(e) {
+      var current = e.target && e.target.closest ? e.target.closest('a[role="tab"]') : null;
+      var i = current ? links.indexOf(current) : -1;
+      if (i === -1) { return; }
+      var n = links.length, target = null;
+      switch (e.keyCode) {
+        case KEY.LEFT:
+        case KEY.UP:    target = links[(i - 1 + n) % n]; break;
+        case KEY.RIGHT:
+        case KEY.DOWN:  target = links[(i + 1) % n]; break;
+        case KEY.HOME:  target = links[0]; break;
+        case KEY.END:   target = links[n - 1]; break;
+        default: return;
+      }
+      e.preventDefault();
+      activate(target, links);
+    });
+  }
+
+  function enhanceAll() {
+    var groups = document.querySelectorAll('.navbar-nav, .nav-tabs');
+    Array.prototype.forEach.call(groups, enhance);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', enhanceAll);
+  } else {
+    enhanceAll();
+  }
+  /* Re-scan after Shiny wires up (inner tabsets may be (re)rendered then). */
+  if (window.jQuery) { window.jQuery(document).on('shiny:connected', enhanceAll); }
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     DISPLAY PANEL
+     Phase 3 of docs/palette-v1-build-plan.qmd, added 2026-08-03.
+
+     A floating button, bottom right, opening a card that holds the two
+     reader-facing display choices: colour palette and high contrast. The
+     control used to live only on the Help page, which meant a reader looking
+     at a map had to leave it, change the setting, and come back.
+
+     WHY IT IS BUILT HERE AND NOT AS SHINY UI. flexdashboard's navbar takes
+     static links only, so a Shiny input cannot be placed in it. This file is
+     already injected into the head of the document that OWNS the navbar, and
+     already runs DOM enhancement JavaScript, so it is the one place a control
+     can be attached that outlives every tab switch.
+
+     WHY PLAIN <select> AND <input>, NOT selectInput(). Three reasons, all of
+     them traps this repo has hit before. Bootstrap 3 sets the root font size
+     to 10px, so anything sized in rem renders about 62 percent too small;
+     everything below is in px. Shiny's selectize widget would drag in that
+     styling and its own focus behaviour. And a native select is what a screen
+     reader and a mobile browser already know how to operate.
+
+     WIRING. The controls talk to R through Shiny.setInputValue, and R talks
+     back through the 'adaparcDisplaySync' custom message, which also carries
+     the sentence to put in the live region. R is the only thing that decides
+     what the current setting is; this file never assumes its own change was
+     accepted. See set_display_settings() in ADA_PARC.Rmd.
+
+     THE OPENING STATE IS PULLED, NOT PUSHED. Phase 1 of
+     docs/palette-v2-build-plan.qmd, 2026-08-03. Shiny DROPS a custom message
+     SILENTLY when no handler is registered for its name, logging one console
+     warning and nothing else. R's startup push therefore raced this file's
+     handler registration, and when the push won the select stayed empty until
+     the reader changed some other setting. The browser is the only end that
+     knows when it is ready, so the ask now belongs here: this file registers
+     the handler, then sets 'display_panel_ready', and R replies with the full
+     state. R's startup push is kept as well, harmlessly, for the case where it
+     does win. Two further guards below, because a control that is silently
+     waiting is its own accessibility problem: the select ships with a disabled
+     placeholder and aria-busy, and populates itself from a static list if
+     nothing has arrived after about three seconds.
+     ══════════════════════════════════════════════════════════════════════ -->
+<style>
+/* All sizes in px. See the Bootstrap 3 rem trap in the comment above. */
+#adaparc-display-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 16px;
+  border: 2px solid var(--ui-accent, #013176);
+  border-radius: 6px;
+  background: var(--ui-accent, #013176);   /* 12.34:1 against white text */
+  color: var(--on-dark, #ffffff);
+  font-size: 16px;
+  line-height: 1.3;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+#adaparc-display-btn:hover {
+  background: var(--ui-accent-dark, #01214f);
+  border-color: var(--ui-accent-dark, #01214f);
+}
+#adaparc-display-btn:focus-visible,
+#adaparc-display-btn:focus {
+  outline: var(--focus-ring-width, 3px) solid var(--focus-ring-dark, #ffffff);
+  outline-offset: 2px;
+}
+#adaparc-display-btn .adaparc-dp-icon {
+  /* Decorative. The button's text carries the meaning. */
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--on-dark, #ffffff);
+  background: linear-gradient(90deg, var(--on-dark, #ffffff) 0 50%, transparent 50% 100%);
+  flex: 0 0 auto;
+}
+
+#adaparc-display-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 74px;
+  z-index: 1501;
+  width: 320px;
+  max-width: calc(100vw - 40px);
+  padding: 18px 20px 20px;
+  background: var(--bg-card, #ffffff);
+  color: var(--text-body, #111111);
+  border: 2px solid var(--ui-accent, #013176);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+  line-height: 1.5;
+}
+#adaparc-display-panel[hidden] { display: none; }
+
+#adaparc-display-panel .adaparc-dp-title {
+  margin: 0 0 4px;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-body, #111111);
+}
+#adaparc-display-panel .adaparc-dp-sub {
+  margin: 0 0 14px;
+  font-size: 14px;
+  color: var(--text-body, #3d3630);
+}
+#adaparc-display-panel label {
+  display: block;
+  margin: 0 0 5px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-body, #111111);
+}
+#adaparc-display-panel select {
+  display: block;
+  width: 100%;
+  min-height: 42px;   /* comfortably over the 24px WCAG 2.5.8 target floor */
+  padding: 8px 10px;
+  margin: 0 0 6px;
+  font-size: 16px;
+  line-height: 1.3;
+  color: var(--text-body, #111111);
+  background: var(--bg-card, #ffffff);
+  border: var(--rule-width, 1px) solid var(--input-border, #6b625a);
+  border-radius: 4px;
+}
+#adaparc-display-panel select:focus-visible,
+#adaparc-display-panel select:focus {
+  outline: var(--focus-ring-width, 3px) solid var(--focus-ring, #0d3b8e);
+  outline-offset: 1px;
+}
+#adaparc-display-panel .adaparc-dp-note {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--text-body, #3d3630);
+}
+#adaparc-display-panel .adaparc-dp-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 6px;
+}
+#adaparc-display-panel .adaparc-dp-check input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  flex: 0 0 auto;
+  accent-color: var(--ui-accent, #013176);
+}
+#adaparc-display-panel .adaparc-dp-check label {
+  margin: 0;
+  font-weight: 700;
+}
+#adaparc-display-panel .adaparc-dp-close {
+  margin-top: 14px;
+  padding: 8px 14px;
+  min-height: 40px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--on-dark, #ffffff);
+  background: var(--navy, #3d3630);
+  border: 2px solid var(--navy, #3d3630);
+  border-radius: 5px;
+  cursor: pointer;
+}
+#adaparc-display-panel .adaparc-dp-close:hover {
+  background: var(--navy-dark, #111111);
+  border-color: var(--navy-dark, #111111);
+}
+#adaparc-display-panel .adaparc-dp-close:focus-visible,
+#adaparc-display-panel .adaparc-dp-close:focus {
+  outline: var(--focus-ring-width, 3px) solid var(--focus-ring, #0d3b8e);
+  outline-offset: 2px;
+}
+
+/* Live region. Visually hidden but never display:none, or nothing is spoken. */
+.adaparc-sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 480px) {
+  #adaparc-display-btn { right: 12px; bottom: 12px; }
+  #adaparc-display-panel { right: 12px; bottom: 66px; }
+}
+
+/* Printing a page should not print a floating control. */
+@media print {
+  #adaparc-display-btn, #adaparc-display-panel { display: none !important; }
+}
+</style>
+<script>
+(function () {
+  'use strict';
+
+  /* Where the button sits in the TAB ORDER, which is not where it sits on the
+     screen. Placing it immediately after the skip link makes it the second
+     tab stop on every page. The alternative, appending to the end of <body>,
+     is the more common convention but on this dashboard it buries the control
+     behind a map, a table and a long list of indicators on several tabs, and
+     the readers most likely to need it are exactly the ones tabbing through.
+     Skip links make the same trade. Set this to false to move it to the end. */
+  var BUTTON_FIRST_IN_TAB_ORDER = true;
+
+  var els = null;          /* built lazily, once the body exists */
+  var syncing = false;     /* true while R is writing values back into the DOM */
+  var pending = null;      /* last state from R, applied when the panel exists */
+  var arrived = false;     /* true once ANY state has been received from R */
+
+  /* 1.3. The last resort, and the reason it exists. If R never answers, for
+     any reason at all, the reader must still be left with a working control
+     rather than a box that says Loading forever. These ids and labels mirror
+     PALETTE_ORDER and the `label` field of each ADAPARC_PALETTES entry in
+     scripts/palettes.R.
+
+     THIS IS A DUPLICATE OF SERVER STATE AND THAT IS DELIBERATE, so keep it
+     honest: if a palette is added, renamed or reordered in palettes.R, change
+     it here too. It is small, it is only ever reached on a broken load, and
+     the alternative to duplicating it is a dead control. Choosing from this
+     list still works end to end, because the value sent is the palette id and
+     R resolves it through pal_id() exactly as it does any other selection.
+
+     FALLBACK_MS is a judgement, not a measurement. Long enough that a slow but
+     healthy connection is never mislabelled as broken; short enough that a
+     reader who opens the panel immediately is not left waiting on it. */
+  var FALLBACK_MS = 3000;
+  var FALLBACK_CHOICES = [
+    { id: 'heritage',  label: 'ADA-PARC' },
+    { id: 'blue_gold', label: 'Blue-Gold' },
+    { id: 'cividis_r', label: 'Cividis' },
+    { id: 'viridis_r', label: 'Viridis' },
+    { id: 'mono_high', label: 'High Contrast Mono' }
+  ];
+  var FALLBACK_NOTE = 'Display settings could not be loaded from the server. ' +
+                      'You can still choose a palette; reload the page if the ' +
+                      'map does not change.';
+  var fallbackTimer = null;
+
+  function announce(text) {
+    if (!els || !text) { return; }
+    /* Clear first so a repeated sentence is still re-announced. */
+    els.live.textContent = '';
+    window.setTimeout(function () { els.live.textContent = text; }, 60);
+  }
+
+  function isOpen() {
+    return els && !els.panel.hasAttribute('hidden');
+  }
+
+  function open() {
+    if (!els || isOpen()) { return; }
+    els.panel.removeAttribute('hidden');
+    els.btn.setAttribute('aria-expanded', 'true');
+    els.palette.focus();
+  }
+
+  function close(returnFocus) {
+    if (!els || !isOpen()) { return; }
+    els.panel.setAttribute('hidden', '');
+    els.btn.setAttribute('aria-expanded', 'false');
+    if (returnFocus) { els.btn.focus(); }
+  }
+
+  function toggle() { isOpen() ? close(true) : open(); }
+
+  function send(id, value) {
+    if (syncing) { return; }
+    if (window.Shiny && window.Shiny.setInputValue) {
+      /* priority 'event' so re-choosing the value R last confirmed still
+         reaches the server. Without it a rejected change would leave the
+         input stuck on a value the reader can no longer re-select. */
+      window.Shiny.setInputValue(id, value, { priority: 'event' });
+    }
+  }
+
+  /* Rebuild the option list only when it actually differs, so a routine sync
+     does not tear down and recreate the control the reader may have open. */
+  function fillChoices(choices) {
+    if (!els || !choices || !choices.length) { return; }
+    /* 1.2. Real options are in hand, so the control is no longer waiting.
+       Cleared BEFORE the early return below, because a routine sync that
+       changes nothing still means the select is live. The disabled placeholder
+       is removed by the innerHTML rebuild that follows; its value is the empty
+       string, which never matches a palette id, so its presence always makes
+       `same` false and the rebuild always happens on the first real state. */
+    els.palette.removeAttribute('aria-busy');
+    var same = els.palette.options.length === choices.length;
+    for (var i = 0; same && i < choices.length; i++) {
+      if (els.palette.options[i].value !== choices[i].id) { same = false; }
+    }
+    if (same) { return; }
+    els.palette.innerHTML = '';
+    for (var j = 0; j < choices.length; j++) {
+      var o = document.createElement('option');
+      o.value = choices[j].id;
+      o.textContent = choices[j].label;
+      els.palette.appendChild(o);
+    }
+  }
+
+  /* Phase 4.3. Write the generated :root block into a single <style> appended
+     to <head>, and set the data-adaparc-contrast hook on <html> in the same
+     step so the tokens and the structural rules in www/styles.css can never
+     describe different modes.
+
+     APPENDED TO HEAD, DELIBERATELY. The :root in www/styles.css has identical
+     specificity to this one, so the winner is decided by document order. Being
+     last is the whole mechanism. Do not move this into the stylesheet or give
+     it a more specific selector to "make sure it wins"; that would break the
+     fallback behaviour, which is that styles.css renders correctly on its own
+     before this arrives and if it never does.
+
+     This runs whether or not the panel has been built, because the tokens
+     matter to the whole page and the panel is only one consumer of them. */
+  function applyTokens(state) {
+    if (!state) { return; }
+    if (typeof state.contrast === 'string') {
+      document.documentElement.setAttribute('data-adaparc-contrast',
+                                            state.contrast);
+    }
+    if (typeof state.css !== 'string' || !state.css) { return; }
+    var el = document.getElementById('adaparc-palette-tokens');
+    if (!el) {
+      el = document.createElement('style');
+      el.id = 'adaparc-palette-tokens';
+      document.head.appendChild(el);
+    }
+    if (el.textContent !== state.css) { el.textContent = state.css; }
+  }
+
+  /* Apply a state pushed from R. Never triggers send(), or the two ends would
+     ping-pong: R writes, the change event fires, R is told again.
+     R always sends the FULL state, never a delta, so the panel cannot drift
+     out of step with the Help page copy of the same control. */
+  function applyState(state) {
+    pending = state;
+    /* Recorded even when the panel does not exist yet, because what this flag
+       means is "R has answered", not "the panel is populated". build() replays
+       `pending` on arrival, so a state that lands early is not lost and the
+       fallback below must not fire on top of it. */
+    arrived = true;
+    if (fallbackTimer !== null) {
+      window.clearTimeout(fallbackTimer);
+      fallbackTimer = null;
+    }
+    applyTokens(state);
+    if (!els || !state) { return; }
+    syncing = true;
+    try {
+      fillChoices(state.choices);
+      if (state.palette && els.palette.value !== state.palette) {
+        els.palette.value = state.palette;
+      }
+      if (typeof state.contrast === 'string') {
+        els.contrast.checked = (state.contrast === 'high');
+      }
+      if (state.note) { els.note.textContent = state.note; }
+    } finally {
+      syncing = false;
+    }
+    if (state.announce) { announce(state.announce); }
+  }
+
+  function build() {
+    if (document.getElementById('adaparc-display-btn')) { return; }
+    if (!document.body) { return; }
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'adaparc-display-btn';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-controls', 'adaparc-display-panel');
+    btn.innerHTML = '<span class="adaparc-dp-icon" aria-hidden="true"></span>' +
+                    '<span>Display</span>';
+
+    var panel = document.createElement('div');
+    panel.id = 'adaparc-display-panel';
+    panel.setAttribute('hidden', '');
+    /* A disclosure, not a dialog. There is no backdrop and the rest of the
+       page stays operable, so claiming role="dialog" aria-modal="true" would
+       tell a screen reader something untrue. aria-expanded on the button plus
+       a labelled group is the honest description of what this is. */
+    panel.setAttribute('role', 'group');
+    panel.setAttribute('aria-labelledby', 'adaparc-dp-title');
+    panel.innerHTML =
+      '<p class="adaparc-dp-title" id="adaparc-dp-title">Display settings</p>' +
+      '<p class="adaparc-dp-sub">Applies to maps across the site. Your choice ' +
+      'is remembered in the page address, so you can bookmark or share it.</p>' +
+
+      /* 1.2. The select ships occupied, not empty. aria-busy tells assistive
+         technology the control is still being populated, and the disabled
+         option says the same thing in plain words to everyone else. Both are
+         cleared in fillChoices() the moment real options arrive. `disabled`
+         rather than a plain option so it cannot be chosen and submitted. */
+      '<label for="adaparc-dp-palette">Map color palette</label>' +
+      '<select id="adaparc-dp-palette" aria-busy="true"' +
+      ' aria-describedby="adaparc-dp-palette-note">' +
+      '<option value="" disabled selected>Loading display settings</option>' +
+      '</select>' +
+      '<p class="adaparc-dp-note" id="adaparc-dp-palette-note"></p>' +
+
+      '<div class="adaparc-dp-check">' +
+      '<input type="checkbox" id="adaparc-dp-contrast"' +
+      ' aria-describedby="adaparc-dp-contrast-note">' +
+      '<label for="adaparc-dp-contrast">High contrast</label>' +
+      '</div>' +
+      '<p class="adaparc-dp-note" id="adaparc-dp-contrast-note">Maximum ' +
+      'separation between map bands, without color. For low vision, glare, ' +
+      'and black and white printing.</p>' +
+
+      '<button type="button" class="adaparc-dp-close">Close</button>';
+
+    var live = document.createElement('div');
+    live.id = 'adaparc-display-live';
+    live.className = 'adaparc-sr-only';
+    live.setAttribute('role', 'status');
+    live.setAttribute('aria-live', 'polite');
+
+    /* The panel and live region go at the end of the body regardless; only the
+       BUTTON's position in the source order is a tab-order decision. */
+    document.body.appendChild(panel);
+    document.body.appendChild(live);
+    var skip = document.querySelector('.skip-to-main');
+    if (BUTTON_FIRST_IN_TAB_ORDER && skip && skip.parentNode === document.body) {
+      document.body.insertBefore(btn, skip.nextSibling);
+    } else if (BUTTON_FIRST_IN_TAB_ORDER) {
+      document.body.insertBefore(btn, document.body.firstChild);
+    } else {
+      document.body.appendChild(btn);
+    }
+
+    els = {
+      btn: btn,
+      panel: panel,
+      live: live,
+      palette: panel.querySelector('#adaparc-dp-palette'),
+      contrast: panel.querySelector('#adaparc-dp-contrast'),
+      note: panel.querySelector('#adaparc-dp-palette-note'),
+      close: panel.querySelector('.adaparc-dp-close')
+    };
+
+    btn.addEventListener('click', toggle);
+    els.close.addEventListener('click', function () { close(true); });
+
+    els.palette.addEventListener('change', function () {
+      /* The Loading placeholder is disabled and so cannot be chosen, but its
+         value is the empty string and an empty palette id is not something R
+         should ever be asked to resolve. Cheap guard, one line. */
+      if (!els.palette.value) { return; }
+      send('display_panel_palette', els.palette.value);
+    });
+    els.contrast.addEventListener('change', function () {
+      send('display_panel_contrast', els.contrast.checked);
+    });
+
+    /* Escape dismisses and hands focus back, from anywhere inside the panel
+       or from the button itself. */
+    function onKeydown(e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        if (isOpen()) { e.stopPropagation(); close(true); }
+      }
+    }
+    panel.addEventListener('keydown', onKeydown);
+    btn.addEventListener('keydown', onKeydown);
+
+    /* Tabbing past the last control, or clicking elsewhere, closes the panel
+       without stealing focus. Focus is NOT trapped: this is a disclosure, so
+       Tab should carry the reader onward into the page rather than loop. */
+    document.addEventListener('focusin', function (e) {
+      if (!isOpen()) { return; }
+      if (panel.contains(e.target) || e.target === btn) { return; }
+      close(false);
+    });
+    document.addEventListener('mousedown', function (e) {
+      if (!isOpen()) { return; }
+      if (panel.contains(e.target) || btn.contains(e.target)) { return; }
+      close(false);
+    });
+
+    if (pending) { applyState(pending); }
+  }
+
+  /* Registered as early as possible, because R sends the opening state during
+     session start and the panel may not be in the DOM yet. applyState() parks
+     anything that arrives early in `pending` and build() replays it.
+
+     Registering early is necessary and NOT sufficient, which is the whole of
+     defect 1: this function returns without doing anything when Shiny has not
+     loaded yet, and until it succeeds a message addressed to this handler is
+     discarded by Shiny rather than queued. sendReady() below is what closes
+     that gap. */
+  function registerHandler() {
+    if (registerHandler.done) { return; }
+    if (!window.Shiny || !window.Shiny.addCustomMessageHandler) { return; }
+    registerHandler.done = true;
+    window.Shiny.addCustomMessageHandler('adaparcDisplaySync', applyState);
+  }
+
+  /* 1.1. Tell R the panel is ready to receive, and let R answer with the full
+     state. This is the fix for the dropped startup message.
+
+     NOT once. A websocket that drops and reconnects re-runs this, and asking a
+     second time costs one small message, where not asking costs a control that
+     is empty for the rest of the visit. R's observer is correspondingly not
+     `once = TRUE` either.
+
+     The counter is what makes the second ask visible to R. Shiny compares the
+     new input value with the old one and, without priority 'event', would
+     treat an identical value as no change and never fire the observer. Both
+     guards are here on purpose; the counter also makes the sequence readable
+     in the browser's input log when debugging this. */
+  var readyTicket = 0;
+  function sendReady() {
+    if (!registerHandler.done) { return; }
+    if (!window.Shiny || !window.Shiny.setInputValue) { return; }
+    readyTicket += 1;
+    window.Shiny.setInputValue('display_panel_ready', readyTicket,
+                               { priority: 'event' });
+  }
+
+  /* 1.3. Arm the static fallback. Idempotent, so the several init() paths
+     below cannot stack up timers. */
+  function armFallback() {
+    if (arrived || fallbackTimer !== null) { return; }
+    fallbackTimer = window.setTimeout(function () {
+      fallbackTimer = null;
+      if (arrived || !els) { return; }
+      fillChoices(FALLBACK_CHOICES);
+      els.note.textContent = FALLBACK_NOTE;
+      /* Logged, not silent. A fallback that nobody can tell fired is a bug
+         that hides itself, which is exactly how defect 1 survived. */
+      if (window.console && window.console.warn) {
+        window.console.warn(
+          '[ADA-PARC] No display state from the server after ' + FALLBACK_MS +
+          'ms. Palette select populated from the static fallback list in ' +
+          'www/cssloaders.html; it may not match the server.');
+      }
+    }, FALLBACK_MS);
+  }
+
+  /* 4.5. Report the operating-system contrast preference to R ONCE, so a
+     reader who has already configured their machine does not have to find the
+     panel. R decides what to do with it: an explicit ?contrast= in the URL
+     outranks the machine default, and a later change in the panel is never
+     overruled, because this is not watched for changes.
+
+     `prefers-contrast: more` is the WCAG-aligned value. `forced-colors`, which
+     Windows High Contrast sets, is a different mechanism that overrides colours
+     at the browser level and is out of scope for v1. */
+  function reportOsPreference() {
+    if (reportOsPreference.done) { return; }
+    if (!window.Shiny || !window.Shiny.setInputValue) { return; }
+    if (!window.matchMedia) { return; }
+    reportOsPreference.done = true;
+    var more = false;
+    try { more = window.matchMedia('(prefers-contrast: more)').matches; }
+    catch (e) { more = false; }
+    window.Shiny.setInputValue('display_os_prefers_contrast', more,
+                               { priority: 'event' });
+  }
+
+  /* ORDER MATTERS HERE. Register the handler before asking, or the reply can
+     arrive with nothing listening for it and the fix reproduces the bug. Arm
+     the fallback before asking too, so the timer is running even in the case
+     where sendReady() cannot send because Shiny is not present at all. */
+  function init() {
+    build();
+    registerHandler();
+    reportOsPreference();
+    armFallback();
+    sendReady();
+  }
+
+  registerHandler();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+  /* shiny:connected is the run that usually matters: it is the first point at
+     which setInputValue can reach the server, and on a cold load it fires
+     after DOMContentLoaded. init() is idempotent, so running it twice is
+     free. */
+  if (window.jQuery) { window.jQuery(document).on('shiny:connected', init); }
+})();
 </script>

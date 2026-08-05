@@ -1,0 +1,254 @@
+:root {
+      --navy:        #1c2b3a;
+      --navy-dark:   #152233;
+      /* --gold-banner was removed with the gold header on 2026-08-04. Leaving
+         an unused gold variable in place invites someone to reapply it to the
+         banner and undo the rebrand by accident. */
+      /* BRAND NAVY, provisional (pending ADA centre approval). Sampled from the
+         tile fill of www/brand/PARC_blue_icon.png, which is the single source
+         of truth for the mark.
+
+         NOT CURRENTLY USED ON THE FACT SHEETS. The banner and the callouts
+         carried --brand-navy for one day, 2026-08-04, and were moved to --navy
+         the same week at the client's request: the fact sheets read better when
+         the banner, the section headings and the table heads are one ink rather
+         than two blues a few degrees apart. The token stays defined because the
+         Shiny home hero still uses the identity colour and because an approved
+         mark may bring the banner back to it. Do not reintroduce it here on the
+         assumption it was dropped by accident.
+
+         White on --brand-navy measures 12.34:1. --brand-navy-dark never carries
+         text. */
+      --brand-navy:      #013176;
+      --brand-navy-dark: #01214f;
+      --bg-page:     #f5f7fa;
+      --bg-card:     #ffffff;
+      --border:      #e4e8ef;
+      --text-body:   #1c2b3a;
+      /* ADA-PARC HERITAGE tier palette, adopted 2026-07-28.
+         Excellent = deep maroon (best performance)
+         Poor      = warm gold   (worst performance)
+
+         This is static CSS and cannot call R, so these values MIRROR
+         ADA_PARC_PALETTE in scripts/palettes.R, which is the single source of
+         truth shared with the national map, the city map and both scorecards.
+
+         Do not edit these by hand. Edit scripts/palettes.R, then run
+           python3 scripts/check_palette.py
+         which fails if this file has drifted, then regenerate the fact sheets.
+
+         Each *-text value is the better of near-black and white against its
+         paired background and clears WCAG 2.2 SC 1.4.3 AA. Measured ratios:
+         excellent 15.05:1 | above 6.95:1 | below 6.35:1 | poor 13.15:1. */
+      --tier-excellent-bg:   #560000;
+      --tier-excellent-text: #ffffff;
+      --tier-above-bg:       #a52f1a;
+      --tier-above-text:     #ffffff;
+      --tier-below-bg:       #d88036;
+      --tier-below-text:     #111111;
+      --tier-poor-bg:        #fdd182;
+      --tier-poor-text:      #111111;
+      --tier-na-bg:          #e0e0e0;
+      --tier-na-text:        #444444;
+      /* Backwards-compatible aliases so legacy .best/.good/.fair/.worst
+         class selectors keep working with the new palette. */
+      --tier-best-bg:    var(--tier-excellent-bg);
+      --tier-best-text:  var(--tier-excellent-text);
+      --tier-good-bg:    var(--tier-above-bg);
+      --tier-good-text:  var(--tier-above-text);
+      --tier-fair-bg:    var(--tier-below-bg);
+      --tier-fair-text:  var(--tier-below-text);
+      --tier-worst-bg:   var(--tier-poor-bg);
+      --tier-worst-text: var(--tier-poor-text);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: 'EB Garamond', Garamond, Georgia, serif !important; }
+    body { font-family: 'EB Garamond', Garamond, Georgia, serif; font-size: 18px; line-height: 1.65; color: var(--text-body); background: var(--bg-page); }
+    .skip-link { position: absolute; top: -3rem; left: 1rem; background: var(--navy); color: #fff; padding: .5rem 1rem; border-radius: 0 0 4px 4px; font-weight: 600; text-decoration: none; z-index: 100; transition: top .2s; }
+    .skip-link:focus { top: 0; }
+    :focus-visible { outline: 3px solid #0d3b8e; outline-offset: 2px; border-radius: 2px; }
+    .page-wrapper { max-width: 900px; margin: 0 auto; background: var(--bg-card); box-shadow: 0 2px 16px rgba(28,43,58,.10); }
+    /* Header
+       The gold banner with two typeset word-logos was replaced 2026-08-04 by a
+       dark banner carrying the brand marks as images: white icon left, title
+       block centre, white wordmark right. The old .logo-adaparc and
+       .logo-ada-national rules were deleted rather than left dormant, because
+       a stale gold rule that still matched would fight the new banner as soon
+       as anyone reused the class name. `print-color-adjust` is required or
+       Chrome drops the fill on print and leaves white text on white.
+
+       The fill is --navy, the same ink as the section headings and the table
+       heads, so the page reads as one dark and one accent family rather than
+       two competing blues. White on --navy is 14.43:1. */
+    .factsheet-header { background: var(--navy); color: #ffffff; padding: 1.15rem 1.5rem; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.5rem; border-bottom: 3px solid var(--navy-dark); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* Fixed px, not rem: these are raster marks and a fractional height
+       resamples into visibly soft edges at the glyph corners.
+       Both marks are sized by HEIGHT so they share an optical baseline; the
+       icon is the cropped knockout glyph (158x253, taller than wide), so a
+       width rule would set its height by accident. The icon was reduced from
+       58px to 44px: it is a single figure beside a two-line wordmark, and at
+       equal height it out-weighed the wordmark and crowded the title block. */
+    .brand-icon { height: 44px; width: auto; display: block; }
+    .brand-wordmark { height: 54px; width: auto; display: block; }
+    .header-title { text-align: center; }
+    /* Title is the topic, subtitle is the ADA-PARC outcome category beneath it.
+       The pair mirrors the title/category registry in ADA_PARC.Rmd, so a sheet's
+       banner and its card on the site say the same thing. The subtitle is small
+       caps-spaced rather than large, since it is a classifier and the topic is
+       what the reader came for. #cbd8e6 on --navy is 9.96:1. */
+    .header-title h1 { font-size: 1.55rem; font-weight: 700; color: #ffffff; line-height: 1.25; margin-bottom: .2rem; }
+    .header-title .header-subtitle { font-size: .92rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: #cbd8e6; line-height: 1.3; }
+    /* Body */
+    .factsheet-body { padding: 2rem 2.5rem; }
+    .intro-section p { margin-bottom: 1rem; }
+    .intro-section p:last-child { margin-bottom: 0; }
+    .section-heading { font-size: 1.25rem; font-weight: 700; color: var(--navy); margin: 2rem 0 .75rem; padding-bottom: .4rem; border-bottom: 2px solid var(--border); }
+    /* Direction note (the "How to read the colors" callouts)
+       Was pale green with dark-green rules and dark-green <strong>; moved to a
+       solid dark field with white text 2026-08-04. The green left rail went
+       with it: on a solid dark field an accent rail either disappears or has
+       to borrow gold or maroon, and both of those already carry tier meaning
+       on this page. A plain block states "aside" without claiming one.
+       Contains <strong> and <em> only, no links, so a single white colour
+       covers every descendant; if a link is ever added here it needs its own
+       light rule, since the global #0d3b8e link colour is 1.7:1 on --navy. */
+    .direction-note { background: var(--navy); color: #ffffff; border-radius: 6px; padding: .85rem 1.15rem; margin-bottom: 1.25rem; font-size: .95rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .direction-note strong { color: #ffffff; }
+    .direction-note em { color: #ffffff; }
+    /* Population note
+       The universe each sheet's numbers describe, stated once at the top of the
+       body rather than left to be inferred from a footnote. It is deliberately
+       NOT a .direction-note: this is the reading frame for the whole sheet, so
+       it must not look like one of the several per-map asides further down. A
+       pale field with a --navy rail reads as a standing condition; #1c2b3a on
+       #f0f4f9 is 13.06:1. */
+    .population-note { background: #f0f4f9; border-left: 5px solid var(--navy); border-radius: 0 5px 5px 0; padding: .7rem 1.1rem; margin-bottom: 1.5rem; font-size: .95rem; line-height: 1.5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .population-note .population-note-label { font-weight: 700; color: var(--navy); }
+    /* Map */
+    .map-figure { margin: 1rem 0; }
+    .map-title { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: .6rem; line-height: 1.3; }
+    .map-container { background: #f0f4f9; border-radius: 6px; min-height: 260px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .map-container svg { display: block; }
+    .map-loading { color: #4a5a67; font-size: .9rem; font-style: italic; padding: 1rem; }
+    .map-error { color: #b91c1c; font-size: .9rem; padding: 1rem; }
+    .map-noscript { font-size: .9rem; color: #4a5a67; padding: 1rem; }
+    /* Legend */
+    .map-legend { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 .5rem; align-items: center; }
+    .map-caption { font-size: .82rem; color: #4a5a67; line-height: 1.45; margin-top: .5rem; }
+    .map-caption a { color: #0d3b8e; }
+    /* Tier chips */
+    .tier-chip { display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 100px; font-size: .8rem; font-weight: 700; letter-spacing: .03em; }
+    .tier-chip.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
+    .tier-chip.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
+    .tier-chip.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
+    .tier-chip.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
+    /* Tables */
+    .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
+    .tier-table-group { margin-bottom: 1.25rem; }
+    .tier-header { display: block; padding: .4rem .75rem; font-weight: 700; font-size: 1rem; letter-spacing: .04em; text-transform: uppercase; border-radius: 4px 4px 0 0; }
+    .tier-header.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
+    .tier-header.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
+    .tier-header.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
+    .tier-header.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
+    table { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--bg-card); }
+    thead tr { background: var(--navy); color: #fff; }
+    thead th { padding: .5rem .75rem; text-align: left; font-weight: 600; font-size: .85rem; letter-spacing: .03em; }
+    thead th:not(:first-child) { text-align: right; }
+    tbody tr:nth-child(even) { background: #fafbfd; }
+    tbody td { padding: .4rem .75rem; border-bottom: 1px solid var(--border); }
+    tbody td:not(:first-child) { text-align: right; }
+    tbody tr:last-child td { border-bottom: none; }
+    /* Footnotes */
+    .footnotes { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .82rem; color: #4a5a67; line-height: 1.5; }
+    .footnotes ol { padding-left: 1.2rem; }
+    .footnotes li { margin-bottom: .35rem; }
+    /* Footer */
+    .factsheet-footer { background: #f0f4f9; border-top: 2px solid var(--border); padding: 1.25rem 2.5rem; font-size: .9rem; line-height: 1.55; }
+    .factsheet-footer p { margin-bottom: .5rem; }
+    .factsheet-footer p:last-child { margin-bottom: 0; }
+    .factsheet-footer a { color: #0d3b8e; }
+    .factsheet-footer a:hover { text-decoration: underline; }
+    .funding-note { font-style: italic; font-size: .85rem; color: #4a5a67; margin-bottom: .75rem !important; }
+    /* "Last updated" moved out of the banner and into the footer. It is
+       provenance, not title matter, and in the banner it competed with the
+       topic for the reader's first glance. Last item in the footer, above the
+       rule, at the same weight as the funding note. #4a5a67 on #f0f4f9 is
+       7.28:1. */
+    .updated-note { font-size: .85rem; color: #4a5a67; margin-top: .75rem !important; margin-bottom: 0 !important; padding-top: .6rem; border-top: 1px solid var(--border); }
+    /* SVG state hover */
+    .state-path { transition: opacity .15s; cursor: default; }
+    .state-path:hover { opacity: .8; }
+    /* Responsive */
+    @media (max-width: 680px) {
+      .tables-grid { grid-template-columns: 1fr; }
+      .factsheet-body { padding: 1.25rem; }
+      /* Stacked banner: the marks are grid items now, not inline text, so
+         text-align cannot centre them. justify-self can. */
+      .factsheet-header { grid-template-columns: 1fr; text-align: center; gap: .85rem; }
+      .brand-icon, .brand-wordmark { justify-self: center; }
+    }
+    @media print {
+      body { background: #fff; font-size: 11pt; }
+      .page-wrapper { box-shadow: none; max-width: 100%; }
+      .skip-link { display: none; }
+      .factsheet-body { padding: 1rem; }
+      .tables-grid { grid-template-columns: 1fr 1fr; }
+    }
+  
+    /* ─── ADA-PARC tier classes (new canonical names) ─── */
+    .tier-chip.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .tier-chip.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .tier-chip.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .tier-chip.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    .tier-chip.na        { background: var(--tier-na-bg);        color: var(--tier-na-text); }
+    .tier-header.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .tier-header.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .tier-header.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .tier-header.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    /* ─── Enhanced SVG state interactivity (hover + keyboard focus) ─── */
+    /* These rules set stroke-WIDTH only. A stroke COLOUR here would overwrite
+       the per-state border ink adaparc-map.js sets from each state's own fill,
+       and a #1c2b3a outline on a #560000 fill is about 1.3:1, i.e. no visible
+       hover state on precisely the best-performing states. Width plus the
+       brightness lift carries the affordance on every tier. */
+    .state-path { transition: filter .15s ease, stroke-width .15s ease; cursor: pointer; outline: none; }
+    .state-path:hover,
+    .state-path:focus-visible { stroke-width: 2.25; filter: brightness(1.06); }
+    .state-path.is-active { stroke-width: 2.5; }
+    /* ─── Floating tooltip for hover / keyboard focus ─── */
+    .map-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: #1c2b3a;
+      color: #ffffff;
+      font-family: 'EB Garamond', Garamond, Georgia, serif;
+      font-size: .9rem;
+      line-height: 1.35;
+      padding: .55rem .8rem;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.18);
+      max-width: 260px;
+      z-index: 20;
+      opacity: 0;
+      transform: translate(-50%, calc(-100% - 10px));
+      transition: opacity .12s ease;
+    }
+    .map-tooltip[data-visible="true"] { opacity: 1; }
+    .map-tooltip .mt-name  { font-weight: 700; font-size: .95rem; display: block; }
+    .map-tooltip .mt-value { font-weight: 600; display: inline-block; margin-right: .35rem; }
+    .map-tooltip .mt-tier  { display: inline-block; padding: .05rem .45rem; border-radius: 3px;
+                              font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
+    .map-tooltip .mt-tier.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
+    .map-tooltip .mt-tier.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
+    .map-tooltip .mt-tier.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
+    .map-tooltip .mt-tier.poor      { background: var(--tier-poor-bg);      color: var(--tier-poor-text); }
+    .map-tooltip .mt-tier.na        { background: var(--tier-na-bg);        color: var(--tier-na-text); }
+    .map-container { position: relative; }
+    /* ─── Screen-reader only (a11y live announcements) ─── */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+                overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    /* ─── Respect user's reduced-motion preference ─── */
+    @media (prefers-reduced-motion: reduce) {
+      .state-path { transition: none; }
+      .map-tooltip { transition: none; }
+      .skip-link   { transition: none; }
+    }

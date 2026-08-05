@@ -11,7 +11,9 @@ output:
 runtime: shiny
 resource_files:
 - www/participant_logos.png
+- www/cssloaders.html
 - scripts/functions.R
+- scripts/palettes.R
 - data/dict_vars.csv
 - data/final/city_place_full.Rds
 - data/final/dict_location_crosswalk.Rds
@@ -21,6 +23,7 @@ resource_files:
 - data/final/tracts_data.Rds
 - www/Status_for_Disabled_image.png
 - www/adaparclogo.png
+- www/brand
 - www/ScorecardReport.pdf
 - www/factsheets
 - www/styles.css
@@ -32,7 +35,8 @@ resource_files:
 - scorecard/font-loader.html
 - scorecard/dictionary
 - scorecard/scorecard_data
-editor_options: 
+- national/national_topic.qmd
+editor_options:
   markdown: 
     wrap: 72
 ---
@@ -46,6 +50,7 @@ library(patchwork)
 library(sf)
 library(leaflet)
 library(leaflet.extras)
+library(leaflet.extras2)
 library(htmltools)
 library(shiny)
 library(shinycssloaders)
@@ -118,6 +123,30 @@ options(scipen = 999999,
         shiny.reactlog = TRUE)
 knitr::opts_chunk$set(fig.cap = TRUE)
 
+# ── Self-contained download icon ─────────────────────────────────────
+# Shiny's downloadButton() defaults to a Font Awesome glyph
+# (<i class="fa fa-download">). When the FA webfont fails to load, that
+# glyph renders as a blank tofu square. dl_icon() supplies an inline SVG
+# instead, wrapped in an <i> tag so it passes Shiny's validateIcon()
+# check (which requires the icon tag name to be "i"). This removes the
+# webfont dependency entirely, so the download affordance always renders.
+dl_icon <- function() {
+  tags$i(
+    class = "dl-svg-icon", `aria-hidden` = "true",
+    HTML(paste0(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" ',
+      'width="1em" height="1em" focusable="false" ',
+      'style="vertical-align:-0.125em;margin-right:0.45em;fill:currentColor;">',
+      '<path d="M8 1.5a.75.75 0 0 1 .75.75v6.69l2.22-2.22a.75.75 0 1 1 ',
+      '1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 ',
+      '1.06-1.06l2.22 2.22V2.25A.75.75 0 0 1 8 1.5Z"/>',
+      '<path d="M2.5 10.75a.75.75 0 0 0-1.5 0v1.75A1.75 1.75 0 0 0 2.75 ',
+      '14.25h10.5A1.75 1.75 0 0 0 15 12.5v-1.75a.75.75 0 0 0-1.5 0v1.75a',
+      '.25.25 0 0 1-.25.25H2.75a.25.25 0 0 1-.25-.25Z"/></svg>'
+    ))
+  )
+}
+
 #################################
 #################################
 # Load data:
@@ -135,6 +164,42 @@ tracts_sf <- readRDS(here::here("data", "final", "tracts_sf.Rds"))
 
 # Read in variable dictionary manually
 dict_vars <- read_csv(here::here("data", "dict_vars.csv"))
+
+# ── Site-wide attribution footer ──────────────────────────────────────────────
+# Shown at the bottom of every page. `site_updated` is the single source of
+# truth for the "updated as of" date, so it only needs changing in one place.
+site_updated <- "July 2026"
+
+# Styling is bundled with the element (not left to www/styles.css) because the
+# shinyApp() sub-apps run in an isolated context where the parent flexdashboard
+# stylesheet does not reliably cascade. Shipping the <style> alongside the
+# markup guarantees the footer looks the same on every tab.
+adaparc_footer <- shiny::tagList(
+  shiny::tags$style(shiny::HTML(
+    ".adaparc-attribution {
+       font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+       font-size: 15px;
+       line-height: 1.6;
+       color: #591313;
+       background: #f9f7f4;
+       border: 1px solid #e2dcd4;
+       border-top: 3px solid #7B1A1A;
+       border-radius: 8px;
+       text-align: center;
+       padding: 1rem 1.5rem;
+       margin: 3rem auto 1.5rem;
+       max-width: 640px;
+       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+     }"
+  )),
+  shiny::tags$footer(
+    class = "adaparc-attribution",
+    role  = "contentinfo",
+    shiny::HTML(paste0(
+      "A website for the ADA-PARC. Last updated ", site_updated, "."
+    ))
+  )
+)
 
 east_coast_states_to_relocate <- c("RI", "DE", "DC", "MD")
 
@@ -175,9 +240,64 @@ us_states <- us_states %>%
   ) %>% 
   left_join(national_data)
 
+### ----- Script sourcing helper -----
+# Bare source() on a file missing from the deployment bundle fails with the
+# opaque message "cannot open the connection", which says nothing about WHICH
+# file is absent. On shinyapps.io that surfaces only as a stack trace in the
+# logs. This helper checks first and names the offending path, along with the
+# reason it is almost always missing: the file is not declared in the
+# `resource_files:` block of this document's YAML header, so rsconnect never
+# uploaded it. Run scripts/preflight_deploy.R before deploying to catch this
+# locally instead of in production.
+#
+# `envir` must be an ENVIRONMENT, not TRUE/FALSE. Passing local = TRUE from
+# inside this helper would evaluate the sourced file in the helper's own frame,
+# and every object it defines would be discarded on return. Defaulting to
+# parent.frame() reproduces what a top-level `source(..., local = TRUE)` does:
+# evaluate in the caller's environment (here, the setup chunk).
+source_required <- function(..., envir = parent.frame()) {
+  path <- here::here(...)
+  if (!file.exists(path)) {
+    stop(
+      "Required script not found: ", path, "\n",
+      "  If the app works locally but fails after deploy, this file is ",
+      "probably missing from the `resource_files:` list in the YAML header ",
+      "of ADA_PARC.Rmd. Add it, then redeploy.",
+      call. = FALSE
+    )
+  }
+  source(path, local = envir)
+}
+
 ### ----- Functions import -----
 
-source(here::here("scripts", "functions.R"), local = TRUE)
+source_required("scripts", "functions.R")
+
+### ----- Tier palette import -----
+# scripts/palettes.R is the single source of truth for ADA-PARC tier colour.
+# Sourced into the GLOBAL environment (envir = globalenv()) rather than locally,
+# because ADA_PARC_PALETTE and the pal_* accessors are read from inside Shiny
+# reactives and render functions that do not share this chunk's environment.
+# Nothing below should carry a tier hex literal. See docs/color-palette-expansion.qmd.
+source_required("scripts", "palettes.R", envir = globalenv())
+
+### ----- Fixed city/place map classification -----
+# City tract choropleth (output$snapshotmap) previously recomputed its color
+# scale PER CITY (colorQuantile if >=4 tracts had data, else colorNumeric).
+# That broke down for the many small/rural places with <4 tracts: 1-3 tract
+# cities either got a non-4-step legend (colorNumeric + addLegend's default
+# pretty()-based binning) or, for single-tract places, a blank legend (the
+# domain collapses to one value, so addLegend's auto-computed cuts have
+# length <= 1). See project memory "City Map Small-N Legend Bug".
+#
+# Fix: compute ONE fixed 4-category classification from the full national
+# tract distribution (reusing the same create_non_overlapping_buckets() /
+# format_ranges() helpers already used for the national state map), so every
+# city's map is classified against the same breakpoints regardless of how
+# many tracts that city has. This also makes colors comparable across
+# different cities' maps, which per-city quantiles never allowed.
+city_map_breaks <- create_non_overlapping_buckets(tracts_data$pct_cni_total_dis_place)
+city_map_labels <- format_ranges(city_map_breaks, "pct_cni_total_dis_place")
 
 ```
 
@@ -185,10 +305,28 @@ source(here::here("scripts", "functions.R"), local = TRUE)
 
 ```{r home}
 # Embed logo as base64 data URI so the src resolves independently of Shiny's
-# session URL context (relative paths like "adaparclogo.png" can 404 when the
-# browser resolves them against /session/ID/... rather than the app root).
+# session URL context (relative paths like "PARC_blue_icon.png" can 404 when
+# the browser resolves them against /session/ID/... rather than the app root).
+#
+# BRAND (provisional, 2026-08-04): www/brand holds the new identity pending
+# approval from the ADA centers. Two blue-on-transparent files pair with two
+# white-on-transparent files for dark surfaces:
+#   PARC_blue_icon.png  / PARC_white_icon.png  384x384 square mark
+#   PARC_blue_text.png  / PARC_white_text.png  448x264 two-line wordmark
+# The hero carries both marks, mirroring the fact sheet banner adopted
+# 2026-08-04 (fs_header() in factsheets/_generate/R/factsheet-functions.R):
+# icon left, title block centred, wordmark right. The hero previously used the
+# icon alone on the reasoning that the wordmark only repeats what the
+# "Welcome to ADA-PARC" heading says; that was true of the words but not of
+# the composition, and the home page and the fact sheets now open the same
+# way. The BLUE files are used here, not the white ones, because the hero sits
+# on the white page rather than on the navy banner.
 logo_uri <- base64enc::dataURI(
-  file = here::here("www", "adaparclogo.png"),
+  file = here::here("www", "brand", "PARC_blue_icon.png"),
+  mime = "image/png"
+)
+wordmark_uri <- base64enc::dataURI(
+  file = here::here("www", "brand", "PARC_blue_text.png"),
   mime = "image/png"
 )
 
@@ -202,18 +340,33 @@ ui <- fluidPage(
         box-sizing: border-box;
         font-family: 'EB Garamond', Garamond, Georgia, serif !important;
       }
+      /* ROOT FONT SIZE — read this before touching any rem value below.
+         fluidPage() loads Bootstrap 3, whose scaffolding sets
+         `html { font-size: 10px }`. Every rem on this page therefore
+         resolved against a 10px root, which rendered 1.4rem body copy at
+         14px and the contact line at 10.5px, roughly 62% of the intended
+         size and well under the site's accessibility floor. Pinning the
+         root here makes rem deterministic regardless of what Bootstrap
+         version ships underneath, and every size below is expressed in
+         rem against this 16px base (1.3125rem = 21px, matching the
+         body size set in www/styles.css for the rest of the site). */
+      html {
+        font-size: 16px;
+      }
       body, html {
         height: 100%;
         margin: 0;
         padding: 0;
         overflow-x: hidden;
-        overflow-y: scroll;
+        /* `auto`, not `scroll`: `scroll` paints a permanent scrollbar track
+           even when the content fits. */
+        overflow-y: auto;
         background: #f5f7fa;
       }
       .main-content {
-        padding: 2.5rem 2.5rem 3rem 2.5rem;
+        padding: 2.5rem 2.75rem 3rem 2.75rem;
         width: 100%;
-        max-width: 880px;
+        max-width: 1020px;
         margin: 0 auto;
         background: #ffffff;
         border-left: 1px solid #e4e8ef;
@@ -222,101 +375,159 @@ ui <- fluidPage(
       }
 
       /* ---- Hero ---- */
+      /* Three-column grid, matching .factsheet-header: mark left, title block
+         centred, wordmark right. `auto 1fr auto` is what makes the middle
+         column centre against the PAGE rather than against the space left
+         over between the two marks, provided the two side columns end up
+         near enough the same width. They do: the 72px square icon and the
+         wordmark set to 60px tall on a 448x264 file (~102px wide) differ by
+         about 30px, which is not readable as an offset at this width. A flex
+         row with `flex: 1` on the text block, which is what this replaced,
+         cannot centre at all: it centres the text inside whatever width is
+         left, so the heading drifts left as the wordmark grows. */
       .home-hero {
-        text-align: center;
-        padding: 1.5rem 0 1.75rem 0;
-        border-bottom: 1px solid #e4e8ef;
-        margin-bottom: 2rem;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.25rem 0 1.125rem 0;
+        border-bottom: 2px solid #7B1A1A;
+        margin-bottom: 1.75rem;
       }
       .home-logo-wrap {
-        margin-bottom: 1.25rem;
+        flex-shrink: 0;
       }
+      /* The brand icon is a 1:1 square, unlike the old wordmark it replaced,
+         so height rather than width is the constraint that sets its visual
+         weight. 72px reads level with the 32px hero heading; the old 96x64
+         box would have shrunk a square mark to 64px and left it sitting
+         light against the type. */
       .home-logo-wrap img {
-        max-width: 300px;
-        height: auto;
-        display: inline-block;
+        width: 72px;
+        height: 72px;
+        display: block;
+      }
+      /* Sized by HEIGHT, as on the fact sheet banner, so the two marks share
+         an optical baseline. A width rule would set the height by accident,
+         since the two files have different aspect ratios. */
+      .home-wordmark {
+        height: 60px;
+        width: auto;
+        display: block;
+      }
+      .hero-text-block {
+        text-align: center;
+        min-width: 0;
       }
       .welcome-text {
-        font-size: 2.6rem;
+        font-size: 2rem;     /* 32px */
         font-weight: 700;
         color: #1c2b3a;
-        margin: 0 0 0.35rem 0;
+        margin: 0 0 0.3rem 0;
         line-height: 1.15;
-        letter-spacing: -0.01em;
       }
+      /* 19px, down from 20px. Below the 21px site body size, but this is a
+         one-line standfirst under a 32px heading rather than reading copy,
+         and it stays well clear of the 16px floor. #1c1c1c on #ffffff is
+         17.4:1. */
       .welcome-sub {
-        font-size: 1.2rem;
-        color: #4a5568;
+        font-size: 1.1875rem; /* 19px */
+        color: #1c1c1c;
+        line-height: 1.4;
         margin: 0;
-        font-style: italic;
       }
 
       /* ---- Nav Cards ---- */
+      /* Two columns, so four cards sit as a 2x2 block. Each card is wider
+         than it was at three across, which is what lets the titles and
+         descriptions carry the larger type without wrapping awkwardly. */
       .nav-cards {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.1rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.125rem;
         margin-bottom: 2rem;
       }
       .nav-card {
         background: #ffffff;
         border: 1px solid #e4e8ef;
-        border-top: 3px solid #7B1A1A;
-        border-radius: 6px;
-        padding: 1.6rem 1.4rem 1.5rem 1.4rem;
+        border-top: 4px solid #7B1A1A;
+        border-radius: 0 0 6px 6px;
+        padding: 1.375rem 1.375rem 1.25rem 1.375rem;
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        /* Centred, matching the hero above. `align-items: center` is what
+           centres the icon tile and the button, which are flex ITEMS and so
+           are unaffected by text-align; text-align centres the title and the
+           description, which are text inside full-width items. Both rules
+           are needed, and neither substitutes for the other. */
+        align-items: center;
+        text-align: center;
         transition: box-shadow 0.2s ease, transform 0.15s ease;
       }
       .nav-card:hover {
         box-shadow: 0 6px 20px rgba(123,26,26,0.12);
         transform: translateY(-2px);
       }
+      /* Tile tint is #eef3fa, the palest usable step of the brand navy,
+         replacing the maroon tint #fdf5f5 that paired with the old stroke.
+         Not pure white: the card itself is white, so a white tile would
+         erase the tile and leave the glyph floating. #eef3fa is 1.06:1
+         against the card, enough to read as a shape, while the #013176
+         stroke on it measures 11.07:1, comfortably past the 3:1 that
+         non-text graphics require and past the 4.5:1 text floor as well. */
       .nav-card-icon {
-        width: 44px;
-        height: 44px;
-        background: #f5f0e8;
+        width: 50px;
+        height: 50px;
+        background: #eef3fa;
         border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 0.9rem;
+        margin-bottom: 1rem;
         flex-shrink: 0;
       }
       .nav-card-icon svg {
-        width: 22px;
-        height: 22px;
+        width: 26px;
+        height: 26px;
         fill: none;
-        stroke: #7B1A1A;
+        stroke: #013176;
         stroke-width: 2;
         stroke-linecap: round;
         stroke-linejoin: round;
       }
       .nav-card-title {
-        font-size: 1.3rem;
+        font-size: 1.3125rem;   /* 21px */
         font-weight: 700;
         color: #1c2b3a;
         margin-bottom: 0.4rem;
-        line-height: 1.2;
+        line-height: 1.25;
       }
       .nav-card-desc {
-        font-size: 1.05rem;
-        color: #4a5568;
-        line-height: 1.55;
-        margin-bottom: 1.1rem;
+        font-size: 1.0625rem;   /* 17px */
+        color: #1c1c1c;
+        line-height: 1.6;
+        margin-bottom: 1.25rem;
         flex-grow: 1;
       }
+      /* Brand navy #013176, sampled from the tile fill of the PARC icon and
+         defined as --brand-navy in factsheets/_generate/assets/factsheet-base.css.
+         The jump-ahead buttons carry the identity colour rather than maroon so
+         the one interactive element on the page is the one thing wearing the
+         mark's blue; maroon stays on the structural rules (card top border,
+         hero underline) and on the card icons. Hard-coded rather than
+         referenced because this sub-app runs in an isolated shinyApp() context
+         that the parent stylesheet's custom properties do not reach; if the
+         approved brand shifts the blue, this literal and --brand-navy must
+         move together.
+         #ffffff on #013176 is 12.34:1. */
       .nav-card-btn {
         display: inline-block;
-        padding: 0.45rem 1.15rem;
+        padding: 0.55rem 1.2rem;
         font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 1rem;
+        font-size: 1.0625rem;   /* 17px */
         font-weight: 600;
         color: #ffffff !important;
-        background-color: #7B1A1A;
+        background-color: #013176;
         border-radius: 4px;
         text-decoration: none !important;
         letter-spacing: 0.02em;
@@ -324,121 +535,131 @@ ui <- fluidPage(
         cursor: pointer;
         border: none;
       }
+      /* Gold on the darker blue is 6.6:1, so the hover state clears AA for
+         normal text and does not depend on the 17px weight to pass. */
       .nav-card-btn:hover {
-        background-color: #5e1414;
+        background-color: #01214f;
         color: #C9A428 !important;
       }
 
-      /* ---- Info Grid ---- */
-      .home-divider {
-        border: none;
-        border-top: 1px solid #e4e8ef;
-        margin: 0 0 2rem 0;
+      /* ---- Callout (full-width) ---- */
+      .callout-full {
+        border-left: 4px solid #7B1A1A;
+        background: #f9f7f4;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 2rem;
+        border-radius: 0;
       }
-      .info-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0;
-        align-items: start;
+      .callout-label {
+        font-size: 1rem;        /* 16px, uppercase with tracking */
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #7B1A1A;
+        margin-bottom: 0.4rem;
       }
-      .info-col-left {
-        padding-right: 2rem;
-        border-right: 1px solid #e4e8ef;
+      .callout-text {
+        font-size: 1.1875rem;   /* 19px */
+        color: #1c1c1c;
+        line-height: 1.6;
+        font-weight: 500;
+        margin: 0;
       }
-      .info-col-right {
-        padding-left: 2rem;
-      }
-      .info-col-section {
+
+      /* ---- Single-column sections ---- */
+      .home-section {
         padding-bottom: 1.5rem;
         margin-bottom: 1.5rem;
-        border-bottom: 1px solid #f0f2f5;
+        border-bottom: 0.5px solid #e4e8ef;
       }
-      .info-col-section:last-child {
+      .home-section:last-of-type {
         border-bottom: none;
         margin-bottom: 0;
         padding-bottom: 0;
       }
-      .section-title {
-        font-size: 1.35rem;
+      .sec-heading {
+        font-size: 1.5rem;      /* 24px */
         font-weight: 700;
         color: #1c2b3a;
         margin: 0 0 0.6rem 0;
         line-height: 1.25;
         border-left: 3px solid #7B1A1A;
-        padding-left: 0.6rem;
+        padding-left: 0.7rem;
+        border-radius: 0;
       }
-      .section-subtitle {
-        font-size: 1.1rem;
-        color: #4a5568;
-        margin-bottom: 0.7rem;
-        line-height: 1.6;
-        font-style: italic;
-      }
-      .section-content {
-        font-size: 1.1rem;
+      .sec-body {
+        font-size: 1.1875rem;   /* 19px */
         color: #2d3748;
-        line-height: 1.75;
+        line-height: 1.7;
+        margin: 0;
+      }
+      .sec-sub {
+        font-size: 1.125rem;    /* 18px */
+        color: #1c1c1c;
+        line-height: 1.6;
+        margin-bottom: 0.6rem;
       }
 
       /* ---- Regions Grid ---- */
       .regions-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 0.2rem 0.75rem;
-        margin: 0.5rem 0 0.85rem 0;
+        gap: 0.2rem 2rem;
+        margin: 0.75rem 0;
         list-style: none;
         padding: 0;
       }
       .regions-grid li {
-        font-size: 1.05rem;
+        font-size: 1.125rem;    /* 18px */
         color: #2d3748;
         line-height: 1.55;
-        padding: 0.15rem 0;
+        padding: 4px 0;
       }
       .region-num {
         color: #7B1A1A;
-        font-weight: 600;
-        margin-right: 0.3rem;
-      }
-
-      /* ---- Callout ---- */
-      .callout-box {
-        background: #fdf8f0;
-        border-left: 4px solid #C9A428;
-        border-radius: 4px;
-        padding: 1rem 1.2rem;
-        margin: 0.5rem 0;
-        font-size: 1.15rem;
-        color: #1c2b3a;
-        line-height: 1.7;
-        font-weight: 500;
-        font-style: italic;
+        font-weight: 700;
+        margin-right: 5px;
       }
 
       /* ---- Bottom Bar ---- */
       .bottom-bar {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-        background: #f8f9fb;
-        border: 1px solid #e4e8ef;
+        gap: 1.75rem;
+        background: #ffffff;
+        border: 1.5px solid #e0d6d6;
         border-radius: 6px;
-        padding: 1.5rem 1.75rem;
+        padding: 1.375rem 1.5rem;
         margin-top: 2rem;
       }
       .bottom-col-title {
-        font-size: 1.2rem;
+        font-size: 1.25rem;     /* 20px */
         font-weight: 700;
         color: #1c2b3a;
         margin-bottom: 0.5rem;
-        line-height: 1.2;
+        line-height: 1.25;
         border-left: 3px solid #7B1A1A;
         padding-left: 0.55rem;
+        border-radius: 0;
       }
       .bottom-col-body {
-        font-size: 1.05rem;
-        color: #4a5568;
-        line-height: 1.7;
+        font-size: 1.0625rem;   /* 17px */
+        color: #333333;
+        line-height: 1.65;
+      }
+      /* Lead line of the authorship column, so the current maintainer reads
+         as the primary credit and the historical contributors sit under it. */
+      .bottom-col-lead {
+        font-size: 1.125rem;    /* 18px */
+        font-weight: 700;
+        color: #1c2b3a;
+        line-height: 1.65;
+      }
+      .bottom-col-note {
+        font-size: 1rem;        /* 16px */
+        color: #333333;
+        line-height: 1.6;
+        margin-top: 0.2rem;
       }
       .bottom-col-body a {
         color: #7B1A1A;
@@ -448,7 +669,7 @@ ui <- fluidPage(
         display: inline-block;
         padding: 0.5rem 1.2rem;
         font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 1rem;
+        font-size: 1.0625rem;   /* 17px */
         font-weight: 600;
         color: white !important;
         background-color: #7B1A1A;
@@ -463,20 +684,27 @@ ui <- fluidPage(
         text-decoration: none !important;
       }
       .questions-contact {
-        font-size: 1.05rem;
-        color: #4a5568;
-        font-style: italic;
+        font-size: 1rem;        /* 16px */
+        color: #1c1c1c;
+      }
+
+      /* Narrow desktop and tablet: keep the 2x2 card block until the cards
+         would be too tight to hold a title on one line. */
+      @media (max-width: 780px) {
+        .main-content { padding: 2rem 1.75rem 2.5rem 1.75rem; }
+        .nav-cards { grid-template-columns: 1fr; }
+        .bottom-bar { grid-template-columns: 1fr; }
       }
 
       @media (max-width: 640px) {
         .main-content { padding: 1.5rem 1.25rem 2rem 1.25rem; }
-        .nav-cards { grid-template-columns: 1fr; }
-        .info-grid { grid-template-columns: 1fr; }
-        .info-col-left { border-right: none; padding-right: 0; border-bottom: 1px solid #e4e8ef; padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
-        .info-col-right { padding-left: 0; }
-        .bottom-bar { grid-template-columns: 1fr; }
+        /* Stacked hero: the marks are grid items, not inline content, so
+           text-align cannot centre them. justify-self can. */
+        .home-hero { grid-template-columns: 1fr; gap: 0.85rem; text-align: center; }
+        .home-logo-wrap, .home-wordmark { justify-self: center; }
         .regions-grid { grid-template-columns: 1fr; }
-        .welcome-text { font-size: 2rem; }
+        .welcome-text { font-size: 1.75rem; }  /* 28px */
+        .sec-heading { font-size: 1.3125rem; } /* 21px */
       }
     "))
   ),
@@ -484,68 +712,84 @@ ui <- fluidPage(
   div(class = "main-content",
 
       # Hero
+      # Icon carries alt="" because the wordmark to its right already names
+      # the centre, and the heading names it a third time; announcing the
+      # mark here would make a screen reader say "ADA-PARC" three times
+      # before the first sentence of the page.
       div(class = "home-hero",
         div(class = "home-logo-wrap",
-          tags$img(src = logo_uri, alt = "ADA-PARC Logo")
+          tags$img(src = logo_uri, alt = "")
         ),
-        div(class = "welcome-text", "Welcome to ADA-PARC"),
-        div(class = "welcome-sub", "Tracking disability participation across the United States")
+        div(class = "hero-text-block",
+          div(class = "welcome-text", "Welcome to ADA-PARC"),
+          div(class = "welcome-sub", "Tracking disability participation across the United States")
+        ),
+        tags$img(class = "home-wordmark", src = wordmark_uri, alt = "ADA-PARC")
       ),
 
-      # Navigation script (unchanged logic)
-      tags$script(HTML(paste(
-        "window.adaparcNavigateToTab = function(label) {",
-        "  var slugs = {",
-        "    'National Data': 'national-data',",
-        "    'City Data': 'city-data',",
-        "    'Scorecards': 'scorecards',",
-        "    'Scorecard': 'scorecards',",
-        "    'Fact Sheets': 'fact-sheets',",
-        "    'Help': 'help',",
-        "    'Home': 'home'",
-        "  };",
-        "  var docs = [];",
-        "  try {",
-        "    var w = window;",
-        "    var guard = 0;",
-        "    while (w && guard < 10) {",
-        "      try { if (docs.indexOf(w.document) === -1) docs.push(w.document); } catch (e) {}",
-        "      if (w === w.parent) break;",
-        "      w = w.parent;",
-        "      guard++;",
-        "    }",
-        "  } catch (e) {}",
-        "  try { if (docs.indexOf(top.document) === -1) docs.push(top.document); } catch (e) {}",
-        "  var sels = ['.navbar-nav a', '.nav-tabs a', '[data-toggle=\"tab\"]', '[data-bs-toggle=\"tab\"]'];",
-        "  var slug = slugs[label];",
-        "  for (var d = 0; d < docs.length; d++) {",
-        "    var doc = docs[d];",
-        "    for (var s = 0; s < sels.length; s++) {",
-        "      var els;",
-        "      try { els = doc.querySelectorAll(sels[s]); } catch (e) { continue; }",
-        "      for (var i = 0; i < els.length; i++) {",
-        "        if ((els[i].textContent || '').trim() === label) {",
-        "          try { els[i].click(); } catch (e) {}",
-        "          return true;",
-        "        }",
-        "      }",
-        "    }",
-        "    if (slug) {",
-        "      var byHref;",
-        "      try { byHref = doc.querySelectorAll('a[href$=\"#' + slug + '\"]'); } catch (e) { byHref = []; }",
-        "      for (var j = 0; j < byHref.length; j++) {",
-        "        try { byHref[j].click(); return true; } catch (e) {}",
-        "      }",
-        "    }",
-        "  }",
-        "  if (slug) {",
-        "    try { top.location.hash = '#' + slug; return true; } catch (e) {}",
-        "    try { window.parent.location.hash = '#' + slug; return true; } catch (e) {}",
-        "  }",
-        "  return false;",
-        "};",
-        sep = "\n"
-      ))),
+      # Navigation script: from the Home nav cards, jump to a top-level
+      # flexdashboard page.
+      #
+      # Home renders as an embedded shinyApp(), so this code runs inside an
+      # iframe that does not contain the navbar. Three paths are tried in
+      # order, each independent of the last:
+      #
+      #   1. Direct: reach top.document and drive the navbar link. Only
+      #      possible when parent and frame share an origin; throws otherwise.
+      #   2. postMessage: hand the request to the listener installed in
+      #      www/cssloaders.html, which runs in the document that owns the
+      #      navbar. Works regardless of origin. This is the path that was
+      #      missing, and the reason the cards did nothing.
+      #   3. Hash: last resort, same-origin only.
+      #
+      # Every selector is scoped to the top navbar (.navbar-nav), so inner
+      # tabsets such as the Scorecards tabset, and the scorecard/factsheet
+      # iframes, can never be targeted by mistake.
+      tags$script(HTML("
+window.adaparcNavigateToTab = function(page) {
+  var slugs = {
+    'Home':          'home',
+    'National Data': 'national-data',
+    'City Data':     'city-data',
+    'Scorecards':    'scorecards',
+    'Scorecard':     'scorecards',
+    'Fact Sheets':   'fact-sheets',
+    'Help':          'help'
+  };
+  var slug = slugs[page];
+
+  /* 1) Same-origin direct path. Any cross-origin access throws, which is
+        caught here so the postMessage path below still runs. */
+  try {
+    var doc = top.document;
+    void doc.documentElement;
+    if (typeof top.adaparcShowPage === 'function') {
+      if (top.adaparcShowPage(page)) { return true; }
+    }
+    if (slug) {
+      var byHref = doc.querySelectorAll('.navbar-nav a[href$=\\'#' + slug + '\\']');
+      if (byHref.length) { byHref[0].click(); return true; }
+    }
+    var links = doc.querySelectorAll('.navbar-nav a');
+    for (var i = 0; i < links.length; i++) {
+      if ((links[i].textContent || '').trim() === page) { links[i].click(); return true; }
+    }
+  } catch (e) { /* fall through to postMessage */ }
+
+  /* 2) Cross-origin safe path. The listener lives in www/cssloaders.html. */
+  try {
+    var target = (window.parent && window.parent !== window) ? window.parent : top;
+    target.postMessage({ adaparc: 'navigate', page: page }, '*');
+    return true;
+  } catch (e) {}
+
+  /* 3) Last resort. */
+  if (slug) {
+    try { top.location.hash = '#' + slug; return true; } catch (e) {}
+  }
+  return false;
+};
+      ")),
 
       # Navigation Cards
       div(class = "nav-cards",
@@ -582,92 +826,94 @@ ui <- fluidPage(
           div(class = "nav-card-icon",
             HTML('<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>')
           ),
-          div(class = "nav-card-title", "Scorecard"),
+          div(class = "nav-card-title", "Scorecards"),
           div(class = "nav-card-desc", "View state-by-state report cards across each disability domain."),
           tags$button(
             class = "nav-card-btn", type = "button",
             `aria-label` = "Navigate to Scorecards",
             onclick = "window.adaparcNavigateToTab('Scorecards');",
-            HTML("View \u2192")
+            HTML("Explore \u2192")
+          )
+        ),
+
+        div(class = "nav-card",
+          div(class = "nav-card-icon",
+            HTML('<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>')
+          ),
+          div(class = "nav-card-title", "Fact Sheets"),
+          div(class = "nav-card-desc", "Read short, plain-language briefs on single disability outcomes."),
+          tags$button(
+            class = "nav-card-btn", type = "button",
+            `aria-label` = "Navigate to Fact Sheets",
+            onclick = "window.adaparcNavigateToTab('Fact Sheets');",
+            HTML("Explore \u2192")
           )
         )
 
       ),
 
-      tags$hr(class = "home-divider"),
+      # Did You Know callout \u2014 full width
+      div(class = "callout-full",
+        div(class = "callout-label", "Did you know"),
+        tags$p(class = "callout-text",
+          "Nationally, between the ages of 18 to 64, 1 in 4 individuals with a disability live below the poverty line."
+        )
+      ),
 
-      # Two-column info grid
-      div(class = "info-grid",
+      # Single-column sections
+      div(class = "home-section",
+        div(class = "sec-heading", "What is the ADA?"),
+        tags$p(class = "sec-body",
+          "The Americans with Disabilities Act (ADA), established in 1990, is a landmark civil rights law that prohibits discrimination against individuals with disabilities in all areas of public life.",
+          " Since the ADA, organizations across public and private sectors have worked to improve the quality of life for individuals with disabilities in the U.S. ADA-PARC emphasizes key components of Census and HUD data to shed light on the lived experiences and outcomes for people with disabilities."
+        )
+      ),
 
-        div(class = "info-col-left",
+      div(class = "home-section",
+        div(class = "sec-heading", "Work of the ADA-PARC"),
+        tags$p(class = "sec-body",
+          "The ADA-PARC has research teams focused on Community Living, Community Participation, and Work/Economic Participation measures, using Regional Steering Committees in each of the ten participating regions to gather and review appropriate data.",
+          " The intent of this effort is to inform ADA Center technical assistance and to help community-level stakeholders increase participation opportunities in their communities."
+        )
+      ),
 
-          div(class = "info-col-section",
-            div(class = "section-title", "What is the ADA?"),
-            div(class = "section-content",
-              "The Americans with Disabilities Act (ADA), established in 1990, is a landmark civil rights law that prohibits discrimination against individuals with disabilities in all areas of public life.",
-              " Since the ADA, organizations across public and private sectors have worked to improve the quality of life for individuals with disabilities in the U.S. ADA-PARC emphasizes key components of Census and HUD data to shed light on the lived experiences and outcomes for people with disabilities."
-            )
-          ),
-
-          div(class = "info-col-section",
-            div(class = "section-title", "Work of the ADA-PARC"),
-            div(class = "section-content",
-              "The ADA-PARC has research teams focused on Community Living, Community Participation, and Work/Economic Participation measures, using Regional Steering Committees in each of the ten participating regions to gather and review appropriate data.",
-              " The intent of this effort is to inform ADA Center technical assistance and to help community-level stakeholders increase participation opportunities in their communities."
-            )
-          ),
-
-          div(class = "info-col-section",
-            div(class = "section-title", "Grant Information"),
-            div(class = "section-content",
-              "The ADA Participation Action Consortium is funded by the National Institute on Disability, Independent Living, and Rehabilitation Research (NIDILRR) (90DP0026 and 90DPAD0001), a Center within the Administration for Community Living (ACL), Department of Health and Human Services (HHS).",
-              " The contents of this website do not necessarily represent the policy of NIDILRR, ACL, or HHS, and you should not assume endorsement by the Federal Government."
-            )
-          )
-
+      div(class = "home-section",
+        div(class = "sec-heading", "About the ADA-PARC"),
+        div(class = "sec-sub",
+          "A collaborative research project of ten ADA Regional Centers:"
         ),
+        tags$ul(
+          class = "regions-grid",
+          role = "list",
+          tags$li(HTML('<span class="region-num">1.</span> New England')),
+          tags$li(HTML('<span class="region-num">2.</span> Northeast')),
+          tags$li(HTML('<span class="region-num">3.</span> Mid-Atlantic')),
+          tags$li(HTML('<span class="region-num">4.</span> Southeast')),
+          tags$li(HTML('<span class="region-num">5.</span> Great Lakes')),
+          tags$li(HTML('<span class="region-num">6.</span> Southwest')),
+          tags$li(HTML('<span class="region-num">7.</span> Great Plains')),
+          tags$li(HTML('<span class="region-num">8.</span> Rocky Mountain')),
+          tags$li(HTML('<span class="region-num">9.</span> Pacific')),
+          tags$li(HTML('<span class="region-num">10.</span> Northwest'))
+        ),
+        tags$p(class = "sec-body",
+          "Collaborating institutions include the ADA Knowledge Translation Center, TIRR Memorial Hermann, Syracuse University, and the University of Illinois at Chicago."
+        )
+      ),
 
-        div(class = "info-col-right",
+      div(class = "home-section",
+        div(class = "sec-heading", "Purpose of this website"),
+        tags$p(class = "sec-body",
+          "The ADA-PARC website presents public data that illuminates the status of people with disabilities in local communities, including national, state, county, and city data.",
+          " The three main data domains are Community Living, Community Participation, and Work & Economics, each presented in map and tabular form."
+        )
+      ),
 
-          div(class = "info-col-section",
-            div(class = "section-title", "Did You Know?"),
-            div(class = "callout-box",
-              "Nationally, between the ages of 18 to 64, 1 in 4 individuals with a disability live below the poverty line."
-            )
-          ),
-
-          div(class = "info-col-section",
-            div(class = "section-title", "About the ADA-PARC"),
-            div(class = "section-subtitle",
-              "A collaborative research project of ten ADA Regional Centers:"
-            ),
-            tags$ul(
-              class = "regions-grid",
-              role = "list",
-              tags$li(HTML('<span class="region-num">1.</span> New England')),
-              tags$li(HTML('<span class="region-num">2.</span> Northeast')),
-              tags$li(HTML('<span class="region-num">3.</span> Mid-Atlantic')),
-              tags$li(HTML('<span class="region-num">4.</span> Southeast')),
-              tags$li(HTML('<span class="region-num">5.</span> Great Lakes')),
-              tags$li(HTML('<span class="region-num">6.</span> Southwest')),
-              tags$li(HTML('<span class="region-num">7.</span> Great Plains')),
-              tags$li(HTML('<span class="region-num">8.</span> Rocky Mountain')),
-              tags$li(HTML('<span class="region-num">9.</span> Pacific')),
-              tags$li(HTML('<span class="region-num">10.</span> Northwest'))
-            ),
-            div(class = "section-subtitle",
-              "Collaborating institutions include the ADA Knowledge Translation Center, TIRR Memorial Hermann, Syracuse University, and the University of Illinois at Chicago."
-            )
-          ),
-
-          div(class = "info-col-section",
-            div(class = "section-title", "Purpose of Website"),
-            div(class = "section-content",
-              "The ADA-PARC website presents public data that illuminates the status of people with disabilities in local communities, including national, state, county, and city data.",
-              " The three main data domains are Community Living, Community Participation, and Work & Economics, each presented in map and tabular form."
-            )
-          )
-
+      div(class = "home-section",
+        div(class = "sec-heading", "Grant Information"),
+        tags$p(class = "sec-body",
+          "The ADA Participation Action Consortium is funded by the National Institute on Disability, Independent Living, and Rehabilitation Research (NIDILRR) (90DP0026 and 90DPAD0001), a Center within the Administration for Community Living (ACL), Department of Health and Human Services (HHS).",
+          " The contents of this website do not necessarily represent the policy of NIDILRR, ACL, or HHS, and you should not assume endorsement by the Federal Government."
         )
       ),
 
@@ -677,20 +923,24 @@ ui <- fluidPage(
         div(
           div(class = "bottom-col-title", "Questions?"),
           a(href = "mailto:joyhammel@uic.edu", class = "email-button", "Email Joy Hammel"),
-          div(class = "questions-contact", "Director of Graduate Studies, UIC College of Applied Health Sciences")
+          div(class = "bottom-col-body", "Director of Graduate Studies, UIC College of Applied Health Sciences")
         ),
 
         div(
-          div(class = "bottom-col-title", "Application Authors"),
+          div(class = "bottom-col-title", "Application Development"),
+          div(class = "bottom-col-lead", "Colin Heeneman"),
+          div(class = "bottom-col-note",
+            "Previously supported by Ethan Jantz, Sean Connelly, Jane Huber, and Randy D. Col\u00f3n."
+          ),
           div(class = "bottom-col-body",
-            "Ethan Jantz, Sean Connelly, Jane Huber, Colin Heeneman, and Randy D. Col\u00f3n",
-            tags$br(), tags$br(),
+            style = "margin-top: 0.75rem;",
             tags$a(href = "https://voorheescenter.uic.edu/", "UIC Voorhees Center")
           )
         )
 
       )
   )
+  , adaparc_footer
 )
 
 server <- function(input, output) {}
@@ -733,8 +983,9 @@ ui <- fluidPage(
         margin-bottom: 40px;
       }
       .table-container .dataTables_wrapper .dataTables_scrollBody {
-        max-height: 500px;
-        overflow-y: auto !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow-y: visible !important;
       }
 
       /* Add space between map legend and table controls */
@@ -743,34 +994,51 @@ ui <- fluidPage(
         clear: both;
       }
 
-      /* NATIONAL TABLE STYLING */
+      /* NATIONAL TABLE STYLING
+         Roomier on-screen table (the downloadable report keeps its own,
+         tighter print styling in national/national_topic.qmd).
+         Selectors are written as table.dataTable.table_national so they
+         outrank DataTables' own thead/tbody padding rules; a bare
+         .table_national th loses that cascade and the padding is dropped. */
       .table_national {
         width: 100%;
         border-collapse: collapse;
         font-family: 'EB Garamond', Garamond, Georgia, serif;
       }
-      .table_national th {
+      table.dataTable.table_national thead th {
         position: sticky;
         top: 0;
         background-color: #1c2b3a;
         color: #ffffff;
         font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 19px;
         z-index: 1;
         white-space: normal;      /* allow wrapping */
         word-wrap: break-word;    /* wrap long words */
-        padding-top: 10px;
-        padding-bottom: 10px;
-        line-height: 1.2;
+        /* Header row sits taller than the body rows: ~62px vs ~50px for a
+           single line of text. Extra right padding keeps header labels clear
+           of the sort arrows, which DataTables absolutely positions there. */
+        padding: 18px 26px 18px 12px;
+        line-height: 1.25;
+        vertical-align: middle;
       }
-      .table_national td {
+      table.dataTable.table_national tbody td {
         font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 17px;
+        white-space: nowrap;
+        /* ~36px body row against the ~62px header, scaled back from a first
+           pass that ran too roomy. Header left as is, so it keeps reading as
+           clearly taller than the body rows. */
+        padding: 7px 12px;
+        line-height: 1.3;
+        vertical-align: middle;
       }
 
-      /* Center all cells except first (State) */
-      .table_national td {
-        text-align: center;
+      /* Right-align numeric cells; left-align State */
+      table.dataTable.table_national tbody td {
+        text-align: right;
       }
-      .table_national td:first-child {
+      table.dataTable.table_national tbody td:first-child {
         text-align: left;
       }
 
@@ -804,14 +1072,47 @@ ui <- fluidPage(
         font-family: 'EB Garamond', Garamond, Georgia, serif !important;
       }
 
-      /* Map title styling */
+      /* Map / table section heading inside cards */
       .national-map-title {
         font-family: 'EB Garamond', Garamond, Georgia, serif;
         color: #1c2b3a;
-        font-size: 2.2rem;
+        font-size: 1.9rem;
         font-weight: 700;
-        margin-bottom: 0.5rem;
-        margin-top: 0.5rem;
+        margin-bottom: 0.65rem;
+        margin-top: 0.25rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 2px solid #6d1f2e;
+      }
+
+      /* Interpretation note under table title */
+      .interpretation-note {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 17px;
+        color: #000000;
+        font-style: normal;
+        margin-top: -0.25rem;
+        margin-bottom: 0.75rem;
+      }
+
+      /* Standalone interpretation-note container shown above the map.
+         Maroon accent + pale gold-tinted panel (design canon). Dark navy
+         text on the pale panel keeps contrast well above WCAG AA at the
+         17px minimum body size used across the site. */
+      .map-interpretation-note {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 17px;
+        line-height: 1.5;
+        color: #1c2b3a;
+        background: #faf5ec;
+        border: 1px solid #e6d9bd;
+        border-left: 5px solid #6d1f2e;
+        border-radius: 6px;
+        padding: 0.7rem 1rem;
+        margin: 0.35rem 0 1rem 0;
+      }
+      .map-interpretation-note-label {
+        font-weight: 700;
+        color: #6d1f2e;
       }
 
       /* SelectInput controls styling */
@@ -863,6 +1164,92 @@ ui <- fluidPage(
         margin-bottom: 1rem;
       }
 
+      /* ── National controls panel ─────────────────────────────────────────
+         One horizontal band: the two selectors on the left, the download on
+         the right behind a full-height vertical rule. The topic summary lives
+         in its own card below so nothing competes for width here. */
+      .national-controls-split {
+        display: flex;
+        align-items: stretch;
+        gap: 1.5rem;
+      }
+
+      /* Selector row: align-items:flex-start keeps the two labels on the same
+         baseline. Bottom alignment used to push the shorter control down
+         whenever a long topic name wrapped the second select box onto two
+         lines. */
+      .national-controls-row {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 1.25rem;
+      }
+      .national-control-field {
+        flex: 1 1 16rem;
+        min-width: 0;
+      }
+      /* Shiny wraps selectInput in .form-group with a bottom margin; zeroing
+         it lets align-items:flex-end line the controls up exactly. */
+      .national-control-field .form-group {
+        margin-bottom: 0;
+      }
+      /* The download occupies its own full-height column, set off by a rule
+         so it reads as a separate action rather than a third control. */
+      .national-control-action {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-left: 1px solid #d8cdb8;
+        padding-left: 1.5rem;
+      }
+
+      /* Download Selected Topic button */
+      .btn-download-national {
+        background: #6d1f2e !important;
+        color: #ffffff !important;
+        border: 1.5px solid #6d1f2e !important;
+        border-radius: 6px !important;
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        padding: 9px 20px !important;
+        cursor: pointer !important;
+        line-height: 1.4 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        white-space: normal !important;
+        text-align: left !important;
+      }
+      .btn-download-national:hover {
+        background: #8b2737 !important;
+        border-color: #8b2737 !important;
+      }
+      .btn-download-national:focus {
+        outline: 3px solid #c9a84c !important;
+        outline-offset: 2px !important;
+      }
+      /* Narrow screens: stack the columns and turn the vertical rule into a
+         horizontal one above the button. */
+      @media (max-width: 900px) {
+        .national-controls-split {
+          flex-wrap: wrap;
+        }
+        .national-control-action {
+          flex: 1 1 100%;
+          justify-content: flex-start;
+          border-left: none;
+          border-top: 1px solid #d8cdb8;
+          padding-left: 0;
+          padding-top: 1rem;
+        }
+        .national-control-field .form-group {
+          margin-bottom: 0.25rem;
+        }
+      }
+
       /* Length + search controls: left-aligned with some spacing */
       div.dataTables_wrapper div.dataTables_length,
       div.dataTables_wrapper div.dataTables_filter {
@@ -874,57 +1261,237 @@ ui <- fluidPage(
       div.dataTables_wrapper div.dataTables_filter label {
         white-space: nowrap;
       }
+
+      /* DT Buttons download button */
+      .dt-buttons {
+        float: left;
+        margin-right: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .dt-button {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        color: #ffffff !important;
+        background: #6d1f2e !important;
+        border: 1.5px solid #6d1f2e !important;
+        border-radius: 4px !important;
+        padding: 4px 14px !important;
+        cursor: pointer !important;
+        line-height: 1.5 !important;
+      }
+      .dt-button:hover {
+        background: #8b2737 !important;
+        border-color: #8b2737 !important;
+      }
+      .dt-button:focus {
+        outline: 3px solid #c9a84c !important;
+        outline-offset: 2px !important;
+      }
+
+      /* ── National Data: card layout ───────────────────────────────────────── */
+
+      /* Page header — warm beige background, maroon heading */
+      .national-banner {
+        background: #f9f7f4;
+        border-bottom: 3px solid #e8e4db;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.25rem;
+        border-radius: 6px 6px 0 0;
+      }
+      .national-banner h1 {
+        color: #6d1f2e;
+        font-size: 2.6rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+      }
+      .national-banner .national-intro {
+        color: #2c2c2c;
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+
+      /* Base card */
+      .national-card {
+        background: #ffffff;
+        border: 1px solid #e4e8ef;
+        border-radius: 8px;
+        padding: 1.25rem 1.5rem 1.5rem 1.5rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 1px 4px rgba(28, 43, 58, 0.07);
+      }
+
+      /* Maroon accent on top edge of each card */
+      .national-controls-card,
+      .national-map-card,
+      .national-table-card {
+        border-top: 4px solid #6d1f2e;
+      }
+
+      /* Topic summary band: its own space between the controls and the map.
+         Kept lighter than the other cards (gold left rule, no maroon top bar,
+         warm tint) so it reads as explanatory prose, not a fourth panel. */
+      .national-summary-card {
+        background: #fbf8f2;
+        border: 1px solid #e6dcc6;
+        border-left: 4px solid #c9a84c;
+        box-shadow: none;
+        padding: 1.15rem 1.5rem;
+      }
+      .national-summary-card .map-summary {
+        display: block;
+        max-width: 78ch;
+        line-height: 1.55;
+      }
+      .national-summary-heading {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 19px;
+        font-weight: 700;
+        color: #6d1f2e;
+        margin: 0 0 0.4rem 0;
+        line-height: 1.3;
+      }
+
+      /* Sort arrow contrast: DataTables sets opacity:0.125 on ::before/::after;
+         using table.dataTable.table_national gives higher specificity than
+         DataTables own selectors so !important is not needed on most rules.
+         Partial opacity was the reason the arrows read as grey: white at 0.6
+         over the slate header resolves to a mid grey. Every arrow is now solid
+         white at full opacity, and the active sort direction is picked out in
+         gold so the sorted state is still obvious. */
+      table.dataTable.table_national thead th.sorting,
+      table.dataTable.table_national thead th.sorting_asc,
+      table.dataTable.table_national thead th.sorting_desc {
+        background-image: none !important;
+      }
+      table.dataTable.table_national thead th.sorting::before,
+      table.dataTable.table_national thead th.sorting::after,
+      table.dataTable.table_national thead th.sorting_asc::before,
+      table.dataTable.table_national thead th.sorting_asc::after,
+      table.dataTable.table_national thead th.sorting_desc::before,
+      table.dataTable.table_national thead th.sorting_desc::after {
+        opacity: 1 !important;
+        color: #ffffff !important;
+        font-size: 14px !important;
+        line-height: 11px !important;
+        right: 9px !important;
+      }
+      table.dataTable.table_national thead th.sorting_asc::before,
+      table.dataTable.table_national thead th.sorting_desc::after {
+        color: #f2c75c !important;   /* gold: active direction, 8.7:1 on slate */
+      }
     "))
   ),
 
   tags$main(
     role = "main",
-    h1("National Data"),
-    tags$p(
-      class = "national-intro",
-      "To explore the data first select a category and then a topic. You can navigate the boxes below using the mouse or keyboard."
+
+    # ── Page header ──────────────────────────────────────────────────────────
+    div(
+      class = "national-banner",
+      h1("National Data"),
+      tags$p(
+        class = "national-intro",
+        "To explore the data first select a category and then a topic. You can navigate the boxes below using the mouse or keyboard."
+      )
     ),
-    tags$section(
-      role = "region",
-      `aria-label` = "Data selection controls",
-      tags$aside(
-        class = "sidebar",
-        selectInput(
-          inputId = "national_category_selector",
-          label   = "Select a category",
-          choices = c(
-            "Demographics",
-            "Community Living",
-            "Community Participation",
-            "Work/Economic"
+
+    # ── Controls card ─────────────────────────────────────────────────────────
+    div(
+      class = "national-card national-controls-card",
+      tags$section(
+        role = "region",
+        `aria-label` = "Data selection controls",
+        # Single horizontal row: the two selectors on the left, the download on
+        # the right behind a vertical rule. The topic summary is no longer part
+        # of this card; it sits in its own card below. Stacks under 900px.
+        div(
+          class = "national-controls-split",
+          div(
+            class = "national-controls-row",
+            div(
+              class = "national-control-field",
+              selectInput(
+                inputId = "national_category_selector",
+                label   = "Select a category",
+                choices = c(
+                  "Demographics",
+                  "Community Living",
+                  "Community Participation",
+                  "Work/Economic"
+                ),
+                selected = "Demographics"
+              )
+            ),
+            div(
+              class = "national-control-field",
+              selectInput(
+                inputId  = "national_variable_selector",
+                label    = "Select a topic",
+                choices  = .initial_nat_choices,
+                selected = .initial_nat_selected
+              )
+            )
           ),
-          selected = "Demographics"
+          tags$section(
+            `aria-label` = "Download the selected topic",
+            class = "national-control-action",
+            downloadButton(
+              "download_national_topic",
+              "Download Selected Topic",
+              class        = "btn-download-national",
+              icon         = dl_icon(),
+              `aria-label` = "Download the selected topic as an accessible, print-ready ADA-PARC report: map and key on page one, full data table on page two"
+            )
+          )
+        )
+      )
+    ),
+
+    # ── Topic summary card ────────────────────────────────────────────────────
+    # Given its own full-width band between the controls and the map so the
+    # definition/high-low sentence reads as prose rather than as a caption
+    # squeezed beside the controls.
+    div(
+      class = "national-card national-summary-card",
+      tags$section(
+        `aria-labelledby` = "national-summary-heading",
+        h2(
+          "About This Topic",
+          id    = "national-summary-heading",
+          class = "national-summary-heading"
         ),
-        selectInput(
-          inputId  = "national_variable_selector",
-          label    = "Select a topic",
-          choices  = .initial_nat_choices,
-          selected = .initial_nat_selected
-        ),
-        div(`aria-live` = "polite",
+        div(
+          `aria-live` = "polite",
           uiOutput("national_map_summary") %>% withSpinner()
         )
       )
     ),
-    tags$section(
-      `aria-label` = "Selected topic title",
-      `aria-live` = "polite",
-      uiOutput("national_map_title") %>% withSpinner()
-    ),
-    tags$section(
-      `aria-label` = "State-by-state map of selected topic",
-      div(
-        id         = "national_map_img",
-        role       = "img",
-        `aria-label` = "Map of the United States. Use the topic dropdown to select a variable.",
-        girafeOutput("national_ggmap", width = "100%", height = "400px") %>% withSpinner()
+
+    # ── Map card ──────────────────────────────────────────────────────────────
+    div(
+      class = "national-card national-map-card",
+      tags$section(
+        `aria-label` = "Selected topic title",
+        `aria-live` = "polite",
+        uiOutput("national_map_title") %>% withSpinner()
+      ),
+      tags$section(
+        `aria-label` = "How to read the map",
+        `aria-live` = "polite",
+        uiOutput("national_map_note")
+      ),
+      tags$section(
+        `aria-label` = "State-by-state map of selected topic",
+        div(
+          id           = "national_map_img",
+          role         = "img",
+          `aria-label` = "Map of the United States. Use the topic dropdown to select a variable.",
+          girafeOutput("national_ggmap", width = "100%", height = "400px") %>% withSpinner()
+        )
       )
     ),
+
     # Tiny JS handler: updates the map div's aria-label reactively
     tags$script(HTML("
       Shiny.addCustomMessageHandler('updateMapAriaLabel', function(x) {
@@ -932,23 +1499,32 @@ ui <- fluidPage(
         if (el) el.setAttribute('aria-label', x.label);
       });
     ")),
-    tags$section(
-      `aria-label` = "Data table for selected topic",
-      `aria-live` = "polite",
-      div(
-        class = "table-container",
+
+    # ── Table card ────────────────────────────────────────────────────────────
+    div(
+      class = "national-card national-table-card",
+      tags$section(
+        `aria-label` = "Data table for selected topic",
+        `aria-live` = "polite",
+        uiOutput("national_table_title"),
         div(
-          style = "overflow-x: auto; width: 100%;",
+          class = "table-container",
           uiOutput("national_table") %>% withSpinner()
         )
       )
     ),
+
+    # ── Source note ───────────────────────────────────────────────────────────
     tags$section(
       `aria-label` = "Data source",
       `aria-live` = "polite",
       uiOutput("national_source_note")
     )
+    # NOTE: the "Download Selected Topic" button previously lived here at the
+    # foot of the page. It now sits in the controls card, to the right of the
+    # category and topic selectors.
   )
+  , adaparc_footer
 )
 
 server <- function(input, output, session) {
@@ -1032,6 +1608,31 @@ server <- function(input, output, session) {
 
   # Reactively update the map image's aria-label whenever the topic changes,
   # so screen readers announce which variable is currently shown on the map.
+  #
+  # AUDITED FOR THE STARTUP MESSAGE RACE. Phase 1.4 of
+  # docs/palette-v2-build-plan.qmd, 2026-08-03. This observe() fires on the
+  # session's first flush, so it sends during startup exactly as the display
+  # panel's push did. It is NOT exposed to the same defect, for two independent
+  # reasons, and both are properties of where the handler lives rather than
+  # luck:
+  #
+  #   1. The handler is a tags$script in this app's own UI, a few lines below.
+  #      It is registered while the browser parses the document body, which is
+  #      finished before shiny.js opens the websocket, which is in turn before
+  #      the server can flush anything back. Nothing can arrive first. The
+  #      display panel's handler is in www/cssloaders.html, injected into the
+  #      HEAD ahead of Shiny's own dependencies, so it runs at a point where
+  #      `window.Shiny` may not exist yet and registration has to be deferred.
+  #      That deferral is the race.
+  #
+  #   2. If a message were dropped anyway, the div carries a static aria-label
+  #      in the markup and the next topic change re-sends. The failure would be
+  #      a stale but valid label, not an unusable control.
+  #
+  # These are the only two sendCustomMessage call sites in this file. If a
+  # third is added, and its handler is not in the same document's body, give it
+  # a client-initiated handshake like display_panel_ready rather than trusting
+  # the ordering.
   observe({
     req(national_variable_selected())
     topic_label <- dict_vars %>%
@@ -1049,6 +1650,91 @@ server <- function(input, output, session) {
     session$sendCustomMessage("updateMapAriaLabel", list(label = new_label))
   })
 
+  # ── Shared topic bundle ─────────────────────────────────────────────────────
+  # Single source of truth for the on-screen table AND the downloadable full
+  # view. Building the friendly table, title, notes, and alt text here (rather
+  # than separately in each output) guarantees the download always matches what
+  # the user sees. Consumed by output$sortable_table and the download handler.
+  national_topic_bundle <- reactive({
+    req(ready_to_render())
+    sel     <- national_variable_selected()
+    req(sel)
+    cat_col <- national_category_selected()
+
+    var_row <- dict_vars %>%
+      filter(var_readable == sel) %>%
+      head(1)
+
+    title <- var_row %>%
+      pull(national_dropdown_label) %>%
+      sub(".*:", "", .) %>%
+      trimws()
+
+    # Interpretation note: only for non-demographic, directional indicators.
+    # Mirrors output$national_map_note so the download reads identically.
+    is_demo <- isTRUE(var_row %>% pull(is_demographics))
+    coding  <- var_row %>% pull(var_coding)
+    interp_note <- ""
+    if (!(is_demo || is.na(coding) || !(coding %in% c("pos", "neg")))) {
+      # The colour reading holds for every series on these maps, not only the
+      # disability series, so the note stays neutral on disability status.
+      lead <- "Darker colors = more opportunity, lighter color = more disparity. "
+      direction <- if (coding == "pos") {
+        paste0("'", title, "' is a 'positive' indicator, meaning higher values indicate more opportunity.")
+      } else {
+        paste0("'", title, "' is a 'negative' indicator, meaning higher values indicate less opportunity.")
+      }
+      interp_note <- paste0(lead, direction)
+    }
+
+    # Source note (mirrors output$national_source_note)
+    source_text <- var_row %>% pull(data_source_label)
+    if (length(source_text) == 0 || is.na(source_text) || !nzchar(trimws(source_text))) {
+      source_text <- "2020-2024 American Community Survey 5-Year Estimates"
+    }
+
+    # Friendly table (mirrors former inline logic in output$sortable_table)
+    national_vars_in_topic <- dict_vars %>%
+      filter(
+        (!!sym(cat_col)) == TRUE,
+        var_topic == (dict_vars %>%
+                        filter(
+                          (!!sym(cat_col)) == TRUE &
+                            var_readable == sel
+                        ) %>%
+                        pull(var_topic)),
+        display == TRUE
+      ) %>%
+      select(var_pretty, var_readable)
+
+    table_df <- national_data %>%
+      mutate("State" = NAME) %>%
+      arrange(State != "United States", State) %>%
+      select(any_of(c("State", national_vars_in_topic %>% pull(var_readable)))) %>%
+      mutate(
+        across(
+          c(starts_with("pct_"), ends_with("_pct")),
+          ~ scales::percent(.x, accuracy = 0.1, scale = 1)
+        ),
+        across(
+          where(is.numeric) & !starts_with("pct_") & !ends_with("_pct"),
+          ~ scales::comma(.x, accuracy = 1)
+        )
+      ) %>%
+      rename(!!!national_vars_in_topic %>% deframe())
+
+    list(
+      sel         = sel,
+      title       = title,
+      category    = input$national_category_selector %||% "",
+      interp_note = interp_note,
+      source_note = source_text,
+      alt_text    = altText(national_data, sel),
+      table_df    = table_df,
+      vars        = national_vars_in_topic
+    )
+  })
+
   output$national_map_summary <- renderUI({
     req(ready_to_render())
     req(national_variable_selected())
@@ -1063,15 +1749,16 @@ server <- function(input, output, session) {
   output$national_source_note <- renderUI({
     req(ready_to_render())
     req(national_variable_selected())
-    hud_data <- c("pwd_housing_choice_voucher_pct", "pwd_pubhousing_pct")
-    source_text <- if (national_variable_selected() %in% hud_data) {
-      "2022 United States Department of Housing and Urban Development"
-    } else {
-      "2020-2024 American Community Survey five-year estimates"
+    source_text <- dict_vars %>%
+      filter(var_readable == national_variable_selected()) %>%
+      head(1) %>%
+      pull(data_source_label)
+    if (length(source_text) == 0 || is.na(source_text) || !nzchar(trimws(source_text))) {
+      source_text <- "2020-2024 American Community Survey 5-Year Estimates"
     }
     tags$p(
       class = "national-source-note",
-      tags$strong("Source: "),
+      tags$strong("This indicator sourced from: "),
       source_text
     )
   })
@@ -1085,7 +1772,61 @@ server <- function(input, output, session) {
       pull(national_dropdown_label) %>%
       sub(".*:", "", .) %>%
       trimws()
-    div(h4(title, class = "national-map-title"))
+    div(h2(title, class = "national-map-title"))
+  })
+
+  output$national_table_title <- renderUI({
+    req(ready_to_render())
+    req(national_variable_selected())
+
+    title <- dict_vars %>%
+      filter(var_readable == national_variable_selected()) %>%
+      head(1) %>%
+      pull(national_dropdown_label) %>%
+      sub(".*:", "", .) %>%
+      trimws()
+
+    div(h2(title, class = "national-map-title"))
+  })
+
+  # Interpretation note shown in its own container ABOVE the map. The note
+  # only applies to non-demographic indicators with an explicit pos/neg
+  # direction. Coloring is now directional (dark = better outcome), so the
+  # note explains that convention and names the indicator's direction.
+  output$national_map_note <- renderUI({
+    req(ready_to_render())
+    req(national_variable_selected())
+
+    var_row <- dict_vars %>%
+      filter(var_readable == national_variable_selected()) %>%
+      head(1)
+
+    is_demo <- isTRUE(var_row %>% pull(is_demographics))
+    coding  <- var_row %>% pull(var_coding)
+
+    title <- var_row %>%
+      pull(national_dropdown_label) %>%
+      sub(".*:", "", .) %>%
+      trimws()
+
+    if (is_demo || is.na(coding) || !(coding %in% c("pos", "neg"))) {
+      return(NULL)
+    }
+
+    # Kept identical to the download copy above: the colour reading applies to
+    # every series on the map, regardless of disability status.
+    lead <- "Darker colors = more opportunity, lighter color = more disparity. "
+    direction <- if (coding == "pos") {
+      paste0("'", title, "' is a 'positive' indicator, meaning higher values indicate more opportunity.")
+    } else {
+      paste0("'", title, "' is a 'negative' indicator, meaning higher values indicate less opportunity.")
+    }
+
+    div(
+      class = "map-interpretation-note",
+      tags$span(class = "map-interpretation-note-label", "Interpretation Note: "),
+      paste0(lead, direction)
+    )
   })
 
   output$national_ggmap <- renderGirafe({
@@ -1093,7 +1834,8 @@ server <- function(input, output, session) {
     req(national_variable_selected())
     gg <- render_national_map(
       national_variable_selected(),
-      access_map_palette_selected()
+      access_map_palette_selected(),
+      na_color = access_map_na_selected()
     )
     girafe(
       ggobj      = gg,
@@ -1109,7 +1851,15 @@ server <- function(input, output, session) {
           ),
           offx = 12, offy = -28, use_cursor_pos = TRUE
         ),
-        opts_hover(css = "fill-opacity:0.75; stroke:#1c2b3a; stroke-width:1.5px;"),
+        # Deliberately sets stroke-WIDTH only, never stroke colour. Each state
+        # now carries a border colour chosen from its own fill (near-black on
+        # the light half of the ramp, white on the dark half; see the State
+        # border ink notes in scripts/functions.R). Forcing a single navy on
+        # hover, as this did before, overwrote that and left dark-filled states
+        # with a 1.3:1 hover outline they could not show. Widening the state's
+        # own ink keeps the hover affordance legible on every bin and in every
+        # palette.
+        opts_hover(css = "fill-opacity:0.75; stroke-width:2px;"),
         opts_sizing(rescale = TRUE, width = 1),
         opts_toolbar(saveaspng = FALSE),
         opts_selection(type = "none")
@@ -1127,44 +1877,19 @@ server <- function(input, output, session) {
     req(ready_to_render())
     req(national_variable_selected())
 
-    national_vars_in_topic <- dict_vars %>%
-      filter(
-        (!!sym(national_category_selected())) == TRUE,
-        var_topic == (dict_vars %>%
-                        filter(
-                          (!!sym(national_category_selected())) == TRUE &
-                            var_readable == national_variable_selected()
-                        ) %>%
-                        pull(var_topic)),
-        display == TRUE
-      ) %>%
-      select(var_pretty, var_readable)
-
-    national_data_table_friendly <- national_data %>%
-      arrange(GEOID) %>%
-      mutate("State" = NAME) %>%
-      select(any_of(c("State", national_vars_in_topic %>% pull(var_readable)))) %>%
-      mutate(
-        # 1) Percent columns (0–100 doubles)
-        across(
-          c(starts_with("pct_"), ends_with("_pct")),
-          ~ scales::percent(.x, accuracy = 0.1, scale = 1)
-        ),
-      
-        # 2) All other numeric columns -> comma
-        across(
-          where(is.numeric) & !starts_with("pct_") & !ends_with("_pct"),
-          ~ scales::comma(.x, accuracy = 1)
-        )
-      ) %>%
-      rename(!!!national_vars_in_topic %>% deframe())
+    # Table content comes from the shared bundle so it always matches the
+    # downloadable full view (see national_topic_bundle above).
+    bundle <- national_topic_bundle()
+    national_data_table_friendly <- bundle$table_df
 
     all_columns      <- colnames(national_data_table_friendly)
     sortable_columns <- which(grepl("State|%", all_columns))
-    
+
     # DataTables uses 0-based column indices; 0 is the State column
     non_state_columns <- setdiff(seq_along(all_columns) - 1, 0)
 
+    # Per-table CSV export removed: downloading is now handled by the single
+    # "Download Selected Topic" full-view button at the bottom of the page.
     DT::datatable(
       national_data_table_friendly,
       options = list(
@@ -1173,29 +1898,122 @@ server <- function(input, output, session) {
           c(10, 25, 50, -1),
           c("10", "25", "50", "All")
         ),
-        scrollX    = TRUE,
-        scrollY    = "500px",
-        autoWidth  = TRUE,
-        responsive = TRUE,
+        scrollX   = TRUE,
+        autoWidth = FALSE,
         columnDefs = list(
           # Make some columns unsortable
           list(
             targets   = setdiff(seq_along(all_columns) - 1, sortable_columns - 1),
             orderable = FALSE
           ),
-          # Center all non-State columns consistently
+          # Right-align all non-State columns
           list(
             targets   = non_state_columns,
-            className = 'dt-center'
+            className = 'dt-right'
           )
         ),
-        dom = "lftip"   # length, filter (search), table, info, paging
+        dom     = "lfrtip"  # length, filter, table, info, paging (no Buttons)
       ),
       rownames = FALSE,
       width    = "100%",
-      class    = "display nowrap compact table_national"
+      # "compact" dropped: its 4px cell padding fought the roomier row
+      # heights set in the national table CSS above.
+      class    = "display table_national"
     )
   }, server = FALSE)
+
+  # ── Download Selected Topic: full branded HTML view ─────────────────────────
+  # Renders national_topic.qmd for the current selection into a self-contained,
+  # ADA-PARC branded HTML: page 1 (banner, title, map + key, notes), page 2
+  # (data table). All content is prepared here and passed via an RDS bundle so
+  # the download always matches the on-screen view.
+  nd_app_root <- normalizePath(
+    getOption("shiny.appdir", default = getwd()),
+    mustWork = FALSE
+  )
+  national_dir  <- file.path(nd_app_root, "national")
+  national_qmd  <- file.path(national_dir, "national_topic.qmd")
+  nd_out_dir    <- file.path(tempdir(), "ada_parc_national_dl")
+  dir.create(nd_out_dir, showWarnings = FALSE, recursive = TRUE)
+
+  output$download_national_topic <- downloadHandler(
+    filename = function() {
+      bundle <- national_topic_bundle()
+      slug   <- gsub("[^A-Za-z0-9]+", "_", bundle$title)
+      slug   <- gsub("^_|_$", "", slug)
+      paste0("ADA-PARC_", slug, "_2024.html")
+    },
+    content = function(file) {
+      withProgress(
+        message = "Building your ADA-PARC report…",
+        detail  = "This usually takes 15–25 seconds.",
+        value   = 0.2,
+        {
+          bundle <- national_topic_bundle()
+
+          # Render the map (ggplot from render_national_map) to an inline SVG
+          # string. svglite emits the requested font-family; the browser pairs
+          # it with the EB Garamond webfont loaded via font-loader.html.
+          gg <- render_national_map(
+            bundle$sel,
+            access_map_palette_selected(),
+            na_color = access_map_na_selected()
+          )
+          svg_tmp <- tempfile(fileext = ".svg")
+          ggplot2::ggsave(
+            filename = svg_tmp, plot = gg,
+            device = svglite::svglite,
+            width = 9, height = 6.4, bg = "white"
+          )
+          map_svg <- paste(readLines(svg_tmp, warn = FALSE), collapse = "\n")
+          unlink(svg_tmp)
+
+          setProgress(0.45, detail = "Composing the document…")
+
+          out_bundle <- list(
+            title       = bundle$title,
+            category    = bundle$category,
+            interp_note = bundle$interp_note,
+            source_note = bundle$source_note,
+            alt_text    = bundle$alt_text,
+            table_df    = bundle$table_df,
+            map_svg     = map_svg,
+            generated   = format(Sys.Date(), "%B %d, %Y")
+          )
+          bundle_path <- file.path(nd_out_dir, "bundle.rds")
+          saveRDS(out_bundle, bundle_path)
+
+          setProgress(0.6, detail = "Rendering HTML…")
+
+          tryCatch({
+            quarto::quarto_render(
+              input          = national_qmd,
+              execute_params = list(bundle = bundle_path),
+              execute_dir    = national_dir
+            )
+            rendered <- file.path(national_dir, "national_topic.html")
+            if (file.exists(rendered)) {
+              file.copy(rendered, file, overwrite = TRUE)
+            } else {
+              writeLines("<html><body>Report could not be generated.</body></html>", file)
+            }
+            setProgress(1)
+          }, error = function(e) {
+            showNotification(
+              ui       = paste("Download failed:", conditionMessage(e)),
+              type     = "error",
+              duration = 15
+            )
+            writeLines(
+              paste0("<html><body>Report could not be generated: ",
+                     htmltools::htmlEscape(conditionMessage(e)), "</body></html>"),
+              file
+            )
+          })
+        }
+      )
+    }
+  )
 }
 
 shinyApp(ui, server)
@@ -1206,6 +2024,7 @@ shinyApp(ui, server)
 ```{r}
 library(shiny)
 library(leaflet)
+library(leaflet.extras2)
 library(dplyr)
 library(stringr)
 library(scales)
@@ -1235,6 +2054,88 @@ create_number_percent_string <- function(num, pct) {
   paste0(fmt_num(num), " (", fmt_pct_1dp(pct), ")")
 }
 
+# Dollar formatter for ACS median earnings (B18140).
+#
+# ACS reports a median that falls in the top or bottom interval as the
+# bound itself, so the raw values 250001 and 2499 are not real medians and
+# must not be printed as though they were. Across the 8,407 places, 6 are
+# top-coded and 40 are bottom-coded.
+fmt_dollar <- function(x) {
+  x <- as.numeric(x)
+  dplyr::case_when(
+    is.na(x)    ~ "Not available",
+    x >= 250001 ~ "$250,000 or more",
+    x <= 2499   ~ "$2,500 or less",
+    TRUE        ~ scales::dollar(x, accuracy = 1)
+  )
+}
+
+# As above, but collapses to a plain-language phrase when the percentage is
+# suppressed, so the reader sees "Not available" rather than "NA (NA)".
+# Used for indicators that are genuinely missing for some places: health
+# insurance (a handful of places) and anything sourced from ACS S1811,
+# which resolves for only 694 of 8,407 places.
+create_number_percent_string_or_na <- function(num, pct) {
+  ifelse(is.na(as.numeric(pct)), "Not available",
+         paste0(fmt_num(num), " (", fmt_pct_1dp(pct), ")"))
+}
+
+# ---------------------------------------------------------------------------
+# Paired with/without-disability comparison tables (City Data tab)
+#
+# Every outcome indicator on the city page has a without-disability
+# counterpart in city_place_full.Rds, at equal or better coverage. These two
+# helpers render a pair as an accessible two-column table rather than as a
+# bullet list, because a bullet carrying two values reads as a run-on
+# sentence and gives screen reader users no column context.
+#
+# The PWD-to-PWOD column pairs MUST be declared explicitly. The naming is not
+# consistent and cannot be derived: unemployment is
+# pct_cni_18to64_nodis_unemployed, with "nodis" before the measure, while its
+# neighbour is pct_cni_18to64_notlabor_nodis with "nodis" after, and the
+# health insurance columns put "nodis" in the middle. A
+# paste0(var, "_nodis") would fail silently on several of them.
+#
+# cmp_row() builds one row spec. kind = "count_pct" formats as
+# "12,345 (12.3%)"; kind = "dollar" formats a single ACS median with the
+# top-code and bottom-code guards in fmt_dollar().
+# ---------------------------------------------------------------------------
+cmp_row <- function(label, dis, nodis, kind = "count_pct", dis_pop = NA_character_,
+                    nodis_pop = NA_character_) {
+  list(label = label, dis = dis, nodis = nodis, kind = kind,
+       dis_pop = dis_pop, nodis_pop = nodis_pop)
+}
+
+render_comparison_table <- function(row, rows, caption) {
+  cell <- function(pct_col, pop_col, kind) {
+    if (identical(kind, "dollar")) {
+      fmt_dollar(row[[pct_col]])
+    } else {
+      create_number_percent_string_or_na(row[[pop_col]], row[[pct_col]])
+    }
+  }
+
+  body <- vapply(rows, function(r) {
+    paste0(
+      "<tr><th scope=\"row\">", r$label, "</th>",
+      "<td>", cell(r$dis,   r$dis_pop,   r$kind), "</td>",
+      "<td>", cell(r$nodis, r$nodis_pop, r$kind), "</td></tr>"
+    )
+  }, character(1))
+
+  paste0(
+    "<table class=\"city-compare\">",
+    "<caption>", caption, "</caption>",
+    "<thead><tr>",
+    "<th scope=\"col\">Indicator</th>",
+    "<th scope=\"col\">With disability</th>",
+    "<th scope=\"col\">Without disability</th>",
+    "</tr></thead><tbody>",
+    paste0(body, collapse = ""),
+    "</tbody></table>"
+  )
+}
+
 # Join-proof tract GEOID normalization (NO percent conversion)
 normalize_tract_geoid <- function(x) {
   x <- as.character(x)
@@ -1248,25 +2149,95 @@ normalize_tract_geoid <- function(x) {
 ui <- fluidPage(
   tags$head(
     tags$style(HTML("
-      /* ── City Data tab: enforce EB Garamond throughout ── */
+      /* ── City Data tab: font + design tokens ──────────────────────────── */
+      /* @import here because the shinyApp sub-context does not reliably     */
+      /* inherit www/styles.css from the parent flexdashboard.               */
+      @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+      /* Universal font rule — covers Bootstrap resets and dynamic widgets */
+      *, *::before, *::after {
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+      }
+
+      body {
+        background: #f9f7f4;
+      }
+
+      /* Page header banner */
+      .city-banner {
+        background: #f9f7f4;
+        border-bottom: 3px solid #e8e4db;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.25rem;
+        border-radius: 6px 6px 0 0;
+      }
+
       .city-title {
-        font-family: 'EB Garamond', Garamond, Georgia, serif;
         font-size: 2.6rem;
         font-weight: 700;
-        color: #1c2b3a;
-        margin-bottom: 0.5rem;
+        color: #6b0f0f;
+        margin-bottom: 0.2rem;
+      }
+      .city-banner .city-note {
+        font-size: 18px;
+        color: #2c2c2c;
+        margin-top: 0;
+        margin-bottom: 0;
       }
       .city-note {
-        font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 1.05rem;
-        color: #4a5568;
+        font-size: 1.15rem;
+        color: #1c1c1c;
         line-height: 1.6;
         max-width: 72ch;
+        font-weight: 600;
+      }
+      /* The footer caveat sits under the full-width two-column summary, so
+         the 72ch measure inherited from .city-note made it look as though
+         it belonged to the left column only. */
+      .city-note-footer {
+        max-width: none;
+        margin-top: 1rem;
+      }
+
+      /* Section cards */
+      .city-card {
+        background: #ffffff;
+        border: 1px solid #e4e8ef;
+        border-radius: 8px;
+        padding: 1.25rem 1.5rem 1.5rem 1.5rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 1px 4px rgba(28, 43, 58, 0.07);
+      }
+      .city-controls-card,
+      .city-map-card,
+      .city-data-summary-card {
+        border-top: 4px solid #6b0f0f;
+      }
+
+      /* Controls card: label and input text — match national data styling */
+      .city-controls-card .shiny-input-container label {
+        font-size: 18px;
+        color: #1c2b3a;
+        font-weight: 500;
+      }
+      .city-controls-card select.form-control,
+      .city-controls-card .selectize-input {
+        font-size: 18px !important;
+        color: #1c2b3a !important;
+      }
+      /* Ensure sufficient contrast on selectize dropdown items (WCAG AA) */
+      .city-controls-card .selectize-dropdown,
+      .city-controls-card .selectize-dropdown-content .option {
+        font-size: 17px !important;
+        color: #1c2b3a !important;
+      }
+      .city-controls-card .selectize-dropdown-content .option.active {
+        background-color: #e8edf3 !important;
+        color: #1c2b3a !important;
       }
       /* City map title */
       .city-map-title {
-        font-family: 'EB Garamond', Garamond, Georgia, serif;
-        color: #1c2b3a;
+        color: #6b0f0f;
         font-size: 2rem;
         font-weight: 700;
         margin-bottom: 0.6rem;
@@ -1274,19 +2245,18 @@ ui <- fluidPage(
         letter-spacing: -0.01em;
       }
 
-      /* Summary section below the map: larger type, consistent rhythm,
-         constrained measure for readability, and a soft card background
-         that coordinates with the muted Positron basemap. */
+      /* Summary card: warm white background, maroon accent borders */
       .city-summary {
-        font-family: 'EB Garamond', Garamond, Georgia, serif;
-        color: #1c2b3a;
+        color: #1c1c1c;
         margin: 1.25rem 0 1.5rem 0;
         padding: 1.25rem 1.5rem 1.5rem 1.5rem;
-        background: #fafbfc;
-        border: 1px solid #e4e8ef;
-        border-radius: 8px;
+        background: #ffffff;
+        border: 1px solid #e0dbd2;
+        border-top: 5px solid #6b0f0f;
+        border-radius: 5px;
         height: 100%;
         box-sizing: border-box;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       }
       .city-summary h3,
       .city-summary h4,
@@ -1294,46 +2264,57 @@ ui <- fluidPage(
       .city-summary ul,
       .city-summary li,
       .city-summary b {
-        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-        color: #1c2b3a;
+        color: #1c1c1c;
       }
       .city-summary h3 {
-        font-size: 1.9rem;
+        font-size: 2.4rem;
         font-weight: 700;
         margin: 0.25rem 0 0.9rem 0;
         padding-bottom: 0.45rem;
-        border-bottom: 2px solid #1c2b3a;
+        border-bottom: 2px solid #6b0f0f;
+        color: #6b0f0f;
         letter-spacing: -0.01em;
       }
       .city-summary h4 {
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: 700;
         margin-top: 1.4rem;
         margin-bottom: 0.4rem;
         padding-left: 0.6rem;
-        border-left: 3px solid #1c2b3a;
+        border-left: 3px solid #6b0f0f;
+        color: #6b0f0f;
         line-height: 1.3;
       }
       .city-summary p {
-        font-size: 1.25rem;
+        font-size: 1.55rem;
         line-height: 1.75;
         margin-bottom: 0.75rem;
       }
       .city-summary b {
         font-weight: 700;
       }
+      /* Sub-headings inside a summary card: Race / Ethnicity, Sex, Ages 19
+         to 64, and so on. The two descendant selectors below were written
+         for an older markup where the b element sat inside a nested div;
+         in the current markup the b element is a direct child of
+         .city-summary, so neither matched and sub-headings were rendering
+         at inherited body size, smaller than the 1.5rem list items they
+         label. The direct-child selector is the one that actually applies.
+         The other two are kept in case that markup returns. */
+      .city-summary > b,
       .city-summary > div > b,
+      .city-summary .city-age-item > b,
       .city-summary .col-md-12 > b {
         display: inline-block;
-        font-size: 1.2rem;
+        font-size: 1.55rem;
         font-weight: 700;
         margin-top: 0.75rem;
         margin-bottom: 0.35rem;
-        color: #1c2b3a;
+        color: #1c1c1c;
         letter-spacing: 0.01em;
       }
       .city-summary ul {
-        font-size: 1.2rem;
+        font-size: 1.5rem;
         line-height: 1.8;
         margin-top: 0.35rem;
         margin-bottom: 1rem;
@@ -1343,34 +2324,182 @@ ui <- fluidPage(
         margin-bottom: 0.45rem;
         padding-left: 0.1rem;
       }
-      /* Helper / context text inside the summary (e.g. the
-         Percentages-displayed-in line). A hair smaller and italic to
-         distinguish from the data. */
       .city-summary .city-summary-help {
-        font-size: 1.1rem;
-        font-style: italic;
-        color: #4a5568;
+        font-size: 1.4rem;
+        font-style: normal;
+        color: #1c1c1c;
         margin-top: -0.1rem;
         margin-bottom: 0.85rem;
         line-height: 1.65;
       }
-      /* selectInput labels */
-      .control-label {
-        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-        font-size: 20px !important;
-        font-weight: 500;
+
+      /* Paired with/without-disability comparison tables.
+         Semantic tables rather than bullet lists: column and row headers are
+         announced by screen readers, and tabular figures keep the two value
+         columns aligned so the comparison is readable at a glance. */
+      .city-summary table.city-compare {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.35rem 0 1.1rem;
+        font-size: 1.4rem;
+        line-height: 1.5;
       }
-      /* selectize dropdown text */
-      .selectize-input, .selectize-dropdown, .selectize-dropdown-content {
-        font-size: 20px !important;
+      .city-summary table.city-compare caption {
+        text-align: left;
+        font-weight: 700;
+        font-size: 1.45rem;
+        color: #1c1c1c;
+        padding: 0 0 0.3rem;
+      }
+      .city-summary table.city-compare th,
+      .city-summary table.city-compare td {
+        border: 1px solid #ded8cf;
+        padding: 0.4rem 0.55rem;
+        text-align: left;
+        vertical-align: top;
+      }
+      .city-summary table.city-compare thead th {
+        background: #6b0f0f;
+        color: #ffffff;
+        font-weight: 600;
+        border-color: #6b0f0f;
+        font-size: 1.3rem;
+      }
+      .city-summary table.city-compare tbody th[scope='row'] {
+        background: #f6f2ec;
+        font-weight: 600;
+        width: 42%;
+      }
+      .city-summary table.city-compare tbody tr:nth-child(even) td {
+        background: #fbf9f6;
+      }
+      .city-summary table.city-compare td {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      /* Narrow screens: allow the value columns to wrap rather than forcing a
+         horizontal scroll inside the card. */
+      @media (max-width: 62em) {
+        .city-summary table.city-compare td { white-space: normal; }
+        .city-summary table.city-compare tbody th[scope='row'] { width: 38%; }
+      }
+      /* With the card-level h3 headings removed, the first sub-section
+         heading sits flush at the top of each card rather than carrying
+         the inter-section spacing meant to separate blocks. */
+      .city-summary h4:first-child {
+        margin-top: 0.25rem;
       }
 
-      /* Leaflet overlay controls: readable typography that coordinates
-         with the rest of the City Data tab. */
+      /* Equal-height card rows.
+         Bootstrap 3 lays .row out with floats, so two cards side by side end
+         at their own natural heights and the shorter one leaves a ragged
+         edge. Making just these rows flex containers equalises the cards.
+         flex-wrap keeps the single-column stack on narrow screens, and the
+         negative gutter margins BS3 puts on .row still apply. Scoped to this
+         class so no other row on the site is affected. */
+      .city-summary-row {
+        display: flex;
+        flex-wrap: wrap;
+      }
+      .city-summary-row > [class*='col-'] {
+        display: flex;
+        flex-direction: column;
+      }
+      .city-summary-row > [class*='col-'] > .city-summary {
+        flex: 1 1 auto;
+      }
+
+      /* Full-width demographics card (row two).
+         Holds both Disability Demographics and Disability Types. Everything
+         inside stacks in a single vertical column at every width. An earlier
+         version flowed the longer lists into two CSS columns to use the extra
+         width, but two columns of bullets read worse than one, so the lists
+         run straight down and the card simply ends where its content ends. */
+      .city-summary-wide .city-age-item > ul {
+        margin-bottom: 0.35rem;
+      }
+
+      /* Full-width explanatory card, used for the Community Living domain,
+         which has no city-level indicators available yet. Lighter treatment
+         than a data card so it does not read as though data is missing. */
+      .city-summary-note {
+        background: #faf8f5;
+        border-top-width: 3px;
+      }
+      .city-summary-note h4:first-child {
+        margin-top: 0.25rem;
+      }
+
+      /* Shared heading above both summary columns. Mirrors .city-summary
+         h3 and p, but sits outside the cards so it can span the full
+         width and centre over the two-column layout below it. */
+      .city-summary-header {
+        text-align: center;
+        margin: 1.25rem 0 0 0;
+        padding: 0 0.5rem;
+      }
+      .city-summary-header h3 {
+        font-size: 2.4rem;
+        font-weight: 700;
+        margin: 0.25rem 0 0.9rem 0;
+        padding-bottom: 0.45rem;
+        border-bottom: 2px solid #6b0f0f;
+        color: #6b0f0f;
+        letter-spacing: -0.01em;
+      }
+      .city-summary-header p {
+        font-size: 1.55rem;
+        line-height: 1.75;
+        color: #1c1c1c;
+        margin: 0 auto;
+        max-width: 90ch;
+      }
+
+      /* ── Select inputs: font, sizing, and maroon accent on focus ──────── */
+      .control-label {
+        font-size: 20px !important;
+        font-weight: 600;
+        color: #6b0f0f;
+        margin-bottom: 0.3rem;
+      }
+      .selectize-input,
+      .selectize-dropdown,
+      .selectize-dropdown-content,
+      .selectize-input input,
+      .selectize-dropdown-content .option,
+      .selectize-dropdown-content .active {
+        font-size: 19px !important;
+      }
+      .selectize-input {
+        border: 1.5px solid #c8b8b8 !important;
+        border-radius: 4px !important;
+        background: #fff !important;
+        color: #1c1c1c !important;
+        padding: 7px 10px !important;
+      }
+      .selectize-input.focus,
+      .selectize-input:focus-within {
+        border-color: #6b0f0f !important;
+        box-shadow: 0 0 0 3px rgba(107, 15, 15, 0.15) !important;
+        outline: none !important;
+      }
+      .selectize-dropdown {
+        border: 1.5px solid #c8b8b8 !important;
+        border-top: none !important;
+        border-radius: 0 0 4px 4px !important;
+        background: #fff !important;
+      }
+      .selectize-dropdown-content .option:hover,
+      .selectize-dropdown-content .option.active,
+      .selectize-dropdown-content .selected {
+        background: #6b0f0f !important;
+        color: #fff !important;
+      }
+
+      /* ── Leaflet legend ─────────────────────────────────────────────── */
       .leaflet-container .legend {
-        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
         font-size: 1.1rem !important;
-        color: #1c2b3a !important;
+        color: #1c1c1c !important;
         background: rgba(255,255,255,1.0) !important;
         padding: 10px 14px !important;
         border-radius: 6px !important;
@@ -1379,67 +2508,85 @@ ui <- fluidPage(
       .leaflet-container .legend .info {
         background: transparent !important;
       }
+
+      /* Focus ring: maroon to match new palette */
+      :focus-visible {
+        outline: 3px solid #6b0f0f !important;
+        outline-offset: 2px;
+      }
     "))
   ),
 
   tags$main(
     role = "main",
 
-    tags$h1("City Data", class = "city-title"),
+    # ── Page header ──────────────────────────────────────────────────────────
+    div(
+      class = "city-banner",
+      tags$h1("City Data", class = "city-title"),
+      tags$p(
+        class = "city-note",
+        "Select a state and city to explore tract-level disability data and community statistics."
+      )
+    ),
 
-    mainPanel(
-      width = 12,
-
-      # ── Selection controls ──────────────────────────────────────────────
+    # ── Controls card ─────────────────────────────────────────────────────────
+    div(
+      class = "city-card city-controls-card",
       tags$section(
         role = "region",
         `aria-label` = "City selection controls",
-
         fluidRow(
           column(6,
-                 selectInput(
-                   "state_selector", "Select a state",
-                   choices = names(state_choices),
-                   selected = "Illinois"
-                 )),
+            selectInput(
+              "state_selector", "Select a state",
+              choices = names(state_choices),
+              selected = "Illinois"
+            )
+          ),
           column(6, uiOutput("city_selector_ui"))
         )
+      )
+    ),
 
-      ),
-
-      # ── Interactive tract map ───────────────────────────────────────────
+    # ── Map card ──────────────────────────────────────────────────────────────
+    div(
+      class = "city-card city-map-card",
       tags$section(
         role = "region",
         `aria-label` = "City tract map showing disability rates",
-
         fluidRow(
           column(12, div(`aria-live` = "polite", withSpinner(uiOutput("city_map_title")))),
           column(12, withSpinner(leafletOutput("snapshotmap", height = 550)))
         )
-      ),
+      )
+    ),
 
-      # ── City summary statistics ─────────────────────────────────────────
+    # ── Summary card ──────────────────────────────────────────────────────────
+    div(
+      class = "city-card city-data-summary-card",
       tags$section(
         role = "region",
         `aria-label` = "City summary statistics for people with disabilities",
-
         fluidRow(
           column(12, div(`aria-live` = "polite", withSpinner(uiOutput("city_summary"))))
         )
-      ),
-
-      # ── Footer note ─────────────────────────────────────────────────────
-      fluidRow(
-        column(
-          12,
-          tags$p(
-            "Note: Not Applicable or NA values may display for cities where data is unavailable, mostly in cities with a population less than 30,000.",
-            class = "city-note"
-          )
-        )
       )
+    ),
+
+    # ── Footer note ───────────────────────────────────────────────────────────
+    tags$p(
+      class = "city-note city-note-footer",
+      # Coverage wording corrected 31 July 2026. The previous text attributed
+      # missing values to a population threshold of 30,000, which is wrong:
+      # 1,322 selectable cities exceed that population but only 648 carry the
+      # education and commuting measures. The Census rule keys on the size of
+      # the population with disabilities, with the cutoff falling between
+      # 7,178 and 7,883 residents across the 8,407 places in the file.
+      "Note: Some measures are not published for every city. The Census releases the education and commuting figures only where the population with disabilities is large enough, roughly 7,500 residents, so those two sections are shown for 648 of the cities in this tool and hidden for the rest. Other Not Applicable or NA values may appear where a figure was suppressed for that city. Percentages built on a small population count, such as a race or ethnicity group of only a few dozen residents in a given city, can shift dramatically based on a handful of survey responses and carry a wide margin of error, so treat figures drawn from small subgroups with caution."
     )
   )
+  , adaparc_footer
 )
 
 # ----------------------------
@@ -1523,30 +2670,19 @@ server <- function(input, output, session) {
   })
 
   # ----------------------------
-  # MAP: palette + leaflet render
+  # MAP: fixed national classification + leaflet render
   #
   # Place these EXACTLY here: after city_tract()/city_tract_sf() reactives exist,
   # and before output$city_summary.
+  #
+  # city_map_breaks / city_map_labels are FIXED (computed once at app start
+  # from the full national tract distribution -- see setup chunk). Only the
+  # 4 discrete colors are reactive to the user's palette choice.
   # ----------------------------
 
-  pal_city <- reactive({
-    req(city_tract())
-    v <- city_tract()$pct_cni_total_dis_place
-    req(is.numeric(v))
-
+  city_map_colors <- reactive({
     raw_palette <- access_map_palette_selected()
-    map_palette <- if (is.function(raw_palette)) raw_palette(256) else raw_palette
-
-    if (all(is.na(v))) {
-      # safe fallback palette so polygons still draw with na.color
-      return(colorNumeric(palette = map_palette, domain = c(0, 100), na.color = "#DDDDDD"))
-    }
-
-    if (sum(!is.na(v)) < 4) {
-      colorNumeric(palette = map_palette, domain = v, na.color = "#DDDDDD")
-    } else {
-      colorQuantile(palette = map_palette, domain = v, n = 4, na.color = "#DDDDDD")
-    }
+    if (is.function(raw_palette)) raw_palette(4) else brewer.pal(4, raw_palette)
   })
 
   output$snapshotmap <- renderLeaflet({
@@ -1564,6 +2700,27 @@ server <- function(input, output, session) {
     data <- left_join(sf_df, tab_df, by = "tract_id_norm")
     has_any_data <- any(!is.na(data$pct_cni_total_dis_place))
 
+    map_colors   <- city_map_colors()
+    map_na_color <- access_map_na_selected()
+
+    data <- data %>%
+      mutate(
+        pct_cat = cut(
+          pct_cni_total_dis_place,
+          breaks         = city_map_breaks,
+          include.lowest = TRUE,
+          labels         = city_map_labels
+        ),
+        # No-data tracts take the no-data colour belonging to the SELECTED
+        # palette, not a fixed grey. Under High Contrast Mono a grey would be
+        # only 6.5 CIEDE2000 units from the lightest band, so "no data" would
+        # read as "best". See the NO-DATA note in scripts/palettes.R.
+        fill_col = dplyr::case_when(
+          is.na(pct_cat) ~ map_na_color,
+          TRUE           ~ map_colors[as.integer(pct_cat)]
+        )
+      )
+
     m <- leaflet(data) %>%
       # Muted, high-contrast neutral basemap (light gray / white) so the
       # tract choropleth does the color work and the map remains
@@ -1576,7 +2733,7 @@ server <- function(input, output, session) {
       addResetMapButton() %>%
       addPolygons(
         stroke = TRUE, color = "#1c2b3a", weight = 1, smoothFactor = 0,
-        fillColor = ~pal_city()(pct_cni_total_dis_place),
+        fillColor = ~fill_col,
         fillOpacity = 0.82,
         layerId = ~tract_GEOID,
         label = ~lapply(ifelse(
@@ -1602,24 +2759,36 @@ server <- function(input, output, session) {
           autoCollapse = FALSE, minLength = 3, position = "topleft",
           zoom = 15, autoResize = FALSE, hideMarkerOnCollapse = TRUE
         )
+      ) %>%
+      addEasyprint(
+        options = easyprintOptions(
+          title      = "Download map as PNG",
+          position   = "bottomleft",
+          exportOnly = TRUE,
+          filename   = paste0(
+            "ADAPARC_",
+            gsub("[^A-Za-z0-9]+", "_", city_place()$NAME),
+            "_tract_map"
+          )
+        )
       )
 
     if (has_any_data) {
+      # Append a "No data" key ONLY when some tract actually lacks a value, so
+      # the legend never explains a colour that is not on the map. This matters
+      # more now that the no-data colour varies by palette: under High Contrast
+      # Mono it is blue, which is unexplained otherwise.
+      has_gaps    <- any(is.na(data$pct_cni_total_dis_place))
+      leg_colors  <- if (has_gaps) c(map_colors, map_na_color) else map_colors
+      leg_labels  <- if (has_gaps) c(city_map_labels, "No data") else city_map_labels
+
       m <- m %>%
         addLegend(
           position = "topright",
-          pal = pal_city(),
-          values = ~pct_cni_total_dis_place,
-          labFormat = function(type, cuts, p) {
-            cuts <- as.numeric(cuts)
-            if (length(cuts) <= 1) return("")
-            paste0(
-              format(round(cuts[-length(cuts)], 1), nsmall = 1),
-              " \u2013 ",
-              format(round(cuts[-1], 1), nsmall = 1)
-            )
-          },
-          title = "% With Disability"
+          colors   = leg_colors,
+          labels   = leg_labels,
+          opacity  = 0.82,
+          title    = "% With Disability"
         )
     } else {
       m <- m %>%
@@ -1643,18 +2812,24 @@ server <- function(input, output, session) {
     req(city_place())
 
     introductory_text <- paste0(
-      "Based on ACS 2024 5-Year Estimates, <b>", fmt_num(city_place()$pop_cni_dis_total_place),
-      "</b> of the city's <b>", fmt_num(city_place()$pop_cni_total_all),
-      "</b> residents (<b>", fmt_pct_1dp(city_place()$pct_cni_total_dis_place), "</b>) are people with disabilities.<br><br>"
+      "Based on ACS 2024 5-Year Estimates, of the city's <b>", fmt_num(city_place()$pop_cni_total_all),
+      "</b> residents, <b>", fmt_num(city_place()$pop_cni_total_dis_place),
+      "</b> (<b>", fmt_pct_1dp(city_place()$pct_cni_total_dis_place), "</b>) are people with disabilities."
     )
+    # The trailing <br><br> this string used to carry was spacing the lead
+    # sentence off the block below it. Now that the sentence sits in its own
+    # centred header, the paragraph margin handles that.
 
     race_ethnicity <- city_place() %>%
       transmute(
-        White = create_number_percent_string(pop_cni_whitenonhisp_dis, pct_cni_whitenonhisp_dis),
+        `White alone (non-Hispanic)` = create_number_percent_string(pop_cni_whitenonhisp_dis, pct_cni_whitenonhisp_dis),
         `Black/African American` = create_number_percent_string(pop_cni_black_dis, pct_cni_black_dis),
-        `Hispanic/Latino` = create_number_percent_string(pop_cni_hisp_dis, pct_cni_hisp_dis),
+        `American Indian/Alaska Native` = create_number_percent_string(pop_cni_aian_dis, pct_cni_aian_dis),
         Asian = create_number_percent_string(pop_cni_asian_dis, pct_cni_asian_dis),
-        `Some other race(s) identified` = create_number_percent_string(pop_cni_raceother_dis, pct_cni_raceother_dis)
+        `Native Hawaiian/Other Pacific Islander` = create_number_percent_string(pop_cni_nhopi_dis, pct_cni_nhopi_dis),
+        `Some other race(s) identified` = create_number_percent_string(pop_cni_raceother_dis, pct_cni_raceother_dis),
+        `Two or more races` = create_number_percent_string(pop_cni_racemulti_dis, pct_cni_racemulti_dis),
+        `Hispanic/Latino (any race)` = create_number_percent_string(pop_cni_hisp_dis, pct_cni_hisp_dis)
       ) %>%
       tidyr::pivot_longer(everything(), names_to = "Race/Ethnicity", values_to = "Value (%)") %>%
       mutate(Bullets = paste0("<li>", `Race/Ethnicity`, " &mdash; ", `Value (%)`, "</li>")) %>%
@@ -1671,6 +2846,44 @@ server <- function(input, output, session) {
       pull(Bullets) %>%
       str_c(collapse = "")
 
+    # ----------------------------------------------------------------------
+    # Age
+    #
+    # Two figures are given per age group because they answer different
+    # questions and are easily confused:
+    #   (1) prevalence WITHIN the age group  -> pct_cni_*_dis_of_*_place
+    #   (2) that group's share of ALL PWD    -> pct_cni_*_dis_of_totaldis_place
+    # Both are computed at place level in addACSCalculatedVariablesCity.R.
+    # Note there is no under-18 row: the ACS age bands the pipeline sums for
+    # the 18-64 and 65+ groups do not leave a clean under-18 residual here.
+    # ----------------------------------------------------------------------
+    age_groups <- city_place() %>%
+      transmute(
+        `Ages 18 to 64` = paste0(
+          "<li>Disability is present in <b>",
+          fmt_pct_1dp(pct_cni_18to64_dis_of_18to64_place),
+          "</b> of this age group (", fmt_num(pop_cni_18to64_dis_place), " residents)</li>",
+          "<li>This group is <b>", fmt_pct_1dp(pct_cni_18to64_dis_of_totaldis_place),
+          "</b> of all city residents with disabilities</li>"
+        ),
+        `Ages 65 and older` = paste0(
+          "<li>Disability is present in <b>",
+          fmt_pct_1dp(pct_cni_65plus_dis_of_65plus_place),
+          "</b> of this age group (", fmt_num(pop_cni_65plus_dis_place), " residents)</li>",
+          "<li>This group is <b>", fmt_pct_1dp(pct_cni_65plus_dis_of_totaldis_place),
+          "</b> of all city residents with disabilities</li>"
+        )
+      ) %>%
+      tidyr::pivot_longer(everything(), names_to = "Age Group", values_to = "Items") %>%
+      # Each group is wrapped so the bold label and its list stay together as
+      # one unit. The wrapper is also what .city-summary .city-age-item > b
+      # hooks onto to give the label its sub-heading styling.
+      mutate(Block = paste0(
+        "<div class=\"city-age-item\"><b>", `Age Group`, "</b><ul>", Items, "</ul></div>"
+      )) %>%
+      pull(Block) %>%
+      str_c(collapse = "")
+
     disability_types <- city_place() %>%
       transmute(
         Hearing = create_number_percent_string(pop_cni_total_hearing_dis, pct_cni_total_hearing_dis),
@@ -1685,59 +2898,320 @@ server <- function(input, output, session) {
       pull(Bullets) %>%
       str_c(collapse = "")
 
-    employment <- city_place() %>%
+    # ----------------------------------------------------------------------
+    # Outcome indicators, paired with/without disability
+    #
+    # From here to the housing-burden block, every indicator is rendered as a
+    # two-column comparison table via render_comparison_table(). cp is the
+    # single-row city data frame the specs read from.
+    #
+    # Housing cost burden is the one exception and stays a bullet list: it
+    # comes from B25070 and B25091, which are household tables with no
+    # disability dimension, so there is no comparison to draw.
+    # ----------------------------------------------------------------------
+    cp <- city_place()
+
+    employment <- render_comparison_table(
+      cp,
+      list(
+        cmp_row("Employed, part or full time",
+                "pct_cni_18to64_employed_dis",   "pct_cni_18to64_employed_nodis",
+                dis_pop = "pop_cni_18to64_employed_dis",
+                nodis_pop = "pop_cni_18to64_employed_nodis"),
+        cmp_row("Unemployed, looking for work",
+                "pct_cni_18to64_unemployed_dis", "pct_cni_18to64_nodis_unemployed",
+                dis_pop = "pop_cni_18to64_unemployed_dis",
+                nodis_pop = "pop_cni_18to64_unemployed_nodis"),
+        cmp_row("Out of the labor force",
+                "pct_cni_18to64_notlabor_dis",   "pct_cni_18to64_notlabor_nodis",
+                dis_pop = "pop_cni_18to64_notlabor_dis",
+                nodis_pop = "pop_cni_18to64_notlabor_nodis")
+      ),
+      "Labor force status, ages 18 to 64"
+    )
+
+    # ----------------------------------------------------------------------
+    # Earnings
+    #
+    # ACS B18140. Note the dictionary calls these variables "Median
+    # Individual Income", but B18140 measures median EARNINGS, meaning pay
+    # from work only, over a universe restricted to people who had
+    # earnings. It excludes benefits, Social Security, SSI and investment
+    # income, so it is not individual income in the ordinary sense. The
+    # labels below say earnings; the dictionary entry should be corrected
+    # to match.
+    #
+    # Coverage: the disabled figure resolves for 4,821 of the 5,881
+    # non-CDP places in the selector, and the non-disabled figure is
+    # present for all but two of those, so the pair travels together.
+    # ----------------------------------------------------------------------
+    earnings <- render_comparison_table(
+      cp,
+      list(
+        cmp_row("Median earnings, ages 16 and over",
+                "pop_cni_16plus_medincome_dis", "pop_cni_16plus_medincome_nodis",
+                kind = "dollar")
+      ),
+      "Median earnings among residents who had earnings"
+    )
+
+    poverty <- render_comparison_table(
+      cp,
+      list(
+        cmp_row("Children under 18",
+                "pct_cni_under18_poverty_dis", "pct_cni_under18_poverty_nodis",
+                dis_pop = "pop_cni_under18_poverty_dis",
+                nodis_pop = "pop_cni_under18_poverty_nodis"),
+        cmp_row("Adults 18 to 64",
+                "pct_cni_18to64_poverty_dis",  "pct_cni_18to64_poverty_nodis",
+                dis_pop = "pop_cni_18to64_poverty_dis",
+                nodis_pop = "pop_cni_18to64_poverty_nodis"),
+        cmp_row("Adults 65 and older",
+                "pct_cni_65plus_poverty_dis",  "pct_cni_65plus_poverty_nodis",
+                dis_pop = "pop_cni_65plus_poverty_dis",
+                nodis_pop = "pop_cni_65plus_poverty_nodis")
+      ),
+      "Residents living below the federal poverty line"
+    )
+
+    # ----------------------------------------------------------------------
+    # Health insurance, split by age band
+    #
+    # The 19-64 band was already shown. The 65+ band is the same four
+    # measures and is populated for 8,372 of 8,407 places, so it is shown
+    # alongside rather than gated. "Any coverage" is listed first because
+    # private and public overlap and will not sum to it.
+    # ----------------------------------------------------------------------
+    # Both age bands use the same four measures, so the spec is built once and
+    # the column prefix is swapped. "nodis" sits in the middle of these names,
+    # which is why the pairs are assembled here rather than derived.
+    health_insurance_rows <- function(band) {
+      list(
+        cmp_row("Any health insurance coverage",
+                paste0("pct_cni_", band, "_dis_healthins"),
+                paste0("pct_cni_", band, "_nodis_healthins"),
+                dis_pop   = paste0("pop_cni_", band, "_dis_healthins"),
+                nodis_pop = paste0("pop_cni_", band, "_nodis_healthins")),
+        cmp_row("Private health insurance",
+                paste0("pct_cni_", band, "_dis_privatehealth"),
+                paste0("pct_cni_", band, "_nodis_privatehealth"),
+                dis_pop   = paste0("pop_cni_", band, "_dis_privatehealth"),
+                nodis_pop = paste0("pop_cni_", band, "_nodis_privatehealth")),
+        cmp_row("Public health insurance",
+                paste0("pct_cni_", band, "_dis_publichealth"),
+                paste0("pct_cni_", band, "_nodis_publichealth"),
+                dis_pop   = paste0("pop_cni_", band, "_dis_publichealth"),
+                nodis_pop = paste0("pop_cni_", band, "_nodis_publichealth")),
+        cmp_row("No health insurance",
+                paste0("pct_cni_", band, "_dis_nohealthins"),
+                paste0("pct_cni_", band, "_nodis_nohealthins"),
+                dis_pop   = paste0("pop_cni_", band, "_dis_nohealthins"),
+                nodis_pop = paste0("pop_cni_", band, "_nodis_nohealthins"))
+      )
+    }
+
+    health_insurance_19to64 <- render_comparison_table(
+      cp, health_insurance_rows("19to64"), "Ages 19 to 64"
+    )
+
+    health_insurance_65plus <- render_comparison_table(
+      cp, health_insurance_rows("65plus"), "Ages 65 and older"
+    )
+
+    # ----------------------------------------------------------------------
+    # Education and Transportation, both from ACS S1811
+    #
+    # S1811 is published only where the population with disabilities clears a
+    # threshold between 7,178 and 7,883 residents, which is 694 of the 8,407
+    # places in the file and 648 of the 5,881 selectable non-CDP places. The
+    # non-NA set is byte-identical across all five S1811-derived measures, so
+    # one sentinel gates both blocks.
+    #
+    # Rather than render two blocks of "Not available" for nearly nine cities
+    # in ten, has_s1811 hides them and the assembly substitutes a sentence
+    # naming the reason. Before this, the page footnote attributed the gaps to
+    # a population threshold of 30,000, which is measurably wrong: 1,322
+    # selectable cities exceed that population but only 648 carry the data.
+    # ----------------------------------------------------------------------
+    has_s1811 <- !is.na(cp$pct_cni_25plus_noGED_dis)
+
+    education <- render_comparison_table(
+      cp,
+      list(
+        cmp_row("Less than high school",
+                "pct_cni_25plus_noGED_dis",     "pct_cni_25plus_noGED_nodis",
+                dis_pop = "pop_cni_25plus_noGED_dis",
+                nodis_pop = "pop_cni_25plus_noGED_nodis"),
+        cmp_row("High school diploma or equivalent",
+                "pct_cni_25plus_GED_dis",       "pct_cni_25plus_GED_nodis",
+                dis_pop = "pop_cni_25plus_GED_dis",
+                nodis_pop = "pop_cni_25plus_GED_nodis"),
+        cmp_row("Bachelor's degree or higher",
+                "pct_cni_25plus_bachelors_dis", "pct_cni_25plus_bachelors_nodis",
+                dis_pop = "pop_cni_25plus_bachelors_dis",
+                nodis_pop = "pop_cni_25plus_bachelors_nodis")
+      ),
+      "Highest level of education completed, ages 25 and over"
+    )
+
+    transportation <- render_comparison_table(
+      cp,
+      list(
+        cmp_row("Commute to work by public transit",
+                "pct_cni_16plus_transit_dis",    "pct_cni_16plus_transit_nodis",
+                dis_pop = "pop_cni_16plus_transit_dis",
+                nodis_pop = "pop_cni_16plus_transit_nodis"),
+        cmp_row("Commute to work driving alone",
+                "pct_cni_16plus_drivealone_dis", "pct_cni_16plus_drivealone_nodis",
+                dis_pop = "pop_cni_16plus_drivealone_dis",
+                nodis_pop = "pop_cni_16plus_drivealone_nodis")
+      ),
+      "Commute mode among workers ages 16 and over"
+    )
+
+    # Substituted for both blocks when the city has no S1811 data.
+    s1811_unavailable_note <- paste0(
+      '<p class="city-summary-help">Education and commuting figures are not ',
+      'published for this city. The Census releases these measures only where ',
+      'the population with disabilities is large enough, roughly 7,500 ',
+      'residents, which covers 648 of the cities in this tool.</p>'
+    )
+
+    housing_burden <- city_place() %>%
       transmute(
-        `Living below poverty (as of 2024, yearly income below $14,891 for individual or $29,678 for family of four)` =
-          create_number_percent_string(pop_cni_18to64_poverty_dis, pct_cni_18to64_poverty_dis),
-        `Employed (part or full time)` =
-          create_number_percent_string(pop_cni_16plus_employed_dis, pct_cni_16plus_employed_dis),
-        `Out of the labor force (not working and not actively seeking employment)` =
-          create_number_percent_string(pop_cni_16plus_notlabor_dis, pct_cni_16plus_notlabor_dis)
+        `Renter households paying 30% or more of income on rent` =
+          create_number_percent_string(total_rent_burdened, pct_rent_burdened),
+        `Households with a mortgage paying 30% or more of income on housing` =
+          create_number_percent_string(mortgage_burdened_households, pct_households_mortgage_burdened)
       ) %>%
       tidyr::pivot_longer(everything(), names_to = "Indicator", values_to = "Value (%)") %>%
       mutate(Bullets = paste0("<li>", Indicator, " &mdash; ", `Value (%)`, "</li>")) %>%
       pull(Bullets) %>%
       str_c(collapse = "")
 
-    education <- city_place() %>%
-      transmute(
-        `Highest education is less than high school (PWD)`  = pct_cni_25plus_noGED_dis,
-        `Highest education is high school equivalent (PWD)`  = pct_cni_25plus_GED_dis,
-        `Highest education is bachelor's degree plus (PWD)`  = pct_cni_25plus_bachelors_dis,
-      ) %>%
-      tidyr::pivot_longer(everything(), names_to = "Indicator", values_to = "Pct") %>%
-      mutate(
-        `Value (%)` = fmt_pct_1dp(Pct),
-        Bullets = paste0("<li>", Indicator, " &mdash; ", `Value (%)`, "</li>")
-      ) %>%
-      pull(Bullets) %>%
-      str_c(collapse = "")
-
     city_summary_tables <- paste0(
-      '<div class="row" style="margin-top:1.25rem;">',
 
-      # ── Left card: Demographics + Disability Types ──────────────────────────
-      '<div class="col-md-6">',
-      '<div class="city-summary">',
+      # ── Shared heading, centred above both columns ──────────────────────────
+      '<div class="row">',
+      '<div class="col-md-12">',
+      '<div class="city-summary-header">',
       '<h3>People with Disabilities - Summary Tables</h3>',
       '<p>', introductory_text, '</p>',
+      '</div>',
+      '</div>',
+      '</div>',
+
+      # ══════════════════════════════════════════════════════════════════════
+      # Row two. Who has disabilities in this city. ONE full-width card.
+      #
+      # Demographics and Disability Types share a single card rather than
+      # sitting in two columns. Split across two columns the types list, at
+      # six items, left a large block of dead space beside the much longer
+      # demographics list. One wide card carries both, and everything inside
+      # it stacks in a single vertical column at every width.
+      #
+      # Neither section carries a without-disability column. Both report
+      # prevalence within a group, so that figure would be the arithmetic
+      # complement and would add a column of noise. The paired comparisons
+      # all live in row three.
+      # ══════════════════════════════════════════════════════════════════════
+      '<div class="row" style="margin-top:1.25rem;">',
+      '<div class="col-md-12">',
+      '<div class="city-summary city-summary-wide">',
+
       '<h4>Disability Demographics</h4>',
-      '<p class="city-summary-help">Percentages displayed in the "Disability Demographics" section refer to the % of the given demographic population of the selected city which have a disability.</p>',
+      '<p class="city-summary-help">Each percentage below is the share of that specific group who have a disability, not the share of the total disabled population that group represents. Hispanic/Latino is an ethnicity that can include people of any race, so it overlaps with the race categories listed above it, and the figures are not meant to sum to the city total.</p>',
       '<b>Race / Ethnicity</b><ul>', race_ethnicity, '</ul>',
       '<b>Sex</b><ul>', sex, '</ul>',
-      '<h4>Disability Types</h4><ul>', disability_types, '</ul>',
-      '</div>',   # end .city-summary
-      '</div>',   # end .col-md-6
+      '<b>Age</b>',
+      '<p class="city-summary-help">Two figures are given for each age group because they answer different questions. The first is how common disability is among residents of that age. The second is how much of the city\'s total disabled population that age group accounts for.</p>',
+      age_groups,
 
-      # ── Right card: ADA-PARC Key Indicators ────────────────────────────────
+      '<h4>Disability Types</h4>',
+      '<p class="city-summary-help">A person can have more than one type of disability, and many do, so these categories overlap. The six figures below will add up to more than the city\'s overall disability rate, often to about twice it, and are not meant to sum to the total.</p>',
+      '<ul>', disability_types, '</ul>',
+
+      '</div>',   # end .city-summary
+      '</div>',   # end .col-md-12
+      '</div>',   # end .row
+
+      # ══════════════════════════════════════════════════════════════════════
+      # Row three. Outcomes, grouped by ADA-PARC domain.
+      #
+      # The domain each block sits in is taken from data/dict_vars.csv rather
+      # than chosen here: the health insurance, education and transportation
+      # variables all carry is_community_participation, and the employment,
+      # earnings, poverty and housing burden variables all carry
+      # is_work_economic. Housing cost burden reads as a community living
+      # measure but the dictionary classes it as economic, so that is where
+      # it sits.
+      #
+      # Every block is a paired comparison table except Housing Cost Burden,
+      # which has no disability dimension in B25070 or B25091.
+      # ══════════════════════════════════════════════════════════════════════
+      '<div class="row city-summary-row" style="margin-top:0.25rem;">',
+
       '<div class="col-md-6">',
       '<div class="city-summary">',
-      '<h3>ADA-PARC Key Indicators</h3>',
-      '<h4>Economic</h4><ul>', employment, '</ul>',
-      '<h4>Education</h4><ul>', education, '</ul>',
+      '<h4>Community Participation</h4>',
+      '<p class="city-summary-help">Each indicator below is shown for residents with disabilities beside residents without disabilities, so the two can be compared directly.</p>',
+      '<b>Health Insurance</b>',
+      '<p class="city-summary-help">A person can hold public and private coverage at the same time, so those two figures are not meant to sum to the any-coverage figure.</p>',
+      health_insurance_19to64,
+      health_insurance_65plus,
+
+      # Education and Transportation share the S1811 publication ceiling, so
+      # both are replaced by one explanatory sentence when it is not met.
+      if (has_s1811) {
+        paste0(
+          '<b>Education</b>',
+          education,
+          '<b>Transportation</b>',
+          transportation
+        )
+      } else {
+        paste0('<b>Education and Transportation</b>', s1811_unavailable_note)
+      },
+
       '</div>',   # end .city-summary
       '</div>',   # end .col-md-6
 
+      '<div class="col-md-6">',
+      '<div class="city-summary">',
+      '<h4>Work and Economic</h4>',
+      '<p class="city-summary-help">Each indicator below is shown for residents with disabilities beside residents without disabilities, so the two can be compared directly.</p>',
+      '<b>Employment</b>',
+      employment,
+      '<b>Earnings</b>',
+      '<p class="city-summary-help">Median earnings in the past 12 months among residents ages 16 and over who had earnings. This is pay from work only. It does not include Social Security, disability benefits or investment income, and it leaves out residents who did not work, so it is not a measure of total income.</p>',
+      earnings,
+      '<b>Poverty</b>',
+      '<p class="city-summary-help">Living below the federal poverty line. As of 2024, that is a yearly income below $14,891 for an individual or $29,678 for a family of four.</p>',
+      poverty,
+      '<b>Housing Cost Burden</b>',
+      '<p class="city-summary-help">Citywide figures for all households, not disability specific. A disability specific breakdown is not published at the city level, so there is no comparison to show here.</p>',
+      '<ul>', housing_burden, '</ul>',
+      '</div>',   # end .city-summary
+      '</div>',   # end .col-md-6
+
+      '</div>',   # end .row
+
+      # ══════════════════════════════════════════════════════════════════════
+      # Row four. Community Living, the fourth ADA-PARC domain.
+      #
+      # No indicator in this domain is currently available at city geography.
+      # The group quarters tables S2601A, S2602 and B26108 are published only
+      # for states and larger areas, so the domain is named and explained
+      # rather than silently omitted. This card is where the HUD housing
+      # access measures will land once the place-level file is wired in.
+      # ══════════════════════════════════════════════════════════════════════
+      '<div class="row" style="margin-top:0.25rem;">',
+      '<div class="col-md-12">',
+      '<div class="city-summary city-summary-note">',
+      '<h4>Community Living</h4>',
+      '<p class="city-summary-help">ADA-PARC tracks a fourth domain, Community Living, covering where people with disabilities live and whether they live in the community or in an institution. The Census publishes those measures only for states and larger areas, not for individual cities, so they appear on the National Data tab rather than here. Housing cost burden is sometimes grouped with community living; it is shown above under Work and Economic, matching how it is classified in the ADA-PARC data dictionary.</p>',
+      '</div>',   # end .city-summary
+      '</div>',   # end .col-md-12
       '</div>'    # end .row
     )
 
@@ -1776,21 +3250,14 @@ app_root <- normalizePath(
 scorecard_dir <- file.path(app_root, "scorecard")
 
 # ── Output directory ──────────────────────────────────────────────────────
-# Shiny auto-serves www/ for top-level apps, but inside an embedded
-# shinyApp() chunk in flexdashboard the sub-app is mounted at its own
-# URL prefix, so bare relative iframe srcs like "state_output.html"
-# resolve against the sub-app path instead of the root — returning 404.
-# Registering an explicit resource path makes the files reachable at
-# /sc_out/… regardless of how the sub-app is mounted.
-www_dir <- file.path(app_root, "www")
-dir.create(www_dir, showWarnings = FALSE)
-shiny::addResourcePath("sc_out", www_dir)
-
-# Clean up leftover renders from any previous session
-invisible(unlink(c(
-  file.path(www_dir, "state_output.html"),
-  file.path(www_dir, "cat_output.html")
-)))
+# Rendered scorecard HTML is written to a per-process temp directory so
+# stale files are never bundled into the deployment (the old www/ approach
+# caused pre-deployment renders to be served on the live site even after
+# the QMD templates were updated).  A unique dir per process avoids cross-
+# session collisions on multi-worker deployments.
+sc_out_dir <- file.path(tempdir(), "ada_parc_sc_out")
+dir.create(sc_out_dir, showWarnings = FALSE, recursive = TRUE)
+shiny::addResourcePath("sc_out", sc_out_dir)
 
 # ── Load dictionaries ───────────────────────────────────────────────────────
 indicator_dict <- tryCatch(
@@ -1948,13 +3415,13 @@ ind_src <- c(
   rel_score_propertycrime        = "FBI NIBRS (2024)",
   rel_score_violentcrime         = "FBI NIBRS (2024)",
   # WE — Positive Work
-  rel_score_employment           = "ACS B18131",
+  rel_score_employment           = "ACS C18120",
   rel_score_coladj_ind_income    = "ACS PUMS + BEA RPP (2022)",
   rel_score_coladj_hh_income     = "ACS PUMS + BEA RPP (2022)",
   # WE — Negative Work
   rel_score_poverty              = "ACS B18130 (derived)",
-  rel_score_unemployed           = "ACS B18131",
-  rel_score_labor                = "ACS B18131",
+  rel_score_unemployed           = "ACS C18120",
+  rel_score_labor                = "ACS C18120",
   # WE — Housing Affordability
   rel_score_ssi_rent             = "SSA ASR 2024 + HUD FMR (FY2025)",
   rel_score_renter_burden        = "ACS PUMS",
@@ -1985,17 +3452,25 @@ build_source_table <- function(hierarchy, ind_df, src_lookup) {
 
   cat_colors <- list(CL = "#C9A227", CP = "#CC5500", WE = "#800000")
 
+  # Band ink is chosen per category, not fixed to white. White on the #C9A227
+  # gold is 2.0:1 and was unreadable; near-black on that same gold is 7.13:1.
+  # White stays on the orange and the maroon, where it reads 4.32:1 and 9.24:1.
+  # The 4.32:1 on orange clears the 3:1 large-text threshold because the band is
+  # set at 19px bold, above the 14pt-bold (18.66px) large-text boundary.
+  cat_ink <- list(CL = "#1c1c1c", CP = "#ffffff", WE = "#ffffff")
+
   rows <- list()
   for (cat_id in names(hierarchy)) {
     cat_info  <- hierarchy[[cat_id]]
     cat_color <- cat_colors[[cat_id]]
+    band_ink  <- cat_ink[[cat_id]]
     rows[[length(rows) + 1]] <- tags$tr(
       tags$td(
         colspan = "3",
         style = sprintf(
-          paste0("background:%s;color:white;font-weight:700;font-size:1rem;",
-                 "padding:0.5rem 0.9rem;letter-spacing:0.02em;"),
-          cat_color
+          paste0("background:%s;color:%s;font-weight:700;font-size:19px;",
+                 "padding:13px 19px;letter-spacing:0.01em;"),
+          cat_color, band_ink
         ),
         cat_info$label
       )
@@ -2005,9 +3480,9 @@ build_source_table <- function(hierarchy, ind_df, src_lookup) {
         tags$td(
           colspan = "3",
           style = sprintf(
-            paste0("background:%s22;color:#1c2b3a;font-weight:700;font-size:1rem;",
-                   "padding:0.35rem 0.9rem 0.3rem 1.5rem;border-top:1px solid #eee;",
-                   "text-transform:uppercase;letter-spacing:0.06em;"),
+            paste0("background:%s22;color:#1c2b3a;font-weight:700;font-size:16px;",
+                   "padding:11px 19px 11px 27px;border-top:1px solid #eee;",
+                   "letter-spacing:0.01em;"),
             cat_color
           ),
           idx_info$label
@@ -2017,15 +3492,16 @@ build_source_table <- function(hierarchy, ind_df, src_lookup) {
         rows[[length(rows) + 1]] <- tags$tr(
           style = "border-bottom:1px solid #f0f0f0;",
           tags$td(
-            style = "padding:0.35rem 0.9rem 0.35rem 2.2rem;font-size:1rem;color:#1c2b3a;",
+            style = "padding:13px 19px 13px 38px;font-size:16px;color:#1c2b3a;line-height:1.5;",
             get_label(ind_id)
           ),
+          # #444 on white is 9.73:1, #333 is 12.63:1.
           tags$td(
-            style = "padding:0.35rem 0.6rem;font-size:1rem;color:#444;white-space:nowrap;",
+            style = "padding:13px 14px;font-size:16px;color:#444;white-space:nowrap;",
             get_dir(ind_id)
           ),
           tags$td(
-            style = "padding:0.35rem 0.9rem;font-size:1rem;color:#333;",
+            style = "padding:13px 19px;font-size:16px;color:#333;",
             get_src(ind_id)
           )
         )
@@ -2034,27 +3510,27 @@ build_source_table <- function(hierarchy, ind_df, src_lookup) {
   }
 
   div(
-    style = "margin-top:1.5rem;",
+    style = "margin-top:28px;",
     tags$h4(
-      style = paste0("font-size:1rem;font-weight:700;text-transform:uppercase;",
-                     "letter-spacing:0.07em;color:#1c2b3a;margin:0 0 0.6rem;"),
+      style = paste0("font-size:22px;font-weight:700;",
+                     "letter-spacing:0.01em;color:#1c2b3a;margin:0 0 11px;"),
       "Indicators & Data Sources"
     ),
     div(
-      style = paste0("background:white;border-radius:8px;",
-                     "box-shadow:0 1px 4px rgba(0,0,0,0.07);overflow:hidden;"),
+      style = paste0("background:white;border-radius:12px;",
+                     "box-shadow:0 1px 6px rgba(0,0,0,0.07);overflow:hidden;"),
       tags$table(
         style = "width:100%;border-collapse:collapse;",
         tags$caption(
-          style = "text-align:left;font-size:1rem;color:#1c2b3a;padding:0.5rem 0.9rem;caption-side:top;",
+          style = "text-align:left;font-size:16px;color:#444;padding:14px 19px 12px;caption-side:top;line-height:1.6;",
           "ADA-PARC Scorecard indicators organized by category, with direction of measurement and data source for each."
         ),
         tags$thead(
           tags$tr(
             style = "background:#f0f2f6;border-bottom:2px solid #dde2ea;",
-            tags$th(scope = "col", style = "padding:0.5rem 0.9rem;text-align:left;font-size:1rem;text-transform:uppercase;letter-spacing:0.07em;color:#1c2b3a;", "Indicator"),
-            tags$th(scope = "col", style = "padding:0.5rem 0.6rem;text-align:left;font-size:1rem;text-transform:uppercase;letter-spacing:0.07em;color:#1c2b3a;", "Direction"),
-            tags$th(scope = "col", style = "padding:0.5rem 0.9rem;text-align:left;font-size:1rem;text-transform:uppercase;letter-spacing:0.07em;color:#1c2b3a;", "Data Source")
+            tags$th(scope = "col", style = "padding:12px 19px;text-align:left;font-size:17px;font-weight:700;letter-spacing:0.01em;color:#1c2b3a;", "Indicator"),
+            tags$th(scope = "col", style = "padding:12px 14px;text-align:left;font-size:17px;font-weight:700;letter-spacing:0.01em;color:#1c2b3a;", "Direction"),
+            tags$th(scope = "col", style = "padding:12px 19px;text-align:left;font-size:17px;font-weight:700;letter-spacing:0.01em;color:#1c2b3a;", "Data Source")
           )
         ),
         tags$tbody(rows)
@@ -2160,31 +3636,108 @@ app_css <- "
   *, *::before, *::after { font-family: 'EB Garamond', Garamond, Georgia, serif !important; }
 
   body {
-    background: #f0f2f6;
+    background: #f9f7f4;
     color: #1c2b3a;
   }
-  .app-header { padding: 1.4rem 0 0.6rem; border-bottom: 2px solid #e2e6ed; margin-bottom: 1.4rem; }
-  .app-header h2 { font-size: 2.6rem; font-weight: 700; color: #1c2b3a; margin: 0 0 0.2rem; letter-spacing: -0.015em; line-height: 1; }
-  .app-header p { color: #1c2b3a; font-size: 1.2rem; margin: 0; line-height: 1.6; }
-  .app-header .revision-badge { display: inline-block; background: #0d3b8e; color: white; font-size: 0.9rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-left: 10px; vertical-align: middle; letter-spacing: 0.04em; }
-  .controls-box { background: white; border-radius: 10px; padding: 1.1rem 1.6rem 1rem; margin-bottom: 1.2rem; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
-  .controls-box label { font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.07em; color: #1c2b3a; margin-bottom: 0.4rem; display: block; }
+
+  /* Phase 5.6. Shown when the reader has changed a Display setting since the
+     scorecard on screen was generated.
+
+     Sized in px, not rem: this sub-app is Bootstrap 3, which sets the root
+     font size to 10px, so rem values render about 62 percent too small. It
+     also ships its own colours rather than reading www/styles.css, which does
+     not reliably cascade into an embedded shinyApp().
+
+     Not colour-only: the bold lead-in carries the message on its own, and the
+     element is role=\"status\" so a screen reader is told without being
+     interrupted. #7a4a05 on #fdf6e6 is 6.94:1. */
+  .scorecard-stale-hint {
+    margin: 14px 0 4px;
+    padding: 12px 16px;
+    border: 1px solid #d9c48a;
+    border-left: 5px solid #a16207;
+    border-radius: 6px;
+    background: #fdf6e6;
+    color: #7a4a05;
+    font-size: 17px;
+    line-height: 1.5;
+  }
+  /* SIZING NOTE — read before adding any rem value below.
+     This sub-app is a fluidPage(), so Bootstrap 3 scaffolding sets
+     `html { font-size: 10px }` and the root is NOT pinned here. Every rem
+     in this block therefore resolves against a 10px root, which is why the
+     landing chrome rendered far smaller than intended (1.35rem guiding
+     sentence = 13.5px, 1.15rem control labels = 11.5px). The landing-page
+     chrome below is sized in px so the rendered size is what is written.
+     Untouched rem values are left as-is to avoid rescaling the whole app. */
+
+  .app-header { padding: 27px 0 16px; border-bottom: 2px solid #e0dbd2; margin-bottom: 27px; }
+  .app-header h2 { font-size: 37px; font-weight: 700; color: #6d1f2e; margin: 0 0 12px; letter-spacing: -0.015em; line-height: 1.1; }
+  /* Pure black on the #f9f7f4 page ground is 19.5:1. */
+  .app-header p { color: #000000; font-size: 19px; margin: 0; line-height: 1.65; }
+  .app-header .revision-badge { display: inline-block; background: #6d1f2e; color: white; font-size: 1rem; font-weight: 700; padding: 4px 12px; border-radius: 4px; margin-left: 12px; vertical-align: middle; letter-spacing: 0.04em; }
+  .controls-box { background: white; border-radius: 10px; border-top: 4px solid #6d1f2e; padding: 24px 28px 22px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .controls-box label { font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 0.07em; color: #1c2b3a; margin-bottom: 8px; display: block; }
   .controls-box .form-group { margin-bottom: 0; }
-  .controls-box select { font-family: 'EB Garamond', Georgia, serif; font-size: 1.1rem; color: #1c2b3a; }
-  .btn-generate { background: #0d3b8e !important; color: white !important; border: none !important; border-radius: 6px !important; font-family: 'EB Garamond', Georgia, serif !important; font-size: 1.15rem !important; font-weight: 700 !important; padding: 9px 20px !important; margin-top: 24px; width: 100%; }
-  .btn-generate:hover { background: #0a2d6e !important; }
-  .btn-download { background: white !important; color: #000000 !important; border: 1.5px solid #1c2b3a !important; border-radius: 6px !important; font-family: 'EB Garamond', Georgia, serif !important; font-size: 1.15rem !important; font-weight: 700 !important; padding: 9px 20px !important; margin-top: 24px; width: 100%; }
-  .btn-download:hover { background: #f0f4fc !important; }
+  .controls-box select, .controls-box select.form-control {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 17px;
+    color: #1c2b3a;
+    height: auto;
+    padding: 9px 11px;
+    line-height: 1.35;
+  }
+  /* Generate: site slate blue (--navy in www/styles.css). White on
+     #1c2b3a is 13.2:1; the #152233 hover is 15.4:1. */
+  .btn-generate { background: #1c2b3a !important; color: #ffffff !important; border: none !important; border-radius: 6px !important; font-family: 'EB Garamond', Georgia, serif !important; font-size: 17px !important; font-weight: 700 !important; padding: 14px 21px !important; margin-top: 34px; width: 100%; }
+  .btn-generate:hover, .btn-generate:focus { background: #152233 !important; color: #ffffff !important; }
+  .btn-download { background: white !important; color: #000000 !important; border: 1.5px solid #6d1f2e !important; border-radius: 6px !important; font-family: 'EB Garamond', Georgia, serif !important; font-size: 17px !important; font-weight: 700 !important; padding: 14px 21px !important; margin-top: 34px; width: 100%; }
+  .btn-download:hover { background: #f9f7f4 !important; }
   .btn-download:disabled, .btn-download[disabled] { opacity: 0.45 !important; cursor: not-allowed !important; }
-  .placeholder-box { background: white; border-radius: 10px; padding: 5rem 2rem; text-align: center; color: #1c2b3a; font-size: 1.15rem; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
-  .placeholder-box .ph-icon { font-size: 2.4rem; margin-bottom: 0.8rem; display: block; opacity: 0.35; }
+  .placeholder-box { background: white; border-radius: 10px; padding: 70px 28px; text-align: center; color: #1c2b3a; font-size: 19px; line-height: 1.6; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .placeholder-box .ph-icon { font-size: 2.8rem; margin-bottom: 1rem; display: block; opacity: 0.35; }
   .scorecard-frame { width: 100%; border: none; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.09); display: block; }
-  .nav-tabs { border-bottom: 2px solid #dde2ea; margin-bottom: 0; }
-  .nav-tabs .nav-link { font-family: 'EB Garamond', Georgia, serif; font-size: 1.2rem; font-weight: 600; color: #1c2b3a; border: none !important; border-radius: 0 !important; padding: 0.5rem 1.2rem 0.6rem; }
-  .nav-tabs .nav-link:hover { color: #0d3b8e; background: transparent; }
-  .nav-tabs .nav-link.active { color: #0d3b8e !important; border-bottom: 3px solid #0d3b8e !important; background: transparent !important; }
-  .tab-content { padding-top: 1.2rem; }
-  .ref-section-note { font-size: 1rem; color: #444; font-style: italic; margin: 0 0 0.9rem; }
+
+  /* TAB SELECTOR — Bootstrap 3 markup is `.nav-tabs > li > a`. The former
+     rules used the Bootstrap 4/5 `.nav-link` class, which does not exist
+     here, so nothing applied and the tabs fell back to the BS3 default
+     link blue (#337ab7). Both selector forms are carried below.
+     Black on white is 21:1; the maroon active state is 9.6:1 and is not
+     the only selection cue, since the underline rule carries it too. */
+  .nav-tabs { border-bottom: 2px solid #e0dbd2; margin-bottom: 0; }
+  .nav-tabs > li { margin-bottom: -2px; }
+  .nav-tabs > li > a,
+  .nav-tabs .nav-link {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #000000;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 14px 26px 14px;
+    line-height: 1.3;
+    margin-right: 4px;
+  }
+  .nav-tabs > li > a:hover, .nav-tabs > li > a:focus,
+  .nav-tabs .nav-link:hover {
+    color: #6d1f2e !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: inset 0 -3px 0 #d8cdb8;
+  }
+  .nav-tabs > li.active > a,
+  .nav-tabs > li.active > a:hover,
+  .nav-tabs > li.active > a:focus,
+  .nav-tabs .nav-link.active {
+    color: #6d1f2e !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: inset 0 -4px 0 #6d1f2e;
+  }
+  .tab-content { padding-top: 24px; }
+  :focus-visible { outline: 3px solid #c9a84c !important; outline-offset: 2px; }
+  .ref-section-note { font-size: 1rem; color: #444; font-style: normal; margin: 0 0 0.9rem; }
 "
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2199,8 +3752,7 @@ ui <- fluidPage(
 
     div(class = "app-header",
         tags$h2(
-          "ADA-PARC Scorecard",
-          tags$span(class = "revision-badge", "2024 Revision")
+          "ADA-PARC Scorecard"
         ),
         tags$p(
           "Select a state or category to generate a scorecard report, or visit the ",
@@ -2227,12 +3779,13 @@ ui <- fluidPage(
                            `aria-label` = "Generate National Category Scorecard")
             ),
             column(3,
-              downloadButton("download_cat", "Download HTML",
-                             class = "btn-download",
+              downloadButton("download_cat", "Download",
+                             class = "btn-download", icon = dl_icon(),
                              `aria-label` = "Download National Category Scorecard HTML")
             )
           )
         ),
+        uiOutput("cat_stale_hint"),
         uiOutput("cat_output_ui")
       ),
 
@@ -2253,12 +3806,13 @@ ui <- fluidPage(
                            `aria-label` = "Generate State Scorecard")
             ),
             column(3,
-              downloadButton("download_state", "Download HTML",
-                             class = "btn-download",
+              downloadButton("download_state", "Download",
+                             class = "btn-download", icon = dl_icon(),
                              `aria-label` = "Download State Scorecard HTML")
             )
           )
         ),
+        uiOutput("state_stale_hint"),
         uiOutput("state_output_ui")
       ),
 
@@ -2266,14 +3820,17 @@ ui <- fluidPage(
       tabPanel("About",
         br(),
         div(
-          style = paste0("background:white;border-radius:10px;padding:1.6rem 2rem 1.4rem;",
-                         "margin-bottom:1.4rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);"),
+          # Sized in px, not rem. See the SIZING NOTE in app_css: this sub-app
+          # runs on Bootstrap 3, which sets a 10px root, so the 1.35rem body
+          # copy here was rendering at 13.5px.
+          style = paste0("background:white;border-radius:12px;padding:28px 32px 26px;",
+                         "margin-bottom:22px;box-shadow:0 1px 6px rgba(0,0,0,0.07);"),
           tags$h3(
-            style = "font-size:1.7rem;font-weight:700;color:#1c2b3a;margin:0 0 0.8rem;line-height:1.3;",
+            style = "font-size:26px;font-weight:700;color:#1c2b3a;margin:0 0 14px;line-height:1.25;",
             "About the ADA-PARC Scorecard"
           ),
           tags$p(
-            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.75;margin:0 0 0.9rem;",
+            style = "font-size:17px;color:#1c2b3a;line-height:1.75;margin:0 0 15px;",
             "The ADA-PARC (Americans with Disabilities Act — Policy and Research Collaborative) ",
             "Scorecard is a comprehensive, evidence-based tool for measuring how well each U.S. ",
             "state supports the full inclusion and wellbeing of people with disabilities. ",
@@ -2282,7 +3839,7 @@ ui <- fluidPage(
             "where people with disabilities actually live, work, participate, and thrive."
           ),
           tags$p(
-            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.75;margin:0 0 0.9rem;",
+            style = "font-size:17px;color:#1c2b3a;line-height:1.75;margin:0 0 15px;",
             "Scores are drawn from multiple federal data sources, including the U.S. Census ",
             "Bureau American Community Survey (ACS), the Department of Housing and Urban ",
             "Development (HUD), the FBI's National Incident-Based Reporting System (NIBRS), ",
@@ -2291,20 +3848,20 @@ ui <- fluidPage(
             "(BEA). All scores range from 0 to 100, where higher is always better."
           ),
           tags$p(
-            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.75;margin:0 0 0.9rem;",
+            style = "font-size:17px;color:#1c2b3a;line-height:1.75;margin:0 0 15px;",
             "The scorecard is organized into three domains:"
           ),
           tags$ul(
-            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.85;margin:0 0 0.9rem;padding-left:1.6rem;",
+            style = "font-size:17px;color:#1c2b3a;line-height:1.8;margin:0 0 15px;padding-left:24px;",
             tags$li(
-              style = "margin-bottom:0.5rem;",
+              style = "margin-bottom:10px;",
               tags$strong("Community Living"), " — measures whether people with disabilities ",
               "live in integrated community settings rather than nursing homes or correctional ",
               "facilities, and whether states invest in community-based supports such as ",
               "Medicaid Home and Community-Based Services (HCBS) and affordable housing programs."
             ),
             tags$li(
-              style = "margin-bottom:0.5rem;",
+              style = "margin-bottom:10px;",
               tags$strong("Community Participation"), " — captures access to the tools and ",
               "systems that enable people with disabilities to participate fully in community life, ",
               "including technology access, health insurance coverage, educational attainment, ",
@@ -2318,7 +3875,7 @@ ui <- fluidPage(
             )
           ),
           tags$p(
-            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.75;margin:0 0 0.9rem;",
+            style = "font-size:17px;color:#1c2b3a;line-height:1.75;margin:0 0 15px;",
             "Within each domain, individual indicators are standardized using z-scores and ",
             "combined into sub-index scores, which are then aggregated into a single domain ",
             "score. States are ranked among all 50 states, Washington D.C., and Puerto Rico, ",
@@ -2329,7 +3886,7 @@ ui <- fluidPage(
             tags$strong("Poor"), " (40+)."
           ),
           tags$p(
-            style = "font-size:1.2rem;color:#1c2b3a;line-height:1.75;margin:0;",
+            style = "font-size:17px;color:#1c2b3a;line-height:1.75;margin:0;",
             "The ADA-PARC Scorecard is produced with the intention of informing policymakers, advocates, and the ",
             "public about the state of disability inclusion across the country, and to highlight ",
             "the states leading the way, as well as those with the most room to improve."
@@ -2339,6 +3896,7 @@ ui <- fluidPage(
       )
     )
   )
+  , adaparc_footer
 )
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2349,13 +3907,66 @@ server <- function(input, output, session) {
   state_rendered <- reactiveVal(FALSE)
   cat_rendered   <- reactiveVal(FALSE)
 
+  # ── Display settings inside this sub-app ─────────────────────────────────
+  # Phase 5 of docs/palette-v1-build-plan.qmd.
+  #
+  # This tab is an embedded shinyApp(), so it runs in its own session inside an
+  # <iframe>. display_settings() is defined in the Help chunk, which belongs to
+  # the parent document. Reading it from here is the same cross-domain read the
+  # national and city maps have always done with
+  # access_map_palette_selected(), and it works for the same reason: every
+  # chunk is evaluated in one environment per top-level session, so the reactive
+  # this closure captures is the parent's.
+  #
+  # It is wrapped anyway. If that read ever fails, a scorecard rendered on the
+  # default palette is a recoverable disappointment; a Generate button that
+  # throws is not.
+  current_display <- reactive({
+    tryCatch(display_settings(),
+             error = function(e) list(palette = PALETTE_DEFAULT,
+                                      contrast = CONTRAST_DEFAULT))
+  })
+
+  # What each scorecard on disk was actually rendered with. NULL until the
+  # first render. 5.6 compares this against current_display().
+  rendered_with <- reactiveValues(state = NULL, cat = NULL)
+
+  # 5.6. Auto-rendering on every dropdown change would mean a 20-second rebuild
+  # each time the reader tries a palette, which is worse than telling them.
+  stale_hint <- function(which) {
+    was <- rendered_with[[which]]
+    if (is.null(was)) return(NULL)
+    now <- current_display()
+    if (identical(was$palette, now$palette) &&
+        identical(was$contrast, now$contrast)) return(NULL)
+    div(
+      class = "scorecard-stale-hint",
+      role  = "status",
+      tags$strong("Display settings changed."),
+      " Select Generate again to apply them to this scorecard."
+    )
+  }
+  output$state_stale_hint <- renderUI(stale_hint("state"))
+  output$cat_stale_hint   <- renderUI(stale_hint("cat"))
+
+  # 5.7. A circulated file should say what it is. Named from what the file on
+  # disk was RENDERED with, not from the current setting, so a reader who
+  # changed the palette without regenerating does not download a file whose
+  # name contradicts its contents. Falls back to the current setting only when
+  # nothing has been rendered yet, in which case the handler is writing a
+  # placeholder anyway.
+  display_suffix <- function(which) {
+    ds <- rendered_with[[which]]
+    if (is.null(ds)) ds <- current_display()
+    paste0("_", ds$palette,
+           if (identical(ds$contrast, "high")) "_highcontrast" else "")
+  }
+
   shinyjs::disable("download_state")
   shinyjs::disable("download_cat")
 
   placeholder <- function(msg) {
-    div(class = "placeholder-box",
-        tags$span(class = "ph-icon", HTML("&#9634;")),
-        msg)
+    div(class = "placeholder-box", msg)
   }
 
   # ── STATE SCORECARD ────────────────────────────────────────────────────────
@@ -2364,6 +3975,10 @@ server <- function(input, output, session) {
     state_rendered(FALSE)
     shinyjs::disable("download_state")
 
+    # Read the settings ONCE, here, so the params passed to quarto and the
+    # record of what was rendered cannot describe different states even if the
+    # reader changes the palette mid-render.
+    ds <- current_display()
     state_label <- names(state_choices)[state_choices == input$state_abbr]
 
     withProgress(
@@ -2374,15 +3989,21 @@ server <- function(input, output, session) {
         tryCatch({
           quarto::quarto_render(
             input          = file.path(scorecard_dir, "state_scorecard.qmd"),
-            execute_params = list(state_abbr = input$state_abbr, year = 2024),
+            # 5.1. The reader's Display settings become render params, so the
+            # file on disk carries the palette it was generated with and the
+            # downloaded copy matches what was on screen.
+            execute_params = list(state_abbr = input$state_abbr, year = 2024,
+                                  palette  = ds$palette,
+                                  contrast = ds$contrast),
             execute_dir    = scorecard_dir
           )
           file.copy(
             file.path(scorecard_dir, "state_scorecard.html"),
-            file.path(www_dir, "state_output.html"),
+            file.path(sc_out_dir, "state_output.html"),
             overwrite = TRUE
           )
           setProgress(1)
+          rendered_with$state <- ds
           state_rendered(TRUE)
           shinyjs::enable("download_state")
         }, error = function(e) {
@@ -2416,11 +4037,11 @@ server <- function(input, output, session) {
     filename = function() {
       state_label <- names(state_choices)[state_choices == input$state_abbr]
       paste0("ADAPARC_", gsub("[^A-Za-z0-9]+", "_", state_label),
-             "_Scorecard_2024.html")
+             "_Scorecard_2024", display_suffix("state"), ".html")
     },
     content = function(file) {
-      if (file.exists(file.path(www_dir, "state_output.html"))) {
-        file.copy(file.path(www_dir, "state_output.html"), file)
+      if (file.exists(file.path(sc_out_dir, "state_output.html"))) {
+        file.copy(file.path(sc_out_dir, "state_output.html"), file)
       } else {
         writeLines("<html><body>No scorecard generated yet.</body></html>", file)
       }
@@ -2433,6 +4054,7 @@ server <- function(input, output, session) {
     cat_rendered(FALSE)
     shinyjs::disable("download_cat")
 
+    ds <- current_display()   # see the note on the state render above
     cat_label <- names(cat_choices)[cat_choices == input$category]
 
     withProgress(
@@ -2443,15 +4065,19 @@ server <- function(input, output, session) {
         tryCatch({
           quarto::quarto_render(
             input          = file.path(scorecard_dir, "category_scorecard.qmd"),
-            execute_params = list(category = input$category, year = 2024),
+            # 5.1. See the note on the state render above.
+            execute_params = list(category = input$category, year = 2024,
+                                  palette  = ds$palette,
+                                  contrast = ds$contrast),
             execute_dir    = scorecard_dir
           )
           file.copy(
             file.path(scorecard_dir, "category_scorecard.html"),
-            file.path(www_dir, "cat_output.html"),
+            file.path(sc_out_dir, "cat_output.html"),
             overwrite = TRUE
           )
           setProgress(1)
+          rendered_with$cat <- ds
           cat_rendered(TRUE)
           shinyjs::enable("download_cat")
         }, error = function(e) {
@@ -2485,11 +4111,11 @@ server <- function(input, output, session) {
     filename = function() {
       cat_label <- names(cat_choices)[cat_choices == input$category]
       paste0("ADAPARC_", gsub("[^A-Za-z0-9]+", "_", cat_label),
-             "_Scorecard_2024.html")
+             "_Scorecard_2024", display_suffix("cat"), ".html")
     },
     content = function(file) {
-      if (file.exists(file.path(www_dir, "cat_output.html"))) {
-        file.copy(file.path(www_dir, "cat_output.html"), file)
+      if (file.exists(file.path(sc_out_dir, "cat_output.html"))) {
+        file.copy(file.path(sc_out_dir, "cat_output.html"), file)
       } else {
         writeLines("<html><body>No scorecard generated yet.</body></html>", file)
       }
@@ -2512,10 +4138,36 @@ library(htmltools)
 # flexdashboard embedded shinyApp(), and Posit Connect.
 shiny::addResourcePath("factsheets", normalizePath("www/factsheets", mustWork = FALSE))
 
-# Fact sheet metadata — title, subtitle, description, and filename
+# Fact sheet metadata — title, subtitle, description, and filename.
+#
+# Sheets are listed in the order they should appear within their category.
+# Adding a sheet here is only half the job: the HTML file also has to be
+# promoted into www/factsheets/ with scripts/promote_factsheets.R.
+#
+# The Nursing Home Rates sheet was retired on 28 July 2026 and replaced by
+# Living in Institution, which carries its content forward with a corrected
+# denominator. The retired file is kept in factsheets/old/retired-2026-07-28/
+# and is not served.
 fact_sheets <- list(
   list(
+    id       = "living-community",
+    category = "Community Living",
+    title    = "Living in Community",
+    subtitle = "At Home and in Non-Institutional Group Quarters",
+    desc     = "Shows the share of people with disabilities living in the community in each state, covering both living at home and living in non-institutional group quarters such as group homes.",
+    file     = "factsheet-living-community.html"
+  ),
+  list(
+    id       = "living-institution",
+    category = "Community Living",
+    title    = "Living in Institution",
+    subtitle = "Nursing Homes, Medical Facilities and Correctional Facilities",
+    desc     = "Shows the share of people with disabilities living in institutions, broken into nursing homes and medical facilities and adult correctional facilities, with nursing home rates by age group.",
+    file     = "factsheet-living-institution.html"
+  ),
+  list(
     id       = "housing",
+    category = "Community Living",
     title    = "Access to Housing",
     subtitle = "Community Living for People with Disabilities",
     desc     = "Examines access to Public Housing and Housing Choice Voucher programs for people with disabilities, with state-by-state rankings and interactive maps.",
@@ -2523,26 +4175,59 @@ fact_sheets <- list(
   ),
   list(
     id       = "hcbs",
-    title    = "State HCBS Spending",
-    subtitle = "Home and Community-Based Services",
-    desc     = "Compares state Medicaid spending on Home and Community-Based Services that support people with disabilities in living in the community.",
+    category = "Community Living",
+    title    = "Spending on Home & Community Based Services",
+    subtitle = "Medicaid HCBS Spending per Recipient",
+    desc     = "Compares state Medicaid spending on Home and Community-Based Services that support people with disabilities in living in the community, and how each state divides its long-term care budget between community and institutional settings.",
     file     = "factsheet-hcbs.html"
   ),
   list(
-    id       = "nursing-home",
-    title    = "Nursing Home Rates",
-    subtitle = "Institutionalization Ages 18 to 64",
-    desc     = "Shows rates of nursing home institutionalization among working-age people with disabilities across all 50 states, with tier-based rankings.",
-    file     = "factsheet-nursing-home.html"
-  ),
-  list(
     id       = "poverty",
-    title    = "Poverty Rates",
+    category = "Work & Economic",
+    title    = "Poverty",
     subtitle = "Working-Age People with Disabilities",
     desc     = "Compares poverty rates between people with and without disabilities of working age, highlighting state-level disparities across the country.",
     file     = "factsheet-poverty.html"
+  ),
+  list(
+    id       = "employment",
+    category = "Work & Economic",
+    title    = "Employment",
+    subtitle = "Employment, Unemployment and Labor Force Participation, Ages 18 to 64",
+    desc     = "Shows how many working-age people with disabilities are employed, unemployed, or outside the labor force in each state, with labor force participation and unemployment rates reported separately.",
+    file     = "factsheet-employment.html"
+  ),
+  list(
+    id       = "health-insurance",
+    category = "Community Participation",
+    title    = "Health Insurance Access",
+    subtitle = "Coverage and Coverage Type, Ages 19 to 64 and 65 and Over",
+    desc     = "Examines health insurance among people with disabilities, covering uninsured rates and the split between public and private coverage, and showing how far public programs close a gap that employer insurance leaves open.",
+    file     = "factsheet-health-insurance.html"
+  ),
+  list(
+    id       = "commuting",
+    category = "Community Participation",
+    title    = "Commuting to Work",
+    subtitle = "How Workers with Disabilities Travel, Age 16 and Over",
+    desc     = "Shows how workers with disabilities get to work, by public transit and by driving alone, alongside the share of each population counted as a commuting worker at all.",
+    file     = "factsheet-commuting.html"
+  ),
+  list(
+    id       = "education",
+    category = "Community Participation",
+    title    = "Educational Attainment",
+    subtitle = "Adults with Disabilities Age 25 and Over",
+    desc     = "Compares educational attainment between adults with and without disabilities, from those who did not complete high school through to those holding a bachelor's degree or higher.",
+    file     = "factsheet-education.html"
   )
 )
+
+# Category display order, matching the ADA-PARC outcome domains as presented on
+# the rest of the site. Categories with no sheets yet still render with a
+# "coming soon" note so the structure signals where new sheets will appear;
+# Community Participation is in that state until its four sheets are built.
+fs_categories <- c("Community Living", "Work & Economic", "Community Participation")
 
 ui <- fluidPage(
   tags$head(
@@ -2561,7 +4246,7 @@ ui <- fluidPage(
         padding: 2.25rem 1.75rem 3rem;
       }
       .fs-heading {
-        font-size: 2.1rem;
+        font-size: 2.6rem;
         font-weight: 700;
         color: #6b0f0f;
         margin: 0 0 0.4rem;
@@ -2569,61 +4254,76 @@ ui <- fluidPage(
         padding-left: 0.75rem;
       }
       .fs-subheading {
-        font-size: 1.2rem;
-        color: #444;
+        font-size: 1.4rem;
+        color: #1c1c1c;
         margin: 0 0 2rem 0;
         padding-left: 0.75rem;
         line-height: 1.6;
       }
-      .fs-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.75rem;
+      /* ── Categorized list ─────────────────────────────────────────── */
+      .fs-category {
         margin-bottom: 2.25rem;
       }
-      @media (max-width: 620px) {
-        .fs-grid { grid-template-columns: 1fr; }
-      }
-      .fs-card {
-        background: #fff;
-        border: 1px solid #e0dbd2;
-        border-top: 5px solid #6b0f0f;
-        border-radius: 5px;
-        padding: 1.9rem 1.75rem 1.6rem;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-        transition: box-shadow 0.15s;
-        min-height: 220px;
-      }
-      .fs-card:hover {
-        box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-      }
-      .fs-card-subtitle {
-        font-size: 1rem;
+      .fs-category-heading {
+        font-size: 1.75rem;
         font-weight: 700;
         color: #6b0f0f;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin: 0 0 0.45rem;
+        margin: 0 0 0.9rem;
+        padding: 0.15rem 0 0.15rem 0.75rem;
+        border-left: 5px solid #c8a743;
       }
-      .fs-card-title {
-        font-size: 1.45rem;
+      .fs-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        border: 1px solid #e0dbd2;
+        border-radius: 5px;
+        overflow: hidden;
+        background: #fff;
+      }
+      .fs-row {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.35rem 1.6rem;
+        border-top: 1px solid #ece7de;
+      }
+      .fs-row:first-child {
+        border-top: none;
+      }
+      .fs-row:hover {
+        background: #fbf9f6;
+      }
+      .fs-row-main {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .fs-row-title {
+        font-size: 1.6rem;
         font-weight: 700;
         color: #1c1c1c;
-        margin: 0 0 0.75rem;
+        margin: 0 0 0.3rem;
       }
-      .fs-card-desc {
-        font-size: 1.15rem;
-        color: #444;
-        line-height: 1.65;
-        flex-grow: 1;
-        margin-bottom: 1.35rem;
+      .fs-row-desc {
+        font-size: 1.3rem;
+        color: #1c1c1c;
+        line-height: 1.6;
+        margin: 0;
+      }
+      .fs-empty-cat {
+        padding: 1.35rem 1.6rem;
+        font-size: 1.3rem;
+        color: #4a4a4a;
+        font-style: italic;
+      }
+      @media (max-width: 620px) {
+        .fs-row { flex-direction: column; align-items: stretch; gap: 0.9rem; }
       }
       .fs-btn-row {
         display: flex;
         gap: 0.65rem;
         flex-wrap: wrap;
+        flex: 0 0 auto;
       }
       .fs-btn-view {
         flex: 1;
@@ -2634,7 +4334,7 @@ ui <- fluidPage(
         border-radius: 4px;
         padding: 0.6rem 1rem;
         font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         font-weight: 600;
         cursor: pointer;
         text-align: center;
@@ -2663,7 +4363,7 @@ ui <- fluidPage(
         border-radius: 4px;
         padding: 0.6rem 1rem;
         font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         font-weight: 600;
         cursor: pointer;
         text-align: center;
@@ -2693,7 +4393,7 @@ ui <- fluidPage(
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         gap: 1rem;
       }
       .fs-preview-bar span {
@@ -2721,10 +4421,10 @@ ui <- fluidPage(
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #595959;
-        font-size: 1.15rem;
+        color: #1c1c1c;
+        font-size: 1.35rem;
         background: #fafaf8;
-        font-style: italic;
+        font-style: normal;
       }
     "))
   ),
@@ -2737,35 +4437,48 @@ ui <- fluidPage(
       "Select any fact sheet to preview it below, or download the HTML file directly."
     ),
 
-    # Card grid
-    div(class = "fs-grid",
-      lapply(fact_sheets, function(fs) {
-        div(class = "fs-card",
-          p(class = "fs-card-subtitle", fs$subtitle),
-          h3(class = "fs-card-title", fs$title),
-          p(class = "fs-card-desc", fs$desc),
-          div(class = "fs-btn-row",
-            tags$button(
-              class   = "fs-btn-view",
-              id      = paste0("view_", fs$id),
-              onclick = paste0("loadFS('", fs$file, "', '", fs$title, "', this)"),
-              "View"
-            ),
-            tags$a(
-              class    = "fs-btn-dl",
-              href     = paste0("factsheets/", fs$file),
-              download = fs$file,
-              "Download"
-            )
+    # Categorized list — one section per category, each a list of fact sheet rows
+    lapply(fs_categories, function(cat) {
+      sheets_in_cat <- Filter(function(fs) fs$category == cat, fact_sheets)
+      tags$section(class = "fs-category", `aria-label` = cat,
+        h3(class = "fs-category-heading", cat),
+        if (length(sheets_in_cat) == 0) {
+          div(class = "fs-list",
+            p(class = "fs-empty-cat", "Fact sheets for this category are coming soon.")
           )
-        )
-      })
-    ),
+        } else {
+          tags$ul(class = "fs-list",
+            lapply(sheets_in_cat, function(fs) {
+              tags$li(class = "fs-row",
+                div(class = "fs-row-main",
+                  h4(class = "fs-row-title", fs$title),
+                  p(class = "fs-row-desc", fs$desc)
+                ),
+                div(class = "fs-btn-row",
+                  tags$button(
+                    class   = "fs-btn-view",
+                    id      = paste0("view_", fs$id),
+                    onclick = paste0("loadFS('", fs$file, "', '", fs$title, "', this)"),
+                    "View"
+                  ),
+                  tags$a(
+                    class    = "fs-btn-dl",
+                    href     = paste0("factsheets/", fs$file),
+                    download = fs$file,
+                    "Download"
+                  )
+                )
+              )
+            })
+          )
+        }
+      )
+    }),
 
     # Preview pane
     div(class = "fs-preview-wrap",
       div(class = "fs-preview-bar",
-        tags$span(id = "fs_current_title", "Select a fact sheet above to preview it here"),
+        tags$span(id = "fs_current_title", ""),
         tags$a(
           id     = "fs_open_new",
           href   = "#",
@@ -2814,6 +4527,7 @@ ui <- fluidPage(
       openLink.style.display = 'inline';
     }
   "))
+  , adaparc_footer
 )
 
 server <- function(input, output, session) {}
@@ -2837,23 +4551,29 @@ tags$style(HTML("
   }
 
   /* ── Page heading ───────────────────────────────────────────────── */
+  .help-banner {
+    background: #f9f7f4;
+    border-bottom: 3px solid #e8e4db;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.25rem;
+    border-radius: 6px 6px 0 0;
+  }
+
   .help-heading {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
     font-size: 3rem;
     font-weight: 700;
-    color: #1c2b3a;
+    color: #6d1f2e;
     margin: 0 0 0.25rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #c8a743;
     letter-spacing: -0.01em;
   }
 
   .help-subheading {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
     font-size: 1.6rem;
-    color: #252930;
-    font-style: italic;
-    margin: 0 0 2rem 0;
+    color: #2c2c2c;
+    font-style: normal;
+    margin: 0;
   }
 
   /* ── Section cards ──────────────────────────────────────────────── */
@@ -2871,8 +4591,6 @@ tags$style(HTML("
     font-weight: 700;
     color: #591313;
     margin: 0 0 0.6rem 0;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
   }
 
   .help-card p {
@@ -2898,7 +4616,7 @@ tags$style(HTML("
   .help-card .selectize-input,
   .help-card .selectize-dropdown {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 1.6rem;
+    font-size: 1.15rem;
     border-color: #d0d7e2;
   }
 
@@ -2910,67 +4628,514 @@ tags$style(HTML("
   .help-palette-note {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
     font-size: 1.6rem;
-    color: #4a5568;
-    font-style: italic;
+    color: #1c2b3a;
+    font-style: normal;
     margin-top: 0.6rem;
     margin-bottom: 0;
   }
+
+  /* ── Contact Us button ──────────────────────────────────────────── */
+  .help-wrap .email-button {
+    color: #7B1A1A !important;
+    background-color: #ffffff !important;
+    border: none !important;
+  }
+
+  .help-wrap .email-button:hover,
+  .help-wrap .email-button:focus {
+    color: #7B1A1A !important;
+    background-color: #ffffff !important;
+  }
+
+  /* -- Glossary definition list -------------------------------------- */
+  .glossary-list {
+    margin: 0.25rem 0 1.25rem 0;
+  }
+
+  .glossary-list dt {
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #591313;
+    margin-top: 1.1rem;
+  }
+
+  .glossary-list dt:first-of-type {
+    margin-top: 0;
+  }
+
+  .glossary-list dd {
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 1.4rem;
+    color: #1c2b3a;
+    line-height: 1.7;
+    margin: 0.2rem 0 0 0;
+  }
+
+  .btn-glossary-download {
+    display: inline-block;
+    padding: 0.5rem 1.2rem;
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    background-color: #7B1A1A !important;
+    border: none !important;
+    border-radius: 4px !important;
+    text-decoration: none !important;
+    margin-top: 0.5rem;
+  }
+
+  .btn-glossary-download:hover,
+  .btn-glossary-download:focus {
+    background-color: #5e1414 !important;
+    color: #ffffff !important;
+  }
+
+  .btn-glossary-download:focus {
+    outline: 3px solid #c8a743 !important;
+    outline-offset: 2px;
+  }
 "))
+
+# ── Glossary data ──────────────────────────────────────────────────
+# Definitions for terms mapped to a variable are pulled from dict_vars
+# (national_summary_text) so the glossary stays in sync with the data
+# dictionary. Terms with no matching variable use a plain-language fallback.
+gloss_def <- function(key, fallback = NA_character_) {
+  v <- dict_vars %>%
+    filter(var_readable == key, !is.na(national_summary_text)) %>%
+    head(1) %>%
+    pull(national_summary_text)
+  if (length(v) == 0 || is.na(v) || !nzchar(trimws(v))) fallback else trimws(v)
+}
+
+glossary_df <- tibble::tibble(
+  Term = c(
+    "PWD (People with Disabilities)",
+    "CNI (Civilian Noninstitutional Population)",
+    "Group Quarters",
+    "Nursing Home (Institutional Group Quarters)",
+    "Non-Institutional (Community)",
+    "HCBS (Home and Community-Based Services)",
+    "ACS Five-Year Estimates",
+    "Community Living",
+    "Community Participation",
+    "Work and Economic"
+  ),
+  Definition = c(
+    gloss_def("pct_cni_total_dis"),
+    gloss_def("pop_cni_total_all"),
+    gloss_def(
+      "pop_grpquarters",
+      paste(
+        "Group quarters are places where people live or stay in a group",
+        "living arrangement that is owned or managed by an organization",
+        "providing housing or services. The Census Bureau divides them into",
+        "institutional settings (such as nursing homes and correctional",
+        "facilities) and non-institutional settings (such as group homes,",
+        "shelters, and college housing)."
+      )
+    ),
+    gloss_def("pop_grp_instgroupquarters_total_dis"),
+    gloss_def("pct_grp_dis_noninstgroupquarters"),
+    paste(
+      "Home and Community-Based Services are Medicaid-funded supports that",
+      "help people with disabilities and older adults live in their own",
+      "homes and communities instead of in institutions such as nursing",
+      "homes. They can include personal care, in-home assistance, and day",
+      "programs."
+    ),
+    paste(
+      "The American Community Survey (ACS) is an ongoing U.S. Census Bureau",
+      "survey. Five-year estimates combine data collected over 60 months,",
+      "which produces more reliable statistics for small populations and",
+      "geographies than single-year estimates, though the figures are less",
+      "current."
+    ),
+    paste(
+      "One of the three ADA-PARC outcome domains. It measures whether people",
+      "with disabilities live in the community, at home or in community-based",
+      "settings, rather than in institutions such as nursing homes or",
+      "correctional facilities."
+    ),
+    paste(
+      "One of the three ADA-PARC outcome domains. It measures access to",
+      "community life for people with disabilities, including transportation,",
+      "education, health insurance, and access to technology."
+    ),
+    paste(
+      "One of the three ADA-PARC outcome domains. It measures economic",
+      "outcomes for people with disabilities, including employment, income,",
+      "poverty, and housing affordability."
+    )
+  )
+)
+
+glossary_dl <- tags$dl(
+  class = "glossary-list",
+  lapply(seq_len(nrow(glossary_df)), function(i) {
+    tagList(
+      tags$dt(glossary_df$Term[i]),
+      tags$dd(glossary_df$Definition[i])
+    )
+  })
+)
 
 # Help page content
 div(class = "help-wrap",
 
   # Page title
-  tags$h1("Help", class = "help-heading"),
-  tags$p("Resources and settings for the ADA-PARC Data Tool.", class = "help-subheading"),
-
-  # Contact card
-  div(class = "help-card",
-    tags$p(class = "help-card-title", "Contact"),
-    tags$p(
-      "For questions about the data, methodology, or site functionality, please reach out to our team."
-    ),
-    tags$a(
-      href  = "mailto:joyhammel@uic.edu",
-      class = "email-button",
-      "Contact Us"
-    )
+  div(class = "help-banner",
+    tags$h1("Help", class = "help-heading"),
+    tags$p("Resources and settings for the ADA-PARC Data Tool.", class = "help-subheading")
   ),
 
   # Map settings card
   div(class = "help-card",
     tags$p(class = "help-card-title", "Map Display Settings"),
-    {
-      ada_parc_colors <- c("#f7e49c", "#fa8e57", "#c41306", "#630801")
-      ada_parc_palette <- colorRampPalette(ada_parc_colors)
-
-      access_map_palette_choices <<- list(
-        "ADA-PARC"              = ada_parc_palette,
-        "Purple Gradient"       = "Purples",
-        "Yellow-Orange-Red"     = "YlOrRd",
-        "Grayscale Gradient"    = "Greys",
-        "Teal-Blue Gradient"    = "GnBu",
-        "Green-Yellow Gradient" = "YlGn",
-        "Brown-Blue Diverging"  = "BrBG"
-      )
-      selectInput(
-        inputId  = "access_map_palette",
-        label    = "Select Map Color Palette:",
-        choices  = names(access_map_palette_choices),
-        selected = "ADA-PARC"
-      )
-    },
+    # Palette choices come from ADAPARC_PALETTES in scripts/palettes.R. No hex is
+    # inlined here, and no ColorBrewer name is used: every option is an explicit
+    # four-stop ramp that has been measured against the admission criteria in
+    # that file (adjacent-bin separation of at least 15 CIEDE2000 under normal
+    # vision and under simulated protanopia, deuteranopia and tritanopia).
+    #
+    # The six non-brand options that shipped before this (Purple Gradient,
+    # Yellow-Orange, Yellow-Orange-Red, Grayscale Gradient, Teal-Blue Gradient,
+    # Green-Yellow Gradient) were retired on 2026-07-30; each either failed or
+    # sat marginal against that floor. See docs/color-palette-expansion.qmd.
+    #
+    # `choices` is a named vector of label -> id, so input$access_map_palette
+    # carries the STABLE id ("heritage") rather than the display label. Renaming
+    # a palette in the UI therefore cannot break the reactive below.
+    selectInput(
+      inputId  = "access_map_palette",
+      label    = "Select Map Color Palette:",
+      choices  = map_palette_choices(),
+      selected = PALETTE_DEFAULT
+    ),
     tags$p(class = "help-palette-note",
-      "Your selected palette applies to choropleth maps in national data, city data."
+      "Your selected palette applies to maps in national data and city data, and is a visual preference only. It does not change how the maps are read: on national maps, darker colors always mean more opportunity and lighter colors mean more disparity, whichever palette you choose."
+    ),
+    # Plain-language description of the palette currently selected, so the
+    # reason to pick one over another is visible at the point of choice rather
+    # than buried in documentation.
+    uiOutput("access_map_palette_note"),
+    tags$p(class = "help-palette-note",
+      "Scorecards and fact sheets always use the ADA-PARC palette and are not affected by this setting."
+    ),
+    # The Display button is available on every page. This dropdown is kept in
+    # step with it, and stays here because Help is where the explanation of the
+    # palettes lives; the panel is where a reader looking at a map wants the
+    # control. Neither is authoritative; both write through
+    # set_display_settings(). High contrast has no copy here because it needs
+    # no explanation, only a switch.
+    tags$p(class = "help-palette-note",
+      "You can also change this without leaving a map: use the ",
+      tags$strong("Display"),
+      " button in the bottom right corner of any page, which also carries the high contrast setting."
     )
+  ),
+
+  # Glossary card
+  div(class = "help-card",
+    tags$p(class = "help-card-title", "Glossary"),
+    tags$p(
+      "Plain-language definitions for terms used throughout the ADA-PARC Data Tool. Download the full glossary as a CSV file."
+    ),
+    glossary_dl,
+    downloadButton("download_glossary", "Download Glossary (CSV)",
+                   class = "btn-glossary-download", icon = dl_icon(),
+                   `aria-label` = "Download glossary of terms as a CSV file")
+  ),
+
+  # Contact note
+  tags$p(
+    "For questions about the data, methodology, or site functionality, please reach out to our team.",
+    class = "help-palette-note",
+    style = "margin-top: 1.5rem;"
+  ),
+  tags$a(
+    href  = "mailto:joyhammel@uic.edu",
+    class = "email-button",
+    "Contact Us"
   )
 
+  , adaparc_footer
 )
 
-# Reactive Palette Selection (unchanged)
-access_map_palette_selected <- reactive({
-  access_map_palette_choices[[input$access_map_palette]]
+# ══════════════════════════════════════════════════════════════════════════
+# DISPLAY SETTINGS
+# ══════════════════════════════════════════════════════════════════════════
+# One source for the two reader-facing display choices, palette and contrast.
+# Phase 2 of docs/palette-v1-build-plan.qmd, added 2026-08-03.
+#
+# WHY NOT JUST READ input$access_map_palette. From phase 3 there are two
+# controls bound to the same setting: this Help page dropdown and the floating
+# Display panel reachable from every tab. Two inputs cannot both be "the"
+# setting. Everything downstream reads display_settings() instead, so adding a
+# third control later is one more observer and no change anywhere else.
+#
+# SESSION SCOPE, AND WHY IT MATTERS HERE. These are per-session reactives,
+# deliberately not globals. scripts/palettes.R is sourced into the global
+# environment, which is correct for constants, but a display setting held there
+# would be shared by every visitor to the deployed app, and two readers would
+# fight over each other's palette.
+
+display_state <- reactiveValues(
+  palette           = PALETTE_DEFAULT,
+  contrast          = CONTRAST_DEFAULT,
+  # TRUE once the URL has been read and found to carry an explicit ?contrast=.
+  # Only the prefers-contrast observer reads it, to know whether to stand down.
+  contrast_from_url = FALSE
+)
+
+# The single source. Every consumer reads from here, never from an input id.
+display_settings <- reactive({
+  list(
+    palette  = pal_id(display_state$palette),
+    contrast = pal_contrast_mode(display_state$contrast)
+  )
 })
+
+# Write a setting, keep every bound control in step, and mirror it into the URL
+# so a reader can bookmark or share the view they configured.
+#
+# mode = "replace" rather than "push": changing palette three times should not
+# put three entries in the reader's back button.
+#
+# The early return on "nothing changed" is what stops the loop between this and
+# the dropdown observer below, which fires again when updateSelectInput lands.
+set_display_settings <- function(palette = NULL, contrast = NULL,
+                                 announce = TRUE) {
+  changed <- character(0)
+
+  if (!is.null(palette)) {
+    p <- pal_id(palette)
+    if (!identical(p, display_state$palette)) {
+      display_state$palette <- p
+      changed <- c(changed, "palette")
+    }
+  }
+  if (!is.null(contrast)) {
+    k <- pal_contrast_mode(contrast)
+    if (!identical(k, display_state$contrast)) {
+      display_state$contrast <- k
+      changed <- c(changed, "contrast")
+    }
+  }
+  if (!length(changed)) return(invisible(FALSE))
+
+  updateSelectInput(
+    session  = getDefaultReactiveDomain(),
+    inputId  = "access_map_palette",
+    selected = display_state$palette
+  )
+  updateQueryString(
+    paste0("?palette=",   display_state$palette,
+           "&contrast=",  display_state$contrast),
+    mode = "replace"
+  )
+  push_display_panel(announce = if (announce) changed else character(0))
+  invisible(TRUE)
+}
+
+# Push the FULL state to the floating Display panel in www/cssloaders.html.
+#
+# Full state, never a delta, so the panel and the Help page dropdown cannot
+# drift apart: whatever R believes is what both controls show. The choices list
+# travels with it so the panel's <option> list is built from
+# map_palette_choices() rather than being a second hardcoded list of palettes.
+#
+# `announce` names which settings changed. The panel drops the sentence into an
+# aria-live region, so a screen reader user learns the setting took effect; a
+# sighted reader sees the map recolour, and this is the equivalent.
+push_display_panel <- function(announce = character(0)) {
+  sess <- getDefaultReactiveDomain()
+  if (is.null(sess)) return(invisible(FALSE))
+
+  choices <- map_palette_choices()      # label -> id
+  ids     <- unname(choices)
+  labels  <- names(choices)
+  pal_lab <- labels[match(display_state$palette, ids)]
+  high    <- identical(display_state$contrast, "high")
+
+  said <- character(0)
+  if ("palette" %in% announce) {
+    said <- c(said, paste0("Map color palette set to ", pal_lab, "."))
+  }
+  if ("contrast" %in% announce) {
+    said <- c(said, if (high)
+      "High contrast turned on." else "High contrast turned off.")
+  }
+
+  # Say plainly that high contrast has taken the palette over. Without this the
+  # selector reads "Cividis" while the map is black and white, which looks like
+  # a bug rather than a setting.
+  note <- map_palette_note(display_state$palette)
+  if (high) {
+    note <- paste(note,
+                  "High contrast is on, so maps are currently drawn in High",
+                  "Contrast Mono. Turning it off restores this palette.")
+  }
+
+  # Empty string, not NULL, for `announce`. A NULL in an R list serialises to a
+  # JSON empty object, which is TRUTHY in JavaScript, and the live region would
+  # end up announcing "[object Object]".
+  sess$sendCustomMessage("adaparcDisplaySync", list(
+    choices  = lapply(seq_along(ids),
+                      function(i) list(id = ids[i], label = labels[i])),
+    palette  = display_state$palette,
+    contrast = display_state$contrast,
+    note     = note,
+    announce = paste(said, collapse = " "),
+    # Phase 4.3. The generated :root block travels with the state that produced
+    # it, in the same message, so the tokens and the data-adaparc-contrast hook
+    # in www/styles.css cannot end up describing different modes. This is why
+    # it is not a separate shinyjs::runjs() call: two channels would be two
+    # chances to arrive out of order.
+    css      = pal_css_rules(display_state$palette, display_state$contrast)
+  ))
+  invisible(TRUE)
+}
+
+# Read the settings out of the URL once, on load, so ?palette=cividis_r or
+# ?contrast=high arrives already applied. Unknown or misspelled values are
+# absorbed by pal_id() and pal_contrast_mode(); a wrong colour is recoverable
+# and a blank map is not.
+#
+# The unconditional push at the end used to be what populated the panel on a
+# cold load. It is now a belt-and-braces second chance rather than the
+# mechanism, because it fires on the session's first flush and could beat the
+# browser's registration of the 'adaparcDisplaySync' handler, in which case
+# Shiny discards the message and the panel's select stays empty. The panel now
+# asks for its own state; see the display_panel_ready observer below. This push
+# is kept because when it does win the race it saves a round trip, and when it
+# loses it costs nothing. Silent either way: nothing has changed from the
+# reader's point of view, so there is nothing to announce.
+observeEvent(TRUE, {
+  sess <- getDefaultReactiveDomain()
+  if (is.null(sess)) return()
+  qs <- parseQueryString(sess$clientData$url_search)
+  # Recorded so the operating-system preference below knows to stand down. An
+  # explicit ?contrast= in the URL is the reader saying what they want for THIS
+  # view, and it outranks a machine-wide default.
+  display_state$contrast_from_url <- !is.null(qs$contrast)
+  if (!is.null(qs$palette) || !is.null(qs$contrast)) {
+    set_display_settings(palette = qs$palette, contrast = qs$contrast,
+                         announce = FALSE)
+  }
+  push_display_panel()
+}, once = TRUE)
+
+# Phase 1.1 of docs/palette-v2-build-plan.qmd, 2026-08-03. The other half of
+# the handshake. The floating panel sets this input once it has registered its
+# custom message handler and the websocket is up; R replies with the full
+# state, exactly as push_display_panel() sends it anywhere else.
+#
+# WHY THE ASK COMES FROM THE BROWSER. Shiny drops a custom message SILENTLY
+# when nothing is listening for its name. Only the browser knows when it has
+# finished listening, so only the browser can say when it is safe to send. The
+# server cannot detect the failure and cannot retry on a condition it cannot
+# observe.
+#
+# NOT once = TRUE. A reconnecting session re-registers the handler and asks
+# again, and the panel would otherwise come back empty for the rest of the
+# visit. push_display_panel() is idempotent, and the panel's applyState()
+# rebuilds the option list only when it actually differs, so an extra push
+# costs one message and disturbs nothing the reader is looking at.
+#
+# Silent. This is a delivery mechanism, not a setting change, and the live
+# region should not announce a palette the reader did not choose.
+observeEvent(input$display_panel_ready, {
+  push_display_panel()
+}, ignoreInit = TRUE, ignoreNULL = TRUE)
+
+# 4.5. Honour `prefers-contrast: more` on a cold load, so a reader who has
+# already configured their machine does not have to find the panel.
+#
+# WHY THIS COMES FROM THE BROWSER RATHER THAN A CSS MEDIA QUERY. A media query
+# would restyle the chrome but leave the maps on the reader's chosen palette,
+# because those are ggplot and leaflet fills chosen in R and baked into the
+# output. The whole point of routing everything through display_settings() is
+# that the two cannot disagree, so the preference is read once in JavaScript and
+# applied as a setting like any other.
+#
+# Read ONCE, at connect, and never again. Watching the media query live would
+# mean a reader who turns high contrast off in the panel gets it turned back on
+# by their operating system, which is the machine overruling the person.
+observeEvent(input$display_os_prefers_contrast, {
+  if (isTRUE(display_state$contrast_from_url)) return()
+  if (!isTRUE(input$display_os_prefers_contrast)) return()
+  set_display_settings(contrast = "high", announce = FALSE)
+}, ignoreInit = TRUE, ignoreNULL = TRUE, once = TRUE)
+
+# ── The two controls ──────────────────────────────────────────────────────
+# Both are CONTROLS over the setting, not the setting. Each one only ever calls
+# set_display_settings(); neither reads the other, and neither is authoritative.
+# Adding a third is one more observer here and no change anywhere else.
+#
+# ignoreInit on the Help dropdown so the first flush does not write a query
+# string onto a URL the reader never touched. The panel inputs need no such
+# guard, because they are only ever set from a real change event in the browser.
+observeEvent(input$access_map_palette, {
+  set_display_settings(palette = input$access_map_palette)
+}, ignoreInit = TRUE)
+
+observeEvent(input$display_panel_palette, {
+  set_display_settings(palette = input$display_panel_palette)
+}, ignoreInit = TRUE, ignoreNULL = TRUE)
+
+observeEvent(input$display_panel_contrast, {
+  set_display_settings(
+    contrast = if (isTRUE(input$display_panel_contrast)) "high" else "standard"
+  )
+}, ignoreInit = TRUE, ignoreNULL = TRUE)
+
+
+# ── Reactive palette selection ────────────────────────────────────────────
+# Returns a colorRampPalette FUNCTION rather than a colour vector, because both
+# consumers (render_national_map() in scripts/functions.R and city_map_colors()
+# below) already branch on is.function(). Keeping that contract means this swap
+# needed no change in either consumer.
+#
+# pal_effective_fill_id() is where high contrast overrides the reader's palette
+# with High Contrast Mono. It lives in scripts/palettes.R and is the same helper
+# pal_css_vars() calls, so the maps and the stylesheet cannot end up disagreeing
+# about what high contrast means.
+access_map_fill_id <- reactive({
+  ds <- display_settings()
+  pal_effective_fill_id(ds$palette, ds$contrast)
+})
+
+access_map_palette_selected <- reactive({
+  colorRampPalette(pal_fill(4, access_map_fill_id()))
+})
+
+# No-data fill for the currently selected palette. Per-palette, not global:
+# High Contrast Mono spans pure white to pure black, so the shared grey would be
+# indistinguishable from its lightest band. See the NO-DATA note in palettes.R.
+access_map_na_selected <- reactive({
+  pal_na(access_map_fill_id())
+})
+
+# Description of the selected palette, shown under the dropdown. This reports
+# what the READER CHOSE, not the effective fill, so a high contrast reader still
+# sees the description of the palette they will get back when they turn it off.
+output$access_map_palette_note <- renderUI({
+  tags$p(class = "help-palette-note",
+         tags$strong("About this palette: "),
+         map_palette_note(display_settings()$palette))
+})
+
+# Glossary CSV download (content built from glossary_df, so the file
+# always matches the definition list shown on the Help page).
+output$download_glossary <- downloadHandler(
+  filename = function() "ADAPARC_Glossary.csv",
+  content  = function(file) {
+    readr::write_csv(glossary_df, file)
+  }
+)
 ```
 
 <!-- Custom Javascript  -->
@@ -3087,11 +5252,6 @@ z-index: 10000;
 overflow-y: auto;
 }
 
-/* Scroll overflow for tables */
-.table-wrapper {
-overflow-x: scroll;
-overflow-y: scroll;
-}
 
 </style>
 ```

@@ -50,3 +50,7 @@ old/
 config.yml
 data/.DS_Store
 .DS_Store
+
+# Rendered scorecard outputs — generated at runtime into tempdir, never deploy
+www/state_output.html
+www/cat_output.html

@@ -17,6 +17,15 @@
   font-family: 'EB Garamond', Garamond, Georgia, serif !important;
 }
 
+/* ── Hide decorative glyphicons on download buttons ────────────────────── */
+/* Shiny's downloadButton() auto-injects a glyphicon-download-alt icon.    */
+/* The Glyphicons Halflings font is unreliable in this stack; hiding the   */
+/* icon is cleaner and more accessible (buttons have clear text labels).   */
+.btn-download .glyphicon,
+.btn-glossary-download .glyphicon {
+  display: none !important;
+}
+
 /* ── SVG text override ─────────────────────────────────────────────────── */
 /* ggplot, ggiraph, plotly, and similar libraries can emit explicit        */
 /* font-family attributes on <text>/<tspan> elements. Belt-and-suspenders  */
@@ -29,15 +38,55 @@ tspan {
 }
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
+/* FALLBACKS, NOT THE SOURCE.
+   As of phase 4 (2026-08-03) these values live in ADAPARC_UI_TOKENS in
+   scripts/palettes.R, and the app injects a generated :root block into the head
+   at startup and again whenever the reader changes contrast mode. That block is
+   appended last, so it wins on document order at equal specificity.
+
+   This copy stays because it is what renders before the injection lands, and
+   what renders if it never does. The values below are the STANDARD contrast
+   mode exactly; `python3 scripts/check_palette.py` fails if the two drift.
+   Edit palettes.R, then re-run the check, and change these to match. */
 :root {
-  --navy:       #1c2b3a;   /* replaces slate #4A5A67 — matches scorecard dark */
-  --navy-dark:  #152233;   /* active/hover state */
-  --bg-page:    #f5f7fa;   /* lighter background for better contrast */
-  --bg-card:    #ffffff;
-  --bg-stripe:  #fafbfd;   /* lighter zebra stripe */
-  --border:     #e4e8ef;   /* scorecard border tone */
-  --text-body:  #1c2b3a;
-  --text-muted: #1c2b3a;
+  --navy:            #1c2b3a;   /* replaces slate #4A5A67 — matches scorecard dark */
+  --navy-dark:       #152233;   /* active/hover state */
+  --bg-page:         #f5f7fa;   /* lighter background for better contrast */
+  --bg-card:         #ffffff;
+  --bg-stripe:       #fafbfd;   /* lighter zebra stripe */
+  --border:          #e4e8ef;   /* scorecard border tone */
+  --input-border:    #6b625a;   /* form control boundary, 4.80:1 on white */
+  --text-body:       #1c2b3a;
+  --text-muted:      #1c2b3a;
+  --on-dark:         #ffffff;   /* text on navy: navbar, table header */
+  --on-dark-hover:   #f5f5f5;   /* navbar link hover, dimmed from --on-dark */
+  --nav-active:      #e8b84b;   /* gold rule under the selected navbar tab */
+  --focus-ring:      #0d3b8e;
+  --focus-ring-dark: #ffffff;   /* focus ring where the background is navy */
+  --focus-halo:      rgba(13, 59, 142, 0.2);
+  /* Display button and Display panel chrome. Moved off maroon #7b1717 to the
+     brand navy on 2026-08-05, matching the identity blue on the home hero
+     marks and the home nav-card buttons. #013176 is sampled from the tile
+     fill of www/brand/PARC_blue_icon.png and is the same literal as
+     --brand-navy in factsheets/_generate/assets/factsheet-base.css; the three
+     must move together if the approved mark shifts the blue.
+     Only #adaparc-display-btn and #adaparc-display-panel in
+     www/cssloaders.html consume these, so the change is confined to the
+     Display control and does not touch the maroon on --attr-* or the
+     scorecard chrome. #ffffff on #013176 is 12.34:1. */
+  --ui-accent:       #013176;
+  --ui-accent-dark:  #01214f;
+  --attr-text:       #591313;
+  --attr-bg:         #f9f7f4;
+  --attr-border:     #e2dcd4;
+  --attr-rule:       #7b1a1a;
+  --rule-width:      1px;
+  --focus-ring-width: 3px;
+  /* Read by the map renderers, not by any rule in this file. Declared anyway
+     so this block is the COMPLETE standard set, which is what lets
+     check_palette.py insist on completeness rather than guess which absences
+     are deliberate. */
+  --map-stroke-width: 0.35px;
 }
 
 /* ── Body & base typography ─────────────────────────────────────────────── */
@@ -81,6 +130,28 @@ table {
   overflow: auto;
 }
 
+/* ── Double scrollbar on shinyApp() tabs ───────────────────────────────── */
+/* Every page except Help embeds its content as a shinyApp(), which knitr
+   renders into an <iframe> inside .chart-shim. Two things then stack a
+   second, outer scrollbar next to the sub-app's own:
+     1. an <iframe> is an inline element, so the line box reserves a few
+        pixels of descender space beneath it. The iframe is sized to fill
+        .chart-shim, so shim content height ends up a few pixels taller
+        than the shim itself and `overflow: auto` above paints a scrollbar.
+     2. even without that gap, the shim never needs to scroll on these
+        pages: the sub-app scrolls its own document.
+   display:block removes the gap; the :has() rule suppresses shim scrolling
+   only where an embedded app is present, so the Help page (plain HTML in
+   the shim, which does need to scroll) is untouched. */
+.chart-shim iframe {
+  display: block;
+  border: 0;
+}
+
+.chart-shim:has(iframe) {
+  overflow: hidden;
+}
+
 /* Cell padding — more breathing room than original 8px */
 table td,
 table th {
@@ -97,7 +168,7 @@ table thead tr {
   height: 56px;
   background: var(--navy);
   font-size: 16px;
-  color: white !important;
+  color: var(--on-dark) !important;
   position: sticky;
   top: 0;
   z-index: 2;
@@ -134,7 +205,7 @@ table th {
    ============================================ */
 
 :focus-visible {
-  outline: 3px solid #0d3b8e !important;
+  outline: var(--focus-ring-width) solid var(--focus-ring) !important;
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -147,16 +218,16 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid #0d3b8e !important;
+  outline: var(--focus-ring-width) solid var(--focus-ring) !important;
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(13, 59, 142, 0.2) !important;
+  box-shadow: 0 0 0 4px var(--focus-halo) !important;
   border-radius: 2px;
 }
 
 /* Navbar links need slightly adjusted treatment on dark background */
 .navbar a:focus-visible,
 .navbar button:focus-visible {
-  outline: 3px solid #ffffff !important;
+  outline: var(--focus-ring-width) solid var(--focus-ring-dark) !important;
   outline-offset: 2px;
 }
 
@@ -209,35 +280,131 @@ table th:focus {
   border-color: var(--navy) !important;
 }
 
-/* Navbar brand */
+/* Navbar brand: flexdashboard auto-renders the YAML title as a non-functional
+   "#" link (href="#", no destination). Hidden entirely (not just visually)
+   so it's also removed from tab order / screen reader focus. */
 .navbar .navbar-brand {
-  font-weight: 700;
-  font-size: 1.3rem;
-  letter-spacing: -0.01em;
+  display: none;
 }
 
 /* Navbar brand + links (default state) */
 .navbar .navbar-brand,
 .navbar .navbar-nav > li > a {
-  color: #ffffff !important;
+  color: var(--on-dark) !important;
 }
 
-/* Navbar brand + links on hover/focus */
+/* ── Centred page tabs ──────────────────────────────────────────────────────
+   flexdashboard floats .navbar-nav left. This is the Bootstrap 3 inline-block
+   recipe rather than a flex one, deliberately: BS3's collapse plugin and
+   dropdown positioning both assume the float model, and flipping the container
+   to flex breaks the collapsed (< 768px) layout.
+
+   Only above the collapse breakpoint. Below it the nav is a stacked list
+   inside the hamburger panel, where centring makes it harder to scan.
+
+   .navbar-header still floats left, but it is zero-width here: the brand is
+   display:none (see above) and the toggle is display:none at this width, so
+   the centred nav is centred on the bar, not offset by it. If a brand or a
+   right-hand item is ever added back, this needs revisiting, because
+   text-align centring measures the space that is LEFT, not the full bar.
+
+   WHY EVERY DECLARATION IS !important, AND WHY THE SELECTORS ARE LONG.
+   The first version of this block used plain `float: none` on `.navbar .nav-
+   bar-nav` and did nothing at all, while the colour rules below (which all
+   carry !important) landed. Two things can beat an unflagged float here and
+   both are live:
+
+     1. Bootstrap 3's alignment utility, `.navbar-left { float: left
+        !important }`. flexdashboard puts the page tabs in a list classed
+        `nav navbar-nav navbar-left` so it can keep them apart from the
+        `navbar-right` list it uses for YAML navbar: items. No selector beats
+        an !important without one of its own.
+     2. Stylesheet order. This file is pulled in through the `css:` key in the
+        YAML header, and it is not guaranteed to land after the yeti theme in
+        every render path. If it lands first, even BS3's plain
+        `.navbar-nav { float: left }` outranks a later-specificity selector.
+
+   Hence the qualified selectors, which outrank `.navbar-left` on specificity,
+   and !important, which puts them in the same cascade layer. The rest of the
+   navbar rules in this file already do the same thing for the same reason.
+
+   The `:not(.navbar-right)` guard matters. flexdashboard emits the right-hand
+   list whether or not it holds anything, and an EMPTY ul is not free: below
+   768px `.navbar-nav` carries `margin: 7.5px -15px`, so un-floating an empty
+   right list would drag the centred group 15px off centre. Leaving it floated
+   keeps it out of the centring calculation entirely. */
+@media (min-width: 768px) {
+  .navbar .navbar-collapse {
+    text-align: center !important;
+  }
+
+  .navbar .navbar-collapse .navbar-nav:not(.navbar-right),
+  .navbar .navbar-collapse .navbar-nav.navbar-left {
+    float: none !important;
+    display: inline-block !important;
+    vertical-align: top;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .navbar .navbar-nav:not(.navbar-right) > li {
+    float: none !important;
+    display: inline-block !important;
+  }
+}
+
+/* Insurance against a two-row wrap in the band just above the collapse
+   breakpoint. Six EB Garamond labels at 20px measure roughly 720px with the
+   Bootstrap default 15px side padding, which is close enough to 768px that a
+   font fallback or a longer label would push it over. */
+@media (min-width: 768px) and (max-width: 991px) {
+  .navbar .navbar-nav > li > a {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+/* ── Tab state indicators ───────────────────────────────────────────────────
+   Both states are drawn with an INSET BOX SHADOW, not a border-bottom. A
+   border would add 2-4px to the link box, which is taller than the navbar's
+   50px min-height and so would grow the bar and shift the content beneath it
+   on every hover. An inset shadow paints inside the existing box and costs no
+   layout, which also means no transparent-border placeholder is needed on the
+   inactive tabs.
+
+   Neither state changes font-weight. On a centred row a weight change re-flows
+   the whole nav sideways, and the rules below already carry the state without
+   it: presence of a rule distinguishes active from inactive, and thickness
+   plus hue distinguishes active from hover. That is a non-colour cue in both
+   directions (WCAG 2.2 SC 1.4.1) on top of aria-selected, which the tablist
+   upgrade in www/cssloaders.html already sets. */
+
+/* Navbar brand + links on hover/focus. The 2px white rule is the affordance;
+   the colour shift alone was #ffffff to #f5f5f5, which is not a visible cue. */
 .navbar .navbar-brand:hover,
 .navbar .navbar-brand:focus,
 .navbar .navbar-nav > li > a:hover,
 .navbar .navbar-nav > li > a:focus {
-  color: #f5f5f5 !important;
+  color: var(--on-dark-hover) !important;
   background-color: transparent !important;
 }
 
-/* Active nav item */
+.navbar .navbar-nav > li > a:hover,
+.navbar .navbar-nav > li > a:focus {
+  box-shadow: inset 0 -2px 0 0 var(--on-dark) !important;
+}
+
+/* Active nav item. --navy-dark against --navy is 1.11:1, so the fill is
+   effectively decorative and the 4px gold rule is what actually reports the
+   state. Kept anyway because it costs nothing and reads as a slight recess on
+   displays that resolve it. */
 .navbar .navbar-nav > .active > a,
 .navbar .navbar-nav > .active > a:hover,
 .navbar .navbar-nav > .active > a:focus {
   background-color: var(--navy-dark) !important;
   border-color: var(--navy-dark) !important;
-  color: #ffffff !important;
+  color: var(--on-dark) !important;
+  box-shadow: inset 0 -4px 0 0 var(--nav-active) !important;
 }
 
 /* Open dropdown in navbar */
@@ -246,7 +413,7 @@ table th:focus {
 .navbar .navbar-nav > .open > a:focus {
   background-color: var(--navy-dark) !important;
   border-color: var(--navy-dark) !important;
-  color: #ffffff !important;
+  color: var(--on-dark) !important;
 }
 
 /* Primary buttons */
@@ -357,4 +524,96 @@ li {
   .nav-card {
     width: 100% !important;
   }
+}
+
+/* ── Site-wide attribution footer ──────────────────────────────────────── */
+/* Appears at the bottom of every page. Kept high-contrast (maroon on a light
+   neutral) with a minimum readable font size for accessibility.            */
+.adaparc-attribution {
+  font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--attr-text);
+  background: var(--attr-bg);
+  border: var(--rule-width) solid var(--attr-border);
+  border-top: 3px solid var(--attr-rule);
+  border-radius: 8px;
+  text-align: center;
+  padding: 1rem 1.5rem;
+  margin: 3rem auto 1.5rem;
+  max-width: 640px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ============================================
+   HIGH CONTRAST MODE, structural
+   Phase 4 of docs/palette-v1-build-plan.qmd.
+
+   Everything expressible as a COLOUR is handled by the token swap: the app
+   injects a generated :root block and every rule above already reads var().
+   What is left here is the small set of changes a colour swap cannot make,
+   which is exactly the set that stops high contrast being colour-only.
+
+   The hook is data-adaparc-contrast on <html>, set by the same custom message
+   that carries the token block, so the attribute and the tokens can never be
+   out of step. See push_display_panel() in ADA_PARC.Rmd.
+   ============================================ */
+
+/* Table cell boundaries become real rules. In standard mode the zebra
+   striping carries the row banding on its own and a border would be visual
+   noise; once the stripe is only #e8e8e8 against white, it needs help. */
+html[data-adaparc-contrast="high"] table td,
+html[data-adaparc-contrast="high"] table th {
+  border: var(--rule-width) solid var(--border);
+}
+
+/* Hover keeps a TEXT underline here rather than the 2px inset rule the base
+   stylesheet draws. In standard contrast hover and active are told apart by
+   hue, white rule against gold rule. In this mode --nav-active is #ffffff, so
+   both rules would be white and the only difference left would be 2px against
+   4px of thickness, which is too fine a distinction to rest a state on. Moving
+   hover to an underline tight against the label, while active stays a thick
+   bar at the foot of the box, makes them different SHAPES in different
+   PLACES. The inset is suppressed so the tab does not carry two lines at once.
+
+   The active rule itself is not restated: the base rule reads
+   var(--nav-active), which this mode binds to #ffffff, 21:1 on the black
+   navbar. It used to be hardcoded here as var(--on-dark). */
+html[data-adaparc-contrast="high"] .navbar .navbar-nav > li > a:hover,
+html[data-adaparc-contrast="high"] .navbar .navbar-nav > li > a:focus {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+  box-shadow: none !important;
+}
+
+/* The suppression above must not reach the active tab, which can also be
+   hovered. Restated at equal specificity so the bar survives hover. */
+html[data-adaparc-contrast="high"] .navbar .navbar-nav > .active > a:hover,
+html[data-adaparc-contrast="high"] .navbar .navbar-nav > .active > a:focus {
+  box-shadow: inset 0 -4px 0 0 var(--nav-active) !important;
+}
+
+/* Buttons get an explicit boundary rather than relying on fill against page. */
+html[data-adaparc-contrast="high"] .btn,
+html[data-adaparc-contrast="high"] button,
+html[data-adaparc-contrast="high"] .form-control,
+html[data-adaparc-contrast="high"] select,
+html[data-adaparc-contrast="high"] input {
+  border: var(--rule-width) solid var(--border) !important;
+}
+
+/* Body links carry an underline, so they are not identified by colour alone. */
+html[data-adaparc-contrast="high"] .section a:not(.btn):not(.navbar-brand),
+html[data-adaparc-contrast="high"] .adaparc-attribution a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Soft shadows read as blur rather than as structure at this contrast level,
+   and on some low-vision setups they read as smudging. Replaced by the
+   borders above. */
+html[data-adaparc-contrast="high"] .adaparc-attribution,
+html[data-adaparc-contrast="high"] .nav-card {
+  box-shadow: none;
 }
