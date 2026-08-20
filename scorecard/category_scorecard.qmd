@@ -85,415 +85,45 @@ local({
   }
 })
 
-# ── Tier palette: single source of truth ──────────────────────────────────
-# scripts/palettes.R defines ADA-PARC Heritage and is shared with the Shiny
-# app, the state scorecard and the fact sheets. This document renders in a
-# Quarto subprocess with execute_dir = scorecard/, so the path is resolved by
-# probing rather than assumed; `here` is not a dependency of this render.
+# ── Scores, ranks, tiers, map data, and the table/card builders ────────────
+# All of this now lives in category_scorecard_core.R, shared with
+# category_scorecard_print.qmd (the branded, paginated "Download" report), so
+# the on-screen scorecard and the downloaded report can never disagree about
+# a category's scores. See the header comment in that file for the full
+# reasoning.
+#
+# Path-probed for the same reason scripts/palettes.R is: this document can be
+# rendered with execute_dir at scorecard/ (the app's quarto_render() call) or
+# hand-rendered from a working directory at the project root.
 local({
-  cand <- c(file.path("..", "scripts", "palettes.R"),
-            file.path("scripts", "palettes.R"))
+  cand <- c("category_scorecard_core.R",
+            file.path("scorecard", "category_scorecard_core.R"))
   hit  <- cand[file.exists(cand)]
   if (length(hit) == 0) {
-    stop("category_scorecard.qmd cannot locate scripts/palettes.R. ",
+    stop("category_scorecard.qmd cannot locate category_scorecard_core.R. ",
          "Render with execute_dir set to the scorecard/ directory, ",
          "or from the project root.")
   }
   source(hit[1], local = FALSE)
 })
 
-# ── Active palette and contrast ───────────────────────────────────────────
-# Phase 5 of docs/palette-v1-build-plan.qmd. The reader's Display settings
-# arrive as render params, so the file on disk carries the palette it was
-# generated with. That is why v1 renders rather than switches client-side: the
-# choropleth map is baked into the output at render time and cannot respond to
-# CSS, so a client-side switch would recolour everything EXCEPT the map.
-#
-# PAL is the EFFECTIVE fill palette, which is not always the one selected:
-# high contrast forces High Contrast Mono. Routing through
-# pal_effective_fill_id() is what keeps this file agreeing with the app.
-#
-# Defaults in the YAML header are heritage and standard, so `quarto render`
-# by hand still produces exactly what it produced before this phase.
-CONTRAST <- pal_contrast_mode(params$contrast)
-PAL      <- pal_effective_fill_id(params$palette, CONTRAST)
-
-# ═══════════════════════════════════════════════════════════════════════════
-# CATEGORY CONFIG
-# All category-specific values live here. To add a new category, add a
-# new entry to this list — the rest of the document is fully generic.
-#
-# NOTE ON COLOUR, REWRITTEN 2026-08-03 FOR PHASE 3.3 OF
-# docs/palette-v2-build-plan.qmd.
-#
-# NO CATEGORY CARRIES A COLOUR LITERAL ANY MORE. `accent`, `col_hdr_bg`,
-# `heading_color`, `banner_dark` and `banner_light` used to be written out per
-# category here, five hexes each, fifteen in total. The note that stood in their
-# place said category identity is per-category by design and so does not come
-# from the palette. The first half of that is right and the second half was the
-# mistake: identity being per-category says nothing about where the per-category
-# value should COME from, and hardcoding it meant a reader who chose Cividis got
-# a Cividis map and a maroon scorecard.
-#
-# So each entry now names its `domain`, one of cl, cp or we, and the colours are
-# looked up from the selected palette's identity set below the list. Category
-# identity is still per-category. It is now also per-palette.
-#
-# `pal` remains the shared tier ramp, identical for every category. Tier meaning
-# is shared across the site; category identity is not. That distinction survives
-# this change intact.
-#
-# sub_cols_pending: names (from sub_cols) that currently have no data.
-#   Set to character(0) when all sub-indices are populated.
-# ═══════════════════════════════════════════════════════════════════════════
-CATS <- list(
-
-  CL = list(
-    name        = "Community Living",
-    desc        = "The degree to which people with disabilities (aged 18–64) live in community settings rather than nursing homes, correctional facilities, or other institutions, and whether states invest in community-based housing and support resources.",
-    col_overall = "index_rel_community_living",
-    col_sub     = c("index_rel_living_arrangements",
-                    "index_rel_community_resource",
-                    "index_rel_housing_access"),
-    score_col   = "CL Score",
-    sub_cols    = c("Living Arrangements", "Community Resource", "Housing Access"),
-    sub_labels  = c("Living Arrangements",
-                    "Community Resource",
-                    "Housing Access"),
-    sub_cols_pending = character(0),
-    sub_desc    = c(
-      "Composite of four living situation indicators for people with disabilities (aged 18\u201364): share living at home (private residence), in non-institutional group quarters, in nursing homes, and in correctional facilities. Higher scores reflect greater community integration.",
-      "Measures state investment in community-based supports: (1) ratio of Medicaid HCBS to institutional spending, and (2) HCBS spending per disabled Medicaid enrollee.",
-      "Disability housing access indicators from HUD Picture of Subsidized Households (POSH): percentage of Housing Choice Voucher and Public Housing households where the head of household has a disability. Higher scores indicate greater access to subsidized housing for people with disabilities."
-    ),
-    # Shared ADA-PARC Heritage tier ramp, worst to best (light to dark).
-    # Identical for every category; see the note in the CATEGORY CONFIG header.
-    pal         = pal_fill(4, PAL),
-    domain      = "cl"
-  ),
-
-  CP = list(
-    name        = "Community Participation",
-    desc        = "Access to the tools and systems that enable full participation in community life — including technology, health insurance, educational attainment, transportation, and public safety.",
-    col_overall = "index_rel_community_participation",
-    col_sub     = c("index_rel_tech",
-                    "index_rel_education",
-                    "index_rel_insurance",
-                    "index_rel_commute",
-                    "index_rel_safety"),
-    score_col   = "CP Score",
-    sub_cols    = c("Technology", "Education", "Insurance",
-                    "Transportation", "Safety"),
-    sub_labels  = c("Technology Access",
-                    "Education Access",
-                    "Insurance Access",
-                    "Transportation Access",
-                    "Public Safety"),
-    sub_cols_pending = character(0),
-    sub_desc    = c(
-      "Computer ownership and broadband internet access among households with disabilities — increasingly essential for employment, healthcare navigation, and civic engagement.",
-      "Educational attainment among adults with disabilities, including high school completion and higher education rates — key drivers of economic and civic participation.",
-      "Health insurance coverage among people with disabilities aged 19\u201364: private insurance, public insurance (Medicare/Medicaid/CHIP), and uninsured rate.",
-      "Commute and transportation accessibility for people with disabilities, reflecting ease of access to employment, services, and community resources.",
-      "State-level property and violent crime rates per 100,000 population. Note: FL, PA, and NY have lower agency participation rates."
-    ),
-    pal         = pal_fill(4, PAL),   # shared tier ramp; see header note
-    domain      = "cp"
-  ),
-
-  WE = list(
-    name        = "Work & Economic",
-    desc        = "Economic inclusion and security for people with disabilities — measuring work outcomes (employment, income, poverty, and labor force participation) and housing affordability.",
-    col_overall = "index_rel_work_economic",
-    col_sub     = c("index_rel_positive_work",
-                    "index_rel_negative_work",
-                    "index_rel_housing_affordability"),
-    score_col   = "WE Score",
-    sub_cols    = c("Positive Work", "Negative Work", "Housing Affordability"),
-    sub_labels  = c("Positive Work Score",
-                    "Negative Work Score",
-                    "Housing Affordability"),
-    sub_cols_pending = character(0),
-    sub_desc    = c(
-      "Employment rate and cost-of-living-adjusted income (individual and household) for people with disabilities. Income adjusted using BEA Regional Price Parities (2022).",
-      "Negative work indicators for people with disabilities: not-in-labor-force rate, poverty rate (all ages, derived from age-split ACS counts), and unemployment rate. Higher scores indicate lower rates of these negative outcomes.",
-      "SSI as a percent of fair market rent for a one-bedroom apartment, plus disability-specific renter and owner cost burden rates. Note: Puerto Rico missing PUMS data."
-    ),
-    pal         = pal_fill(4, PAL),   # shared tier ramp; see header note
-    domain      = "we"
-  )
+ctx <- build_category_scorecard(
+  category = params$category,
+  year     = params$year,
+  palette  = params$palette,
+  contrast = params$contrast
 )
-
-# ── Select config for this render ──────────────────────────────────────────
-cfg <- CATS[[params$category]]
-
-# ── Category identity colour, from the selected palette ────────────────────
-# Phase 3.3. The five colours that used to be literals in CATS, derived from
-# one value: this category's identity colour in the reader's palette.
-#
-# ONE COLOUR, NOT FIVE. The old set had a separate `banner_dark` and
-# `banner_light`, an `accent` and a `col_hdr_bg` that were identical across all
-# three categories anyway, and a `heading_color` that was a fourth shade. Four
-# of the five varied by nothing, and the fifth varied by hand. Deriving them all
-# from the identity colour is what makes the category look like one thing.
-#
-# WHY THE INK IS READ AND NOT ASSUMED. Every identity triple has one LIGHT
-# member carrying near-black; that is what buys the triple its lightness range,
-# and it is `cl` in all five palettes today. The banner and the table header
-# used to hardcode `color: white`, which on that chip is about 3.5:1 and fails
-# AA. CAT_ON is the value the catalogue records for this exact fill.
-CAT_COLOR <- pal_identity(cfg$domain, PAL)
-CAT_ON    <- pal_on_identity(cfg$domain, PAL)
-
-cfg$accent        <- CAT_COLOR   # gt heading band, top rule, top-3 row rule
-cfg$col_hdr_bg    <- CAT_COLOR   # gt column label band
-cfg$heading_color <- CAT_COLOR   # section headings, 1.6rem bold on white
-cfg$banner_dark   <- CAT_COLOR
-cfg$banner_light  <- CAT_COLOR
-
-# heading_color is drawn as TEXT on white at 1.6rem bold, which is 25.6px bold
-# and therefore LARGE TEXT under WCAG 2.2, needing 3:1 rather than 4.5:1. Every
-# identity member clears 3:1 against the summary tint, which is darker than
-# white, so this is satisfied with margin by construction and checked by
-# section 9 of scripts/check_palette.py. IF THIS HEADING IS EVER MADE SMALLER
-# than 18.66px bold or 24px regular, it needs 4.5:1 and this line stops being
-# safe; use doc_ink there instead.
-
-# ═══════════════════════════════════════════════════════════════════════════
-# DATA
-# ═══════════════════════════════════════════════════════════════════════════
-raw     <- read_csv("scorecard_data/final/index_scores_wide.csv",
-                    show_col_types = FALSE)
-nat_row <- raw |> filter(ABBR == "USA")
-states  <- raw |> filter(ABBR != "USA")
-
-# Build scored data frame with generic column names
-# Only keep states where the domain-level score is non-NA
-scores_df <- states |>
-  select(GEOID, NAME, ABBR,
-         cat_overall = all_of(cfg$col_overall),
-         all_of(cfg$col_sub)) |>
-  mutate(cat_overall = as.numeric(cat_overall),
-         across(all_of(cfg$col_sub), as.numeric)) |>
-  filter(!is.na(cat_overall)) |>
-  rename_with(~ paste0("sub_", seq_along(cfg$col_sub)),
-              all_of(cfg$col_sub)) |>
-  arrange(desc(cat_overall)) |>
-  mutate(rank = row_number())
-
-# ── Availability guard ─────────────────────────────────────────────────────
-# If ALL domain scores are NA (e.g., WE when sub-index data are pending),
-# flag it — remaining chunks will show a pending message and exit early.
-data_available <- nrow(scores_df) > 0
-
-# ── Helpers ────────────────────────────────────────────────────────────────
-f <- function(x) ifelse(is.na(x), "\u2014", sprintf("%.1f", as.numeric(x)))
-
-# ── Only compute these when data are available ─────────────────────────────
-if (data_available) {
-
-  # National values
-  nat_overall <- as.numeric(nat_row[[cfg$col_overall]])
-  nat_subs    <- sapply(cfg$col_sub, function(x) as.numeric(nat_row[[x]]))
-
-  # Summary stats for banner pills
-  top_row <- scores_df |> slice(1)
-  bot_row <- scores_df |> slice(n())
-  n_above <- sum(scores_df$cat_overall > nat_overall, na.rm = TRUE)
-
-  # ── Quantile breaks: 4 equal-population bins ─────────────────────────────
-  q_breaks    <- quantile(scores_df$cat_overall, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
-  min_score   <- min(scores_df$cat_overall, na.rm = TRUE)
-  max_score   <- max(scores_df$cat_overall, na.rm = TRUE)
-
-  # Explicit quartile-to-colour mapping so legend colours exactly match the map.
-  # The no-data fill is the shared neutral from scripts/palettes.R rather than a
-  # local cool grey, so "no data" reads identically here, on the national and
-  # city maps, and on the fact sheets.
-  quartile_col <- function(score) {
-    dplyr::case_when(
-      is.na(score)         ~ pal_na(PAL),
-      score <= q_breaks[1] ~ cfg$pal[1],
-      score <= q_breaks[2] ~ cfg$pal[2],
-      score <= q_breaks[3] ~ cfg$pal[3],
-      TRUE                 ~ cfg$pal[4]
-    )
-  }
-
-  # (The former `score_pal_4 <- quartile_col` alias was removed on 2026-07-30.
-  # It existed only for gt::data_color() in the rankings table, which has been
-  # replaced by explicit tab_style() fills; see the note at that call site.)
-
-  # Tier INDEX (1 = Poor ... 4 = Excellent, NA = no data) for the same
-  # quartile cut points quartile_col() uses. Anything that needs to know which
-  # tier a score falls in, rather than just its fill, goes through here, so the
-  # map's state labels and the ranking table's cell fills can never drift from
-  # the map's own colours.
-  #
-  # THIS IS THE ONLY TIER CLASSIFIER ON THIS PAGE, as of 2026-08-03. It used to
-  # coexist with a second one that banded by RANK (top 13, next 13, ...), used
-  # for the map tooltip's "Tier:" line and the ranking table's `Tier` column.
-  # The two disagree whenever the number of ranked states is not 52 or scores
-  # tie across a break: in Community Living, where one state has no data and n
-  # is 51, Nebraska and South Dakota were shown a tier NAME that contradicted
-  # the colour of their own patch on the map and their own cell in the table.
-  # Both now read from here, so the name and the colour cannot disagree.
-  #
-  # pal_tier_of_rank() in scripts/palettes.R still bands by rank and is correct
-  # for the state scorecard, which shows no score-quartile colour. Do not
-  # substitute one for the other.
-  quartile_idx <- function(score) {
-    dplyr::case_when(
-      is.na(score)         ~ NA_integer_,
-      score <= q_breaks[1] ~ 1L,
-      score <= q_breaks[2] ~ 2L,
-      score <= q_breaks[3] ~ 3L,
-      TRUE                 ~ 4L
-    )
-  }
-
-  # Ink that clears WCAG AA on each tier fill, from scripts/palettes.R. Used for
-  # the state abbreviations drawn on the map AND, as of 2026-08-04, for that
-  # state's own border: near-black on the two light tiers, white on the two dark
-  # ones. No-data states keep near-black, which is correct against the light
-  # neutral no-data fill.
-  #
-  # This is the same rule the national map applies through
-  # border_ink_for_fill() in scripts/functions.R, expressed here against the
-  # palette's declared on_fill rather than recomputed from luminance. The two
-  # agree by construction: check_palette.py already asserts every on_fill is the
-  # better of near-black and white on its own fill, and the AA floor it holds
-  # them to (4.5:1) is stricter than the 3:1 WCAG 2.2 SC 1.4.11 floor a border
-  # has to clear.
-  quartile_ink <- function(score) {
-    idx <- quartile_idx(score)
-    ifelse(is.na(idx), pal_on_fill("poor", PAL), pal_on_fill(idx, PAL))
-  }
-
-  # ── Map data ───────────────────────────────────────────────────────────────
-  # border_col is the per-state stroke. It replaced a fixed white border, which
-  # disappeared wherever it met one of the two light tiers and left those states
-  # merged into a single patch.
-  us_map <- map_data("state") |>
-    left_join(
-      scores_df |> mutate(region = tolower(NAME)),
-      by = "region"
-    ) |>
-    mutate(
-      fill_col   = quartile_col(cat_overall),
-      border_col = quartile_ink(cat_overall)
-    )
-
-  # National perimeter, drawn UNDER the filled states.
-  #
-  # Per-state ink solves interior boundaries but breaks the coastline: a
-  # dark-tier coastal state takes a white stroke, and against the white page
-  # behind the map that outer edge vanishes, so the national silhouette
-  # dissolves wherever a top-quartile state happens to sit on the border.
-  #
-  # map_data("usa") is the same boundary database as map_data("state")
-  # dissolved to the national outline, so the two register exactly with no
-  # projection or simplification mismatch. Drawn first and wider than the
-  # per-state stroke: the filled layer paints over its inner half and leaves a
-  # dark flank on the outside only. Same fix as map_border_perimeter() on the
-  # national map, without needing sf here.
-  us_outline <- map_data("usa")
-
-  # ── State label centroids ──────────────────────────────────────────────────
-  state_centroids <- us_map |>
-    group_by(region) |>
-    summarise(long = mean(range(long)), lat = mean(range(lat)), .groups = "drop")
-
-  # lbl_col carries the per-state ink for the abbreviation drawn on top of that
-  # state's fill. A single fixed navy could not work across a ramp that runs
-  # from near-white to near-black: on the two dark tiers it fell to roughly
-  # 1.6:1 and the abbreviations disappeared.
-  map_labels <- scores_df |>
-    mutate(region = tolower(NAME)) |>
-    inner_join(state_centroids, by = "region") |>
-    mutate(lbl_col = quartile_ink(cat_overall))
-
-  # ── Census region lookup ───────────────────────────────────────────────────
-  census_regions <- c(
-    "Connecticut"="Northeast","Maine"="Northeast","Massachusetts"="Northeast",
-    "New Hampshire"="Northeast","Rhode Island"="Northeast","Vermont"="Northeast",
-    "New Jersey"="Northeast","New York"="Northeast","Pennsylvania"="Northeast",
-    "Illinois"="Midwest","Indiana"="Midwest","Iowa"="Midwest",
-    "Kansas"="Midwest","Michigan"="Midwest","Minnesota"="Midwest",
-    "Missouri"="Midwest","Nebraska"="Midwest","North Dakota"="Midwest",
-    "Ohio"="Midwest","South Dakota"="Midwest","Wisconsin"="Midwest",
-    "Alabama"="South","Arkansas"="South","Delaware"="South",
-    "District of Columbia"="South","Florida"="South","Georgia"="South",
-    "Kentucky"="South","Louisiana"="South","Maryland"="South",
-    "Mississippi"="South","North Carolina"="South","Oklahoma"="South",
-    "South Carolina"="South","Tennessee"="South","Texas"="South",
-    "Virginia"="South","West Virginia"="South",
-    "Alaska"="West","Arizona"="West","California"="West",
-    "Colorado"="West","Hawaii"="West","Idaho"="West",
-    "Montana"="West","Nevada"="West","New Mexico"="West",
-    "Oregon"="West","Utah"="West","Washington"="West","Wyoming"="West"
-  )
-
-  region_df <- scores_df |>
-    mutate(region = census_regions[NAME]) |>
-    filter(!is.na(region)) |>
-    group_by(region) |>
-    summarise(avg_score = mean(cat_overall, na.rm = TRUE),
-              n_states  = n(), .groups = "drop") |>
-    arrange(avg_score) |>
-    mutate(region = factor(region, levels = region))
-
-  # ── Top / bottom performers ────────────────────────────────────────────────
-  top5 <- scores_df |> slice(1:min(5, n()))
-  bot5 <- scores_df |> slice(max(1, n() - 4):n())
-
-}
-
-# ── Inline style strings ───────────────────────────────────────────────────
-# CAT_ON, not "white". The banner background is now the category's identity
-# colour, and the lightest identity member in every palette carries near-black.
-# White on it is about 3.5:1.
-banner_style  <- paste0(
-  "background: ", cfg$banner_light, "; ",
-  "color: ", CAT_ON, "; padding: 2.4rem 3rem 2.2rem; ",
-  "border-radius: 12px; margin-bottom: 2rem;"
-)
-
-heading_style <- paste0(
-  "font-family: 'EB Garamond', Garamond, Georgia, serif; ",
-  "font-size: 1.6rem; font-weight: 700; color: ", cfg$heading_color, "; ",
-  "margin: 0 0 0.3rem; letter-spacing: -0.01em;"
-)
-
-heading_style_black <- paste0(
-  "font-family: 'EB Garamond', Garamond, Georgia, serif; ",
-  "font-size: 1.6rem; font-weight: 700; color: #1c2b3a; ",
-  "margin: 0 0 0.3rem; letter-spacing: -0.01em;"
-)
-
-# ── Performer card helpers (accessible) ───────────────────────────────────
-# Uses <ol> for ranked lists and aria-label on each item so screen readers
-# announce "Rank 1, New Jersey, score 66.9" rather than just raw text.
-make_perf_row <- function(r, name, score) {
-  paste0(
-    '<li class="perf-row" aria-label="Rank ', r, ', ', name,
-    ', score ', sprintf("%.1f", score), '">',
-    '<span class="perf-rank" aria-hidden="true">#', r, '</span>',
-    '<span class="perf-name">', name, '</span>',
-    '<span class="perf-score">', sprintf("%.1f", score), '</span>',
-    '</li>'
-  )
-}
-
-make_perf_card <- function(label, df, hdr_color, hdr_ink = "#ffffff") {
-  rows <- paste0(mapply(make_perf_row, df$rank, df$NAME, df$cat_overall),
-                 collapse = "")
-  paste0('<div class="perf-card" role="region" aria-label="', label, '">',
-         '<div class="perf-header" style="background:', hdr_color,
-         ';color:', hdr_ink, ';">', label, '</div>',
-         '<ol class="perf-body" style="list-style:none; margin:0; padding:0;">', rows, '</ol>',
-         '</div>')
-}
+# invisible() matters here: list2env() returns the environment it just
+# populated (this chunk's own environment == R_GlobalEnv when this document
+# is rendered from the Shiny app's download handler), and as the last
+# expression in the chunk it would otherwise auto-print. That auto-print is
+# exactly the stray "<environment: R_GlobalEnv>" line that used to appear
+# above the masthead on every rendered scorecard. Same fix already applied
+# in state_scorecard.qmd / state_scorecard_print.qmd; this file and
+# category_scorecard_print.qmd had fallen out of sync with that fix until
+# now -- confirmed present live on the on-screen National Scorecard tab too
+# (category_scorecard.html), not just the print download.
+invisible(list2env(ctx, environment()))
 ```
 
 ```{r doc-tokens, results='asis'}
@@ -503,7 +133,10 @@ make_perf_card <- function(label, df, hdr_color, hdr_ink = "#ffffff") {
 # structural rules key on. Written into the body, which puts it AFTER the
 # linked stylesheet in document order, so at equal specificity it wins; the
 # copy in the .css file is the fallback for opening that file on its own.
-cat(pal_doc_header(params$palette, CONTRAST))
+# doc_header_html is built by build_category_scorecard() in
+# category_scorecard_core.R from the same palette/contrast this whole render
+# used, so it can never disagree with the tier colours on the page.
+cat(doc_header_html)
 ```
 
 <a href="#state-rankings" class="sr-only" style="position:absolute;top:-40px;left:0;background:#333;color:#fff;padding:0.5rem 1rem;z-index:100;text-decoration:none;font-size:0.9rem;" onfocus="this.style.top='0'" onblur="this.style.top='-40px'">Skip to state rankings table</a>
@@ -534,29 +167,10 @@ if (!data_available) {
     '</div>'
   ))
 } else {
-  cat(paste0(
-    '::: {.stat-pills}\n\n',
-    '::: {.stat-pill}\n',
-    '<div class="pill-val">', f(nat_overall), '</div>\n',
-    '<div class="pill-lbl">US Average</div>\n',
-    ':::\n\n',
-    '::: {.stat-pill}\n',
-    '<div class="pill-val">', f(top_row$cat_overall), '</div>\n',
-    '<div class="pill-lbl">Highest Score</div>\n',
-    '<div class="pill-sub">', top_row$NAME, '</div>\n',
-    ':::\n\n',
-    '::: {.stat-pill}\n',
-    '<div class="pill-val">', f(bot_row$cat_overall), '</div>\n',
-    '<div class="pill-lbl">Lowest Score</div>\n',
-    '<div class="pill-sub">', bot_row$NAME, '</div>\n',
-    ':::\n\n',
-    '::: {.stat-pill}\n',
-    '<div class="pill-val">', n_above, '</div>\n',
-    '<div class="pill-lbl">States Above US Avg</div>\n',
-    '<div class="pill-sub">of ', nrow(scores_df), ' states &amp; territories</div>\n',
-    ':::\n\n',
-    ':::\n'
-  ))
+  # Same stat-pill markup the print report shows: built once in
+  # category_scorecard_core.R (stat_pills_html()) from the same top/bottom
+  # rows and national average this whole render used.
+  cat(stat_pills_html())
 }
 ```
 
@@ -566,16 +180,12 @@ if (!data_available) {
 # If no data, show an explanatory pending section and stop rendering
 if (!data_available) {
   cat(paste0(
-    '<div class="section-card" style="margin-top:1.5rem;">',
+    '<div class="section-card about-category" style="margin-top:1.5rem;">',
+    '<span class="eyebrow">Category details</span>',
     '<h2 style="', heading_style, '">About This Category</h2>',
     '<p class="section-sub">The sub-indices that comprise the ',
     cfg$name, ' score and the measures they capture.</p>',
-    '<ul class="about-list">',
-    paste0(
-      "<li><strong>", cfg$sub_labels, "</strong> &mdash; ", cfg$sub_desc, "</li>",
-      collapse = "\n"
-    ),
-    '</ul>',
+    about_list_html(),
     '</div>'
   ))
   knitr::knit_exit()
@@ -591,104 +201,11 @@ if (!data_available) {
 <p class="section-sub">States divided into four equal-population quartile groups. Alaska, Hawaii, D.C., and territories appear in the rankings table below.</p>
 
 ```{r choropleth}
-# Build legend labels from actual data range + quartile breaks
-legend_labels <- c(
-  paste0("Poor: ",            sprintf("%.1f", min_score),   "\u2013", sprintf("%.1f", q_breaks[1])),
-  paste0("Below Average: ",   sprintf("%.1f", q_breaks[1]), "\u2013", sprintf("%.1f", q_breaks[2])),
-  paste0("Above Average: ",   sprintf("%.1f", q_breaks[2]), "\u2013", sprintf("%.1f", q_breaks[3])),
-  paste0("Excellent: ",       sprintf("%.1f", q_breaks[3]), "\u2013", sprintf("%.1f", max_score))
-)
-
-# Build per-state tooltip text (shown on hover)
-# Includes state name, score, rank, and tier label
-# Note: us_map already contains rank, ABBR, etc. from the join above — no second join needed
+# p_map (a plain ggplot, unwrapped) is built once in category_scorecard_core.R
+# and shared with category_scorecard_print.qmd, which exports the SAME object
+# to a static SVG via svglite instead of wrapping it in girafe(). See the note
+# on p_map in that file.
 #
-# tier_text is classified by quartile_idx(), the same function that chose the
-# fill this tooltip sits on top of, so the name a reader reads on hover always
-# matches the colour they are hovering over. It previously banded by rank,
-# which disagreed with the fill wherever the two classifications parted.
-us_map_ig <- us_map |>
-  mutate(
-    tier_text = pal_tier_label(quartile_idx(cat_overall), na_label = "No data"),
-    tooltip   = dplyr::case_when(
-      is.na(cat_overall) ~ paste0(stringr::str_to_title(region), "\nNo data available"),
-      TRUE ~ paste0(
-        stringr::str_to_title(region), "\n",
-        "Score: ", sprintf("%.1f", cat_overall), "\n",
-        "Rank: #", rank, " of ", nrow(scores_df), "\n",
-        "Tier: ", tier_text
-      )
-    ),
-    data_id = region   # unique id per state polygon group for ggiraph
-  )
-
-p_map <- ggplot(us_map_ig, aes(x = long, y = lat, group = group, fill = fill_col)) +
-  # Drawn first, so the filled layer covers its inner half and only the outside
-  # flank survives to hold the coastline. See the note on us_outline above.
-  geom_polygon(
-    data        = us_outline,
-    aes(x = long, y = lat, group = group),
-    inherit.aes = FALSE,
-    fill        = NA,
-    color       = "#1c2b3a",
-    linewidth   = 1.1
-  ) +
-  geom_polygon_interactive(
-    aes(tooltip = tooltip, data_id = data_id, color = border_col),
-    linewidth = 0.35,
-    # hover_css sets stroke-width ONLY. Setting a stroke COLOUR here would
-    # overwrite the per-state ink and leave the dark tiers with a navy-on-maroon
-    # hover outline at roughly 1.3:1, i.e. no visible hover state at all.
-    hover_css = "fill-opacity:0.75;stroke-width:2px;"
-  ) +
-  scale_fill_identity(
-    name   = "Performance Tier",
-    guide  = guide_legend(
-      title.position = "top",
-      title.hjust    = 0.5,
-      nrow           = 2,
-      byrow          = TRUE,
-      keywidth       = unit(2.4, "cm"),
-      keyheight      = unit(0.7, "cm"),
-      label.theme    = element_text(size = 16, color = "#1c2b3a", family = "EB Garamond")
-    ),
-    breaks = cfg$pal,
-    labels = legend_labels
-  ) +
-  # State abbreviations, inked per state from the tier they sit on. alpha was
-  # 0.75, which was compensating for a fixed dark label on dark fills; now that
-  # the ink is correct per tier the labels can run at full strength, which is
-  # what keeps a small 2.5pt bold glyph legible.
-  geom_text(
-    data = map_labels,
-    aes(x = long, y = lat, label = ABBR, color = lbl_col),
-    inherit.aes = FALSE,
-    size = 2.5, fontface = "bold", show.legend = FALSE
-  ) +
-  scale_color_identity() +
-  coord_map("albers", lat0 = 39, lat1 = 45) +
-  labs(x = NULL, y = NULL) +
-  theme_void(base_size = 14, base_family = "EB Garamond") +
-  theme(
-    text             = element_text(family = "EB Garamond"),
-    legend.position  = "bottom",
-    legend.title     = element_text(size = 17, face = "bold",
-                                    color = "#1c2b3a", family = "EB Garamond"),
-    legend.text      = element_text(size = 16, color = "#1c2b3a",
-                                    family = "EB Garamond"),
-    legend.spacing.x = unit(0.4, "cm"),
-    # theme_void() strips legend key borders. The map's own borders are now
-    # inked per state, but a legend swatch sits on white rather than on another
-    # swatch, so it takes the fixed stroke instead: without one the Poor tier's
-    # pale gold is about 1.3:1 against the white legend background and the key
-    # for the worst-performing tier is the one a reader cannot see. Matches the
-    # national map's legend.key.
-    legend.key       = element_rect(fill = NA, color = "#1c2b3a", linewidth = 0.6),
-    plot.background  = element_blank(),
-    panel.background = element_blank()
-  )
-
-# Render as interactive ggiraph widget
 # Tooltip CSS is kept clean and accessible; canvas sized to match old fig dimensions
 girafe(
   ggobj  = p_map,
@@ -744,209 +261,11 @@ girafe(
 <div id="gt-table-wrap" role="region" aria-label="State rankings table" aria-live="polite">
 
 ```{r gt-table}
-# ── ACCESSIBILITY FIX: use safe R column names (no spaces) ────────────────
-# gt generates <th id="..."> from column names, hyphenating spaces.
-# But <td headers="..."> keeps the original name with spaces.
-# This mismatch (e.g. id="CL-Score" vs headers="CL Score") breaks
-# screen readers. Using underscore names fixes the id/headers match,
-# then cols_label() sets the human-readable display names.
-#
-# NOTE: sub_missing() and tab_caption() require gt >= 0.9.0
-# ──────────────────────────────────────────────────────────────────────────
-
-safe_score_col <- gsub("[^A-Za-z0-9]", "_", cfg$score_col)
-safe_sub_cols  <- gsub("[^A-Za-z0-9]", "_", cfg$sub_cols)
-
-sub_rename_safe <- setNames(paste0("sub_", seq_along(cfg$sub_cols)),
-                            safe_sub_cols)
-
-# The Tier column is classified by quartile_idx(), the same score quartile that
-# colours the overall-score cell two columns to its right and the state's patch
-# on the map above. It used to band by rank (top 13, next 13, ...), which put a
-# state in one tier by name and another by colour whenever the two partings did
-# not line up. Short labels because the column is 95px wide.
-tbl_data <- scores_df |>
-  mutate(Tier = pal_tier_label(quartile_idx(cat_overall), short = TRUE,
-                               na_label = "No data")) |>
-  rename(!!safe_score_col := cat_overall) |>
-  rename(!!!sub_rename_safe) |>
-  select(rank, Tier, State = NAME, Abbr = ABBR,
-         all_of(safe_score_col),
-         all_of(safe_sub_cols))
-
-# ── Row indices per tier, for the overall-score column fill ───────────────
-# gt renders tbl_data in row order, so these integer positions address the same
-# rows the reader sees. Classified by quartile_idx(), the SAME function the map
-# uses, so a state's cell in this table always matches its patch on the map.
-score_tier_idx <- quartile_idx(tbl_data[[safe_score_col]])
-tier_rows <- lapply(1:4, function(k) which(score_tier_idx == k))
-
-# ── All score columns (safe names) for fmt_number ────────────────────────
-score_cols <- c(safe_score_col, safe_sub_cols)
-
-# ── Build display-label map: safe R name → pretty label ──────────────────
-label_list <- as.list(c(
-  setNames("Rank",               "rank"),
-  setNames("Tier",               "Tier"),
-  setNames("State / Territory",  "State"),
-  setNames("Abbrev.",            "Abbr"),
-  setNames(cfg$score_col,        safe_score_col),
-  setNames(cfg$sub_cols,         safe_sub_cols)
-))
-
-# ── Build source note with national averages (NA-safe) ────────────────────
-nat_note_parts <- paste0(
-  f(nat_subs), " ", cfg$sub_cols
-)
-nat_note <- paste0(
-  "**US National Average:** ",
-  f(nat_overall), " overall",
-  paste0(" &nbsp;\u00b7&nbsp; ", nat_note_parts, collapse = "")
-)
-
-# ── Render gt table ────────────────────────────────────────────────────────
-tbl_data |>
-  gt() |>
-
-  fmt_number(columns = all_of(score_cols), decimals = 1) |>
-
-  # Show — for NA values; wrap in <span> so screen readers say
-  # "Data not available" instead of just announcing an em-dash
-  sub_missing(
-    columns      = all_of(score_cols),
-    missing_text = html('<span aria-label="Data not available">\u2014</span>')
-  ) |>
-
-  # Apply accessible display labels (safe names → pretty names)
-  cols_label(.list = label_list) |>
-
-  cols_width(
-    rank  ~ px(55),
-    Tier  ~ px(95),
-    Abbr  ~ px(48),
-    State ~ px(190),
-    everything() ~ px(105)
-  ) |>
-
-  cols_align(align = "center",
-             columns = c(rank, Tier, Abbr, all_of(safe_score_col),
-                         all_of(safe_sub_cols))) |>
-  cols_align(align = "left", columns = State) |>
-
-  # ── Colour the overall score column, one solid tier colour per cell ──────
-  #
-  # This replaced gt::data_color(fn = score_pal_4, autocolor_text = TRUE) on
-  # 2026-07-30, for two reasons.
-  #
-  # 1. autocolor_text picked WHITE on the "Below Average" fill #d88036, which is
-  #    2.31:1 and fails WCAG AA. Its heuristic does not know our tokens. Taking
-  #    the ink from pal_on_fill() instead gives 6.35:1 there, and every pairing
-  #    in this column is now the one recorded in scripts/palettes.R.
-  #
-  # 2. data_color writes the fill as an inline style on the cell, which Quarto's
-  #    table post-processing then paints over: it adds Bootstrap's
-  #    `table-striped` class, and Bootstrap draws its stripe as a translucent
-  #    `box-shadow: inset`, not as a background. A box-shadow sits ON TOP of an
-  #    inline background-color, so alternate rows within one tier came out a few
-  #    percent darker than their neighbours. That is the "alternating slightly
-  #    different colours" effect. tab_options(quarto.disable_processing) below
-  #    stops the class being added at all; this block plus the defensive CSS in
-  #    scorecard_v3.css means the fill survives even if that ever changes.
-  #
-  # Rows are addressed by integer position from tier_rows, computed above with
-  # the same quartile_idx() the map uses.
-  tab_style(
-    style     = list(cell_fill(color = pal_fill(4, PAL)[1]),
-                     cell_text(color = pal_on_fill(1L, PAL))),
-    locations = cells_body(columns = all_of(safe_score_col),
-                           rows    = tier_rows[[1]])
-  ) |>
-  tab_style(
-    style     = list(cell_fill(color = pal_fill(4, PAL)[2]),
-                     cell_text(color = pal_on_fill(2L, PAL))),
-    locations = cells_body(columns = all_of(safe_score_col),
-                           rows    = tier_rows[[2]])
-  ) |>
-  tab_style(
-    style     = list(cell_fill(color = pal_fill(4, PAL)[3]),
-                     cell_text(color = pal_on_fill(3L, PAL))),
-    locations = cells_body(columns = all_of(safe_score_col),
-                           rows    = tier_rows[[3]])
-  ) |>
-  tab_style(
-    style     = list(cell_fill(color = pal_fill(4, PAL)[4]),
-                     cell_text(color = pal_on_fill(4L, PAL))),
-    locations = cells_body(columns = all_of(safe_score_col),
-                           rows    = tier_rows[[4]])
-  ) |>
-
-  # Bold rank
-  tab_style(
-    style     = cell_text(weight = "bold", size = px(15)),
-    locations = cells_body(columns = rank)
-  ) |>
-
-  # Accent border on top 3 rows
-  tab_style(
-    style     = cell_borders(sides = "left", color = cfg$accent, weight = px(4)),
-    locations = cells_body(rows = rank <= 3)
-  ) |>
-
-  tab_source_note(source_note = md(nat_note)) |>
-
-  # Proper <caption> element for screen readers to identify the table
-  tab_caption(
-    caption = md(paste0(
-      cfg$name, " — All States Ranked 1\u2013", nrow(tbl_data),
-      " by overall score (",  params$year, " ACS Data)"
-    ))
-  ) |>
-
-  tab_header(
-    title    = md(paste0("**", cfg$name, "** — All States Ranked")),
-    subtitle = md(paste0(
-      "Ranked 1–", nrow(tbl_data),
-      " by overall ", cfg$name, " score · ",
-      params$year, " ACS Data"
-    ))
-  ) |>
-
-  tab_options(
-    table.width                     = pct(100),
-    table.font.names                = c("EB Garamond", "Georgia", "serif"),
-    table.font.size                 = px(16),
-    data_row.padding                = px(5),
-    heading.background.color        = cfg$accent,
-    heading.title.font.size         = px(18),
-    heading.subtitle.font.size      = px(13),
-    column_labels.background.color  = cfg$col_hdr_bg,
-    column_labels.font.size         = px(13),
-    row.striping.include_table_body = TRUE,
-    row.striping.background_color   = "#f8f8fc",
-    source_notes.font.size          = px(13),
-    source_notes.background.color   = "#f8f8fc",
-    table.border.top.color          = cfg$accent,
-    table.border.top.width          = px(3),
-    # Stop Quarto's table post-processing from bolting Bootstrap's
-    # `table table-sm table-striped small` classes onto this table. Bootstrap
-    # draws striping as a translucent `box-shadow: inset`, which paints OVER
-    # gt's own cell backgrounds and tinted alternate rows of the coloured score
-    # column. gt already styles this table completely, including its own
-    # striping via row.striping.* above, so nothing is lost by opting out.
-    quarto.disable_processing       = TRUE
-  ) |>
-
-  # Both bands are painted in cfg$accent / cfg$col_hdr_bg, which are the
-  # category's identity colour, so the ink has to be the value recorded for it
-  # rather than a literal white. See the CAT_ON note above.
-  tab_style(
-    style     = cell_text(color = CAT_ON, weight = "bold"),
-    locations = cells_column_labels(everything())
-  ) |>
-  tab_style(
-    style     = cell_text(color = CAT_ON),
-    locations = cells_title(groups = c("title", "subtitle"))
-  )
+# The full gt table (columns, tier fills, header bands, source note, caption)
+# is built once in build_category_scorecard() (category_scorecard_core.R) and
+# returned ready-built as gt_table, so this table is identical in the
+# on-screen scorecard and the downloadable report by construction.
+gt_table
 ```
 
 </div><!-- /#gt-table-wrap -->
@@ -987,33 +306,17 @@ tbl_data |>
 <!-- ═══════════════════════════════════════════════════════════
      TOP / BOTTOM PERFORMERS
 ════════════════════════════════════════════════════════════ -->
-::: {.section-card}
+::: {.section-card .tb-performers}
 
+<span class="eyebrow">At a glance</span>
 <h2 style="`r heading_style`">Top &amp; Bottom Performers</h2>
 <p class="section-sub">The five highest- and lowest-scoring states for `r cfg$name`.</p>
 
 ```{r performers}
-# Phase 3.4. Two literals, #7b1717 and #92620a, replaced by two members of the
-# identity triple.
-#
-# NOT THE TIER RAMP, though it was tempting. Colouring the top card with the
-# `excellent` fill and the bottom with `poor` would read beautifully against the
-# site-wide "darker is better" convention, and it would be a lie: the top five
-# states are the top five, which is not the same as being in the Excellent band,
-# and in a weak year they might none of them be. The card LABELS carry the
-# meaning; the colour is reinforcement and must not assert a tier.
-#
-# `we` and `cp` are simply two members of the active triple, guaranteed at least
-# 20 CIEDE2000 apart under every vision type by the admission criteria, each
-# carrying its own recorded ink.
-HTML(paste0(
-  '<div class="top-bottom-container">',
-  make_perf_card("Top 5 States",    top5,
-                 pal_identity("we", PAL), pal_on_identity("we", PAL)),
-  make_perf_card("Bottom 5 States", bot5,
-                 pal_identity("cp", PAL), pal_on_identity("cp", PAL)),
-  '</div>'
-))
+# Card markup (including the colour reasoning in the long-form comment this
+# carries forward from the pre-refactor file) lives in performer_cards_html()
+# in category_scorecard_core.R now, shared with the print report.
+HTML(performer_cards_html())
 ```
 
 :::
@@ -1021,63 +324,39 @@ HTML(paste0(
 <!-- ═══════════════════════════════════════════════════════════
      REGIONAL BREAKDOWN
 ════════════════════════════════════════════════════════════ -->
-::: {.section-card}
+::: {.section-card .regional-card}
 
+<span class="eyebrow">Regional comparison</span>
 <h2 style="`r heading_style`">Average Score by Census Region</h2>
 <p class="section-sub">State scores averaged within each U.S. Census region. Territories and Puerto Rico excluded.</p>
 
-```{r regional-chart, fig.width=8, fig.height=2.4, fig.align='center', fig.alt=paste0("Horizontal bar chart showing average ", cfg$name, " scores by U.S. Census region. Bars are ordered from lowest to highest. A dashed vertical line marks the US national average of ", f(nat_overall), ". Exact average scores are labeled at the end of each bar.")}
-ggplot(region_df, aes(x = avg_score,
-                      y = region)) +
-  geom_col(fill = cfg$pal[3], alpha = 0.82, width = 0.48) +
-  geom_vline(xintercept = nat_overall,
-             linetype = "dashed", color = "#1c2b3a", linewidth = 0.75) +
-  geom_text(aes(label = sprintf("%.1f", avg_score)),
-            hjust = -0.25, size = 3.8, color = "#1c2b3a",
-            family = "EB Garamond", fontface = "bold") +
-  annotate("text", x = nat_overall + 0.8, y = 0.55,
-           label = paste0("US avg  ", f(nat_overall)),
-           hjust = 0, size = 3, color = "#1c2b3a",
-           fontface = "bold", family = "EB Garamond") +
-  scale_x_continuous(limits = c(0, 100),
-                     breaks = c(0, 25, 50, 75, 100),
-                     expand = c(0.01, 0)) +
-  labs(x = "Average Score (0\u2013100)", y = NULL) +
-  theme_minimal(base_size = 12, base_family = "EB Garamond") +
-  theme(
-    text               = element_text(family = "EB Garamond"),
-    axis.text.y        = element_text(size = 12, family = "EB Garamond",
-                                      color = "#1c2b3a"),
-    axis.text.x        = element_text(size = 9, color = "#1c2b3a",
-                                      family = "EB Garamond"),
-    axis.title.x       = element_text(size = 9, color = "#1c2b3a",
-                                      family = "EB Garamond",
-                                      margin = margin(t = 5)),
-    panel.grid.major.x = element_line(color = "#eaecf0", linewidth = 0.4),
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor   = element_blank(),
-    plot.background    = element_blank(),
-    panel.background   = element_blank(),
-    plot.margin        = margin(4, 20, 4, 4)
-  )
+```{r regional-chart, results='asis'}
+# Row markup lives in regional_card_html() in category_scorecard_core.R now,
+# shared with the print report. See that file for the accessibility notes
+# (role="img" + full-sentence aria-label per row) this carries forward.
+cat(regional_card_html())
 ```
 
 :::
 
 <!-- ═══════════════════════════════════════════════════════════
      ABOUT THIS CATEGORY
+     Roomier pass, 2026-08-18, per Colin's request that this card match the
+     height of the "Average Score by Census Region" card above it. Sized by
+     giving each sub-index its own stacked name/description row (was a
+     single run-in "Name, then description" line) plus the same padding-top /
+     top accent bar / eyebrow treatment already used on .tb-performers and
+     .regional-card, so the three cards read as one family. See the CSS
+     comment on .section-card.about-category for the measured numbers.
 ════════════════════════════════════════════════════════════ -->
-::: {.section-card}
+::: {.section-card .about-category}
 
+<span class="eyebrow">Category details</span>
 <h2 style="`r heading_style`">About This Category</h2>
 <p class="section-sub">The sub-indices that comprise the `r cfg$name` score and the measures they capture.</p>
 
 ```{r about-measures, results='asis'}
-items <- paste0(
-  "<li><strong>", cfg$sub_labels, "</strong> &mdash; ", cfg$sub_desc, "</li>",
-  collapse = "\n"
-)
-cat(paste0('<ul class="about-list">', items, '</ul>'))
+cat(about_list_html())
 ```
 
 :::

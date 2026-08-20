@@ -17,10 +17,14 @@
   --doc-rule-soft : #dde2ea;
   --doc-navy      : #1c2b3a;
   --doc-accent-alt: #8b1a1a;
-  --identity-cl   : #d07048;
-  --identity-cp   : #a81808;
-  --identity-we   : #480008;
 }
+/* --identity-* WAS DECLARED HERE UNTIL 2026-08-06. The three rules that read
+   it, .cat-banner, .section-heading and the .cat-banner print override, now
+   take --doc-navy: nothing on the national scorecard is coloured by which
+   category it belongs to any more. The role still exists in
+   scripts/palettes.R and the generated :root block still emits it, because the
+   Top 5 / Bottom 5 performer cards read it from R; those set their colour
+   inline, so they need no token here. */
 
 /* ── Font note ───────────────────────────────────────────────────────────── */
 /* EB Garamond is loaded via font-loader.html (include-in-header in the      */
@@ -70,11 +74,13 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
    override at the foot of this file, whose `!important` would beat the inline
    background and print every category banner in one colour.
 
-   Repointed to the identity tokens anyway, in phase 3.2, so that whenever the
-   class is restored the rule is already correct rather than maroon. */
+   Repointed to the identity tokens in phase 3.2, and repointed again to
+   --doc-navy on 2026-08-06 when the banner went neutral, so that whenever the
+   class is restored the rule is already correct rather than a category colour.
+   The gradient went with it: two stops of one colour is a flat fill, and the
+   qmd's inline banner_style is flat. */
 .cat-banner {
-  background: linear-gradient(140deg,
-              var(--identity-we) 0%, var(--identity-cp) 100%);
+  background: var(--doc-navy);
   color: white;
   padding: 2.4rem 3rem 2.2rem;
   border-radius: 12px;
@@ -108,10 +114,18 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 }
 
 /* ── Stat pills row ─────────────────────────────────────────────────────── */
+/* Grid, not flex-wrap: the "States Above US Avg" pill carries more text
+   (label + a "of 51 states & territories" sub-line) than the other three,
+   so as a flex row it rendered wider than its siblings and didn't fit at
+   the end of the row -- wrapping alone onto its own line as an orphaned
+   4th tile under a row of 3, rather than a balanced 2x2 or 4-across
+   layout. An explicit 4-column grid forces all four into equal-width
+   columns regardless of content length, so text wraps inside a tile
+   instead of the tile itself overflowing the row. Fixed 2026-08-19. */
 .stat-pills {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  flex-wrap: wrap;
   margin-top: 0.2rem;
 }
 
@@ -121,7 +135,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
   border-radius: 8px;
   padding: 0.65rem 1.2rem;
   text-align: center;
-  min-width: 120px;
+  min-width: 0;
 }
 
 .stat-pill .pill-val {
@@ -162,8 +176,8 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
   font-size: 1.6rem;
   font-weight: 700;
   /* Also unmatched today; the qmd uses heading_style inline. See the note on
-     .cat-banner above. Repointed for the same reason. */
-  color: var(--identity-we);
+     .cat-banner above. Repointed for the same reason, twice. */
+  color: var(--doc-navy);
   margin: 0 0 0.3rem;
   letter-spacing: -0.01em;
 }
@@ -199,94 +213,336 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 }
 
 /* ── Top / Bottom performer cards ──────────────────────────────────────── */
+/* Emphasis pass, Colin, 2026-08-18. Taller card, an accent bar + eyebrow so
+   this section reads as a highlight, and a "spotlight" treatment on the
+   single best-ranked row in the top card and the single worst-ranked row in
+   the bottom card. All colour on the cards still comes from the active
+   palette's `identity` role (we/cp), set inline by make_perf_card() /
+   make_perf_row() in category_scorecard.qmd -- nothing below hardcodes a
+   hex, so this keeps tracking the palette selector and high-contrast mode
+   exactly as it did before this pass. See mix_toward_white() in the qmd for
+   how the row and badge tints are derived from that same inline colour.
+
+   .perf-header.top / .perf-header.bottom used to live here but were dead:
+   the header div never carried a "top" or "bottom" class, only
+   "perf-header", because its colour has always been set inline. Removed
+   rather than carried forward silently. */
+.section-card.tb-performers {
+  padding-top: 2.1rem;
+  padding-bottom: 2rem;
+  border-top: 5px solid var(--doc-accent-alt);
+  border-radius: 4px 4px 12px 12px;
+}
+
+.tb-performers .eyebrow {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--doc-accent-alt);
+  margin: 0 0 0.5rem;
+}
+
+.tb-performers .section-heading { font-size: 1.7rem; }
+
 .top-bottom-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.2rem;
-  margin-top: 0.6rem;
+  gap: 1.4rem;
+  margin-top: 0.4rem;
 }
 
 .perf-card {
-  border-radius: 10px;
+  border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--doc-rule-soft);
+  box-shadow: 0 6px 18px rgba(28, 43, 58, 0.08);
 }
 
 .perf-header {
-  padding: 0.65rem 1.1rem 0.6rem;
-  font-size: 0.85rem;
+  padding: 0.95rem 1.1rem 0.9rem;
+  font-size: 0.9rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.04em;
   color: white;
+  white-space: nowrap;
 }
 
-.perf-header.top  { background: var(--doc-navy); }
-.perf-header.bottom { background: var(--doc-muted); }
+.perf-header-glyph {
+  font-size: 0.8rem;
+  margin-right: 0.35rem;
+}
 
 .perf-body {
-  background: white;
+  background: white; /* fallback only; category_scorecard.qmd sets the
+                         palette-derived tint inline on this element */
 }
 
 .perf-row {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1.1rem;
-  border-bottom: 1px solid #f0f2f6;
-  gap: 0.6rem;
+  padding: 0.85rem 1.4rem;
+  border-bottom: 1px solid rgba(28, 43, 58, 0.08);
+  gap: 0.85rem;
 }
 
 .perf-row:last-child { border-bottom: none; }
 
+.perf-row-spotlight {
+  padding: 1rem 1.4rem;
+}
+
+.perf-row-spotlight .perf-name { font-weight: 600; }
+
 .perf-rank {
   font-family: 'EB Garamond', Garamond, Georgia, serif;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: var(--doc-navy);
-  min-width: 2rem;
-  text-align: right;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
   flex-shrink: 0;
+  /* background + text colour set inline per row; non-spotlight badges get
+     plain doc_ink text on a pale identity tint, spotlight badges get white
+     (on_identity) text on the full-strength identity colour. See
+     make_perf_row() in category_scorecard.qmd. */
 }
 
 .perf-name {
   flex: 1;
-  font-size: 0.92rem;
+  font-size: 1rem;
   color: var(--doc-navy);
 }
 
 .perf-score {
   font-family: 'EB Garamond', Garamond, Georgia, serif;
-  font-size: 1.05rem;
+  font-size: 1.3rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--doc-navy);
   flex-shrink: 0;
+  /* only the spotlighted row's score is recoloured, inline, to the
+     identity colour; every other score stays doc_navy like the rest of the
+     page. See make_perf_row() in category_scorecard.qmd. */
 }
 
-/* ── Regional breakdown ─────────────────────────────────────────────────── */
-.region-chart-wrap {
-  margin-top: 0.6rem;
+.perf-row-spotlight .perf-score { font-size: 1.5rem; }
+
+.spread-stat {
+  grid-column: 1 / -1;
+  margin-top: 0.3rem;
+  text-align: center;
+  padding: 1rem 1rem 0.2rem;
+  border-top: 1px solid var(--doc-rule-soft);
 }
 
-/* ── About this category list ───────────────────────────────────────────── */
+.spread-stat .num {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--doc-navy);
+}
+
+.spread-stat .label {
+  font-size: 0.9rem;
+  color: var(--doc-muted);
+  margin-top: 0.15rem;
+}
+
+/* ── Regional breakdown, 2026-08-18 redesign ────────────────────────────── */
+/* Replaces a ggplot horizontal bar chart (a static raster image) with real
+   HTML: one big serif number and a slim position bar per Census region,
+   ranked highest to lowest. `.region-chart-wrap` above was leftover from an
+   even earlier version and was never referenced by the qmd; removed rather
+   than kept alongside this.
+
+   PALETTE-INVARIANT BY CONSTRUCTION. Every colour below is one of the doc_*
+   custom properties (--doc-navy, --doc-accent, --doc-accent-alt, --doc-ink,
+   --doc-tint, --doc-rule-soft), which vary ONLY with contrast mode, never
+   with which of the five map/table palettes is selected -- see
+   ADAPARC_DOC_TOKENS in scripts/palettes.R, which has no per-palette branch.
+   Colin asked specifically that this card not react to the palette selector;
+   do not introduce a var(--tier-*) or var(--identity-*) property here, since
+   those DO change with the palette. */
+.section-card.regional-card {
+  border-top: 5px solid var(--doc-accent-alt);
+  border-radius: 4px 4px 12px 12px;
+}
+
+.regional-card .eyebrow {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--doc-accent-alt);
+  margin: 0 0 0.5rem;
+}
+
+.region-rows {
+  margin-top: 1.1rem;
+}
+
+.region-row {
+  display: flex;
+  align-items: center;
+  gap: 1.8rem;
+  padding: 1.72rem 0.2rem;
+  border-bottom: 1px solid var(--doc-rule-soft);
+}
+
+.region-row:last-child { border-bottom: none; }
+
+.region-figure {
+  flex: 0 0 160px;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.region-score {
+  font-size: 2.9rem;
+  font-weight: 700;
+  color: var(--doc-ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* The single highest-scoring region only -- a rank fact (it IS the top row),
+   not a tier assertion. See the note on doc_accent where REGION_BAR used to
+   be defined in category_scorecard.qmd. */
+.region-row.is-top .region-score { color: var(--doc-accent); }
+
+.region-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--doc-navy);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.region-bar-track {
+  flex: 1 1 auto;
+  position: relative;
+  height: 0.7rem;
+  background: var(--doc-tint);
+  border-radius: 999px;
+}
+
+.region-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--doc-navy);
+  border-radius: 999px;
+}
+
+.region-row.is-top .region-bar-fill { background: var(--doc-accent); }
+
+/* The US-average reference tick has to stay readable whether it lands on the
+   light track or on a bar fill dark enough to swallow a plain doc_ink line
+   (this is exactly the problem the old REGION_RULE contrast note described).
+   Rather than branch in R on which side of the tick each bar's fill ends,
+   the tick is a 1px-dark / 2px-white / 1px-dark stripe: the white core reads
+   clearly against the dark navy or maroon fill (>8:1 either way), and the
+   dark edges read clearly against the light doc_tint track (~17:1). At least
+   one half of the stripe clears WCAG 2.2 SC 1.4.11's 3:1 floor in every case,
+   so the mark never needs to know what colour is behind it. */
+.region-bar-track .avg-tick {
+  position: absolute;
+  top: -0.55rem;
+  bottom: -0.55rem;
+  width: 4px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to right,
+    var(--doc-ink) 0, var(--doc-ink) 1px,
+    #ffffff 1px, #ffffff 3px,
+    var(--doc-ink) 3px, var(--doc-ink) 4px
+  );
+  border-radius: 1px;
+}
+
+.avg-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 1.5rem 0 0.1rem;
+  font-size: 0.88rem;
+  color: var(--doc-navy);
+  opacity: 0.85;
+}
+
+.avg-legend .swatch {
+  width: 1.3rem;
+  height: 0;
+  border-top: 2px solid var(--doc-ink);
+  flex: 0 0 auto;
+}
+
+/* ── About this category card, roomier pass 2026-08-18 ─────────────────── */
+/* Colin asked for this card (the last one on the page) to match the height
+   of "Average Score by Census Region" above it, not by forcing a fixed
+   height but by making it genuinely roomier and more readable: the
+   padding-top / top accent bar / eyebrow mirror .tb-performers and
+   .regional-card so the three cards read as one family, and each sub-index
+   gets its own stacked name + description row instead of one run-in line.
+
+   Measured in a headless browser against the real markup/CSS: with the
+   default WE category (3 sub-indices) this card comes out ~645px tall vs.
+   ~643px for the regional card, an effectively exact match. CL (3
+   sub-indices, longer descriptions) lands around ~708px; CP (5
+   sub-indices) around ~950px -- taller because it has more content to show,
+   which is the correct trade-off over shrinking text or truncating
+   descriptions to force a false match. */
+.section-card.about-category {
+  padding-top: 2.1rem;
+  border-top: 5px solid var(--doc-accent-alt);
+  border-radius: 4px 4px 12px 12px;
+}
+
+.about-category .eyebrow {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--doc-accent-alt);
+  margin: 0 0 0.5rem;
+}
+
 .about-list {
-  margin: 0.6rem 0 0 0;
+  margin: 1.1rem 0 0 0;
   padding: 0;
   list-style: none;
 }
 
 .about-list li {
-  padding: 0.55rem 0;
-  border-bottom: 1px solid #f0f2f6;
-  font-size: 1rem;
-  line-height: 1.7;
-  color: var(--doc-navy);
+  padding: 1.5rem 0.2rem;
+  border-bottom: 1px solid var(--doc-rule-soft);
 }
 
 .about-list li:last-child { border-bottom: none; }
 
 .about-list .al-name {
+  display: block;
+  font-size: 1.3rem;
   font-weight: 700;
-  margin-right: 0.35rem;
+  color: var(--doc-ink);
+  margin-bottom: 0.4rem;
+}
+
+.about-list .al-desc {
+  display: block;
+  font-size: 1.08rem;
+  line-height: 1.8;
+  color: var(--doc-navy);
 }
 
 /* ── Focus visibility (WCAG 2.4.7 / 2.4.11) ────────────────────────────── */
@@ -312,21 +568,48 @@ button:focus-visible,
     padding: 1rem 0.75rem 2.5rem;
   }
 
-  /* Banner pills: wrap to one per row on small screens */
+  /* Banner pills: one per row on small screens */
   .stat-pills {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 0.6rem;
-  }
-
-  .stat-pill {
-    min-width: unset;
-    width: 100%;
   }
 
   /* Top/bottom performer cards: stack vertically */
   .top-bottom-container {
     grid-template-columns: 1fr;
   }
+
+  /* .tb-performers has higher specificity than the .section-card padding
+     rule just below, so it needs its own mobile override or the desktop
+     padding and accent bar would stay full-size on small screens. */
+  .section-card.tb-performers {
+    padding: 1.5rem 1rem 1.25rem;
+  }
+
+  /* Same specificity reason as .tb-performers above. */
+  .section-card.regional-card {
+    padding: 1.5rem 1rem 1.25rem;
+  }
+
+  /* Same specificity reason as .tb-performers above. */
+  .section-card.about-category {
+    padding: 1.5rem 1rem 1.25rem;
+  }
+
+  /* Region rows: number stacks above its bar instead of sitting beside it --
+     side-by-side at 160px + a bar left too little room for the bar to read
+     as a bar on a narrow screen. */
+  .region-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+
+  .region-figure { flex: 0 0 auto; }
+
+  .region-bar-track { width: 100%; }
+
+  .region-score { font-size: 2.3rem; }
 
   /* Reduce banner heading size */
   [role="banner"] h1,
@@ -351,7 +634,7 @@ button:focus-visible,
     border: 1px solid var(--doc-rule-soft);
   }
   .cat-banner {
-    background: var(--identity-we) !important;
+    background: var(--doc-navy) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     border-radius: 6px;

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>ADA-PARC State Scorecard</title>
+<title>state_scorecard_print</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -3800,25 +3800,134 @@ box-shadow: none !important;
 
 <main class="content column-page" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">ADA-PARC State Scorecard</h1>
+
+
+
+<div class="cell">
+<style type="text/css">
+
+:root {
+--adaparc-maroon: #6d1f2e;
+--adaparc-gold: #c9a84c;
+}
+.adaparc-banner {
+background: var(--adaparc-maroon);
+color: #ffffff;
+border-bottom: 5px solid var(--adaparc-gold);
+padding: 1rem 1.25rem;
+margin: 0 0 1rem 0;
+}
+.adaparc-banner .banner-content {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 0.75rem;
+max-width: 8.7in;
+margin: 0 auto;
+}
+.adaparc-banner .banner-icon { height: 2.2rem; width: auto; flex-shrink: 0; }
+.adaparc-banner .brand {
+font-size: 1.6rem;
+font-weight: 800;
+letter-spacing: 0.03em;
+margin: 0;
+font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+.adaparc-banner .sub {
+font-size: 1.05rem;
+font-weight: 500;
+margin: 0.15rem 0 0 0;
+color: #f3e6c9;
+font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+.adaparc-footer {
+max-width: 8.7in;
+margin: 1.5rem auto 0 auto;
+padding: 0.75rem 1.25rem 1.5rem;
+border-top: 2px solid var(--adaparc-gold);
+font-size: 0.9rem;
+color: #555;
+font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+.adaparc-footer p { margin: 0.2rem 0; }
+.adaparc-footer .funding-note { font-weight: 600; color: #1c2b3a; }
+
+.print-bar {
+max-width: 8.7in;
+margin: 0 auto 1rem auto;
+padding: 0 1.25rem;
+}
+.btn-print {
+font-family: 'EB Garamond', Garamond, Georgia, serif;
+font-size: 1.02rem;
+font-weight: 700;
+color: #ffffff;
+background: var(--adaparc-maroon);
+border: 1.5px solid var(--adaparc-maroon);
+border-radius: 6px;
+padding: 8px 18px;
+cursor: pointer;
+}
+.btn-print:hover { background: #8b2737; border-color: #8b2737; }
+.btn-print:focus { outline: 3px solid var(--adaparc-gold); outline-offset: 2px; }
+.print-hint {
+font-family: 'EB Garamond', Garamond, Georgia, serif;
+font-size: 0.92rem;
+color: #555;
+margin: 0.5rem 0 0;
+}
+
+@page {
+size: Letter;
+margin: 0.6in 0.5in;
+}
+.print-page-break {
+break-before: page;
+page-break-before: always;
+}
+@media print {
+
+#quarto-content,
+#quarto-content.page-columns,
+.page-columns,
+main.content,
+main#quarto-document-content,
+.cell {
+display: block !important;
+grid-template-columns: none !important;
+}
+
+.banner-ranks > .cell,
+.banner-ranks > .cell > .cell-output-display {
+display: contents !important;
+}
+.print-bar { display: none !important; }
+body { font-size: 11.5pt; }
+
+body,
+.adaparc-banner {
+-webkit-print-color-adjust: exact;
+print-color-adjust: exact;
+}
+.adaparc-banner { padding: 0.6rem 1rem; margin-bottom: 0.7rem; }
+.adaparc-banner .banner-icon { height: 26px; }
+.adaparc-footer {
+break-inside: avoid;
+
+font-size: 9.5pt;
+margin-top: 0.6rem;
+padding-top: 0.4rem;
+}
+.adaparc-footer p { margin: 0.1rem 0; }
+
+.domain-card, .summary-table-card, .about-category {
+break-inside: avoid;
+page-break-inside: avoid;
+}
+a[href]:after { content: ""; }
+}
+</style>
 </div>
-
-
-
-<div class="quarto-title-meta column-page">
-
-    
-  
-    
-  </div>
-  
-
-
-</header>
-
-
 <style>
 :root {
 --palette-id: heritage;
@@ -3864,6 +3973,27 @@ box-shadow: none !important;
 }
 </style>
 <script>document.documentElement.setAttribute('data-adaparc-contrast', 'standard');</script>
+<div class="adaparc-banner">
+<div class="banner-content">
+<div>
+<p class="brand">
+ADA-PARC
+</p>
+<p class="sub">
+State Scorecard  ·  Illinois  ·  2024 Data
+</p>
+</div>
+<img class="banner-icon" src="data:image/png;base64,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" alt>
+</div>
+</div>
+<div class="print-bar">
+<button type="button" class="btn-print" onclick="window.print()">
+Print or save as PDF
+</button>
+<p class="print-hint">
+For a clean copy, turn off “Headers and footers” in the print dialog’s More settings before saving.
+</p>
+</div>
 <div class="page-wrap">
 <!-- ═══════════════════════════════════════════════════════════
      BANNER
@@ -4173,8 +4303,10 @@ Housing Affordability
 </div>
 <!-- ═══════════════════════════════════════════════════════════
      SCORE SUMMARY TABLE
+     print-page-break: opens on its own page rather than starting a few
+     lines from the bottom of whatever page the domain cards end on.
 ════════════════════════════════════════════════════════════ -->
-<div class="summary-section summary-table-card">
+<div class="summary-section summary-table-card print-page-break">
 <span class="eyebrow">State Performance, All Indices</span>
 <h3 class="summary-title anchored">
 Score Summary
@@ -4184,20 +4316,20 @@ How Illinois scores and ranks across all 15 ADA-PARC indices, from the three top
 </p>
 <div class="cell">
 <div class="cell-output-display">
-<div id="mkmpyjekqq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#mkmpyjekqq table {
+<div id="cdmqkujbmd" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#cdmqkujbmd table {
 font-family: 'EB Garamond', Georgia, serif;
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 }
-#mkmpyjekqq thead, #mkmpyjekqq tbody, #mkmpyjekqq tfoot, #mkmpyjekqq tr, #mkmpyjekqq td, #mkmpyjekqq th {
+#cdmqkujbmd thead, #cdmqkujbmd tbody, #cdmqkujbmd tfoot, #cdmqkujbmd tr, #cdmqkujbmd td, #cdmqkujbmd th {
 border-style: none;
 }
-#mkmpyjekqq p {
+#cdmqkujbmd p {
 margin: 0;
 padding: 0;
 }
-#mkmpyjekqq .gt_table {
+#cdmqkujbmd .gt_table {
 display: table;
 border-collapse: collapse;
 line-height: normal;
@@ -4222,11 +4354,11 @@ border-left-style: none;
 border-left-width: 2px;
 border-left-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_caption {
+#cdmqkujbmd .gt_caption {
 padding-top: 4px;
 padding-bottom: 4px;
 }
-#mkmpyjekqq .gt_title {
+#cdmqkujbmd .gt_title {
 color: #333333;
 font-size: 125%;
 font-weight: initial;
@@ -4237,7 +4369,7 @@ padding-right: 5px;
 border-bottom-color: #FFFFFF;
 border-bottom-width: 0;
 }
-#mkmpyjekqq .gt_subtitle {
+#cdmqkujbmd .gt_subtitle {
 color: #333333;
 font-size: 85%;
 font-weight: initial;
@@ -4248,7 +4380,7 @@ padding-right: 5px;
 border-top-color: #FFFFFF;
 border-top-width: 0;
 }
-#mkmpyjekqq .gt_heading {
+#cdmqkujbmd .gt_heading {
 background-color: #FFFFFF;
 text-align: center;
 border-bottom-color: #FFFFFF;
@@ -4259,12 +4391,12 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_bottom_border {
+#cdmqkujbmd .gt_bottom_border {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_col_headings {
+#cdmqkujbmd .gt_col_headings {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -4278,7 +4410,7 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_col_heading {
+#cdmqkujbmd .gt_col_heading {
 color: #FFFFFF;
 background-color: #1C2B3A;
 font-size: 13.5px;
@@ -4297,7 +4429,7 @@ padding-left: 10px;
 padding-right: 10px;
 overflow-x: hidden;
 }
-#mkmpyjekqq .gt_column_spanner_outer {
+#cdmqkujbmd .gt_column_spanner_outer {
 color: #FFFFFF;
 background-color: #1C2B3A;
 font-size: 13.5px;
@@ -4308,13 +4440,13 @@ padding-bottom: 0;
 padding-left: 4px;
 padding-right: 4px;
 }
-#mkmpyjekqq .gt_column_spanner_outer:first-child {
+#cdmqkujbmd .gt_column_spanner_outer:first-child {
 padding-left: 0;
 }
-#mkmpyjekqq .gt_column_spanner_outer:last-child {
+#cdmqkujbmd .gt_column_spanner_outer:last-child {
 padding-right: 0;
 }
-#mkmpyjekqq .gt_column_spanner {
+#cdmqkujbmd .gt_column_spanner {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
@@ -4325,10 +4457,10 @@ overflow-x: hidden;
 display: inline-block;
 width: 100%;
 }
-#mkmpyjekqq .gt_spanner_row {
+#cdmqkujbmd .gt_spanner_row {
 border-bottom-style: hidden;
 }
-#mkmpyjekqq .gt_group_heading {
+#cdmqkujbmd .gt_group_heading {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -4353,7 +4485,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 text-align: left;
 }
-#mkmpyjekqq .gt_empty_group_heading {
+#cdmqkujbmd .gt_empty_group_heading {
 padding: 0.5px;
 color: #333333;
 background-color: #FFFFFF;
@@ -4367,13 +4499,13 @@ border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 vertical-align: middle;
 }
-#mkmpyjekqq .gt_from_md > :first-child {
+#cdmqkujbmd .gt_from_md > :first-child {
 margin-top: 0;
 }
-#mkmpyjekqq .gt_from_md > :last-child {
+#cdmqkujbmd .gt_from_md > :last-child {
 margin-bottom: 0;
 }
-#mkmpyjekqq .gt_row {
+#cdmqkujbmd .gt_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -4391,7 +4523,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 overflow-x: hidden;
 }
-#mkmpyjekqq .gt_stub {
+#cdmqkujbmd .gt_stub {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -4403,7 +4535,7 @@ border-right-color: #D3D3D3;
 padding-left: 5px;
 padding-right: 5px;
 }
-#mkmpyjekqq .gt_stub_row_group {
+#cdmqkujbmd .gt_stub_row_group {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -4416,13 +4548,13 @@ padding-left: 5px;
 padding-right: 5px;
 vertical-align: top;
 }
-#mkmpyjekqq .gt_row_group_first td {
+#cdmqkujbmd .gt_row_group_first td {
 border-top-width: 2px;
 }
-#mkmpyjekqq .gt_row_group_first th {
+#cdmqkujbmd .gt_row_group_first th {
 border-top-width: 2px;
 }
-#mkmpyjekqq .gt_summary_row {
+#cdmqkujbmd .gt_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -4431,14 +4563,14 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#mkmpyjekqq .gt_first_summary_row {
+#cdmqkujbmd .gt_first_summary_row {
 border-top-style: solid;
 border-top-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_first_summary_row.thick {
+#cdmqkujbmd .gt_first_summary_row.thick {
 border-top-width: 2px;
 }
-#mkmpyjekqq .gt_last_summary_row {
+#cdmqkujbmd .gt_last_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -4447,7 +4579,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_grand_summary_row {
+#cdmqkujbmd .gt_grand_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -4456,7 +4588,7 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#mkmpyjekqq .gt_first_grand_summary_row {
+#cdmqkujbmd .gt_first_grand_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -4465,7 +4597,7 @@ border-top-style: double;
 border-top-width: 6px;
 border-top-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_last_grand_summary_row_top {
+#cdmqkujbmd .gt_last_grand_summary_row_top {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -4474,10 +4606,10 @@ border-bottom-style: double;
 border-bottom-width: 6px;
 border-bottom-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_striped {
+#cdmqkujbmd .gt_striped {
 background-color: rgba(128, 128, 128, 0.05);
 }
-#mkmpyjekqq .gt_table_body {
+#cdmqkujbmd .gt_table_body {
 border-top-style: none;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -4485,7 +4617,7 @@ border-bottom-style: none;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_footnotes {
+#cdmqkujbmd .gt_footnotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -4498,7 +4630,7 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_footnote {
+#cdmqkujbmd .gt_footnote {
 margin: 0px;
 font-size: 90%;
 padding-top: 4px;
@@ -4506,7 +4638,7 @@ padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#mkmpyjekqq .gt_sourcenotes {
+#cdmqkujbmd .gt_sourcenotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -4519,64 +4651,64 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#mkmpyjekqq .gt_sourcenote {
+#cdmqkujbmd .gt_sourcenote {
 font-size: 12.5px;
 padding-top: 4px;
 padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#mkmpyjekqq .gt_left {
+#cdmqkujbmd .gt_left {
 text-align: left;
 }
-#mkmpyjekqq .gt_center {
+#cdmqkujbmd .gt_center {
 text-align: center;
 }
-#mkmpyjekqq .gt_right {
+#cdmqkujbmd .gt_right {
 text-align: right;
 font-variant-numeric: tabular-nums;
 }
-#mkmpyjekqq .gt_font_normal {
+#cdmqkujbmd .gt_font_normal {
 font-weight: normal;
 }
-#mkmpyjekqq .gt_font_bold {
+#cdmqkujbmd .gt_font_bold {
 font-weight: bold;
 }
-#mkmpyjekqq .gt_font_italic {
+#cdmqkujbmd .gt_font_italic {
 font-style: italic;
 }
-#mkmpyjekqq .gt_super {
+#cdmqkujbmd .gt_super {
 font-size: 65%;
 }
-#mkmpyjekqq .gt_footnote_marks {
+#cdmqkujbmd .gt_footnote_marks {
 font-size: 75%;
 vertical-align: 0.4em;
 position: initial;
 }
-#mkmpyjekqq .gt_asterisk {
+#cdmqkujbmd .gt_asterisk {
 font-size: 100%;
 vertical-align: 0;
 }
-#mkmpyjekqq .gt_indent_1 {
+#cdmqkujbmd .gt_indent_1 {
 text-indent: 5px;
 }
-#mkmpyjekqq .gt_indent_2 {
+#cdmqkujbmd .gt_indent_2 {
 text-indent: 10px;
 }
-#mkmpyjekqq .gt_indent_3 {
+#cdmqkujbmd .gt_indent_3 {
 text-indent: 15px;
 }
-#mkmpyjekqq .gt_indent_4 {
+#cdmqkujbmd .gt_indent_4 {
 text-indent: 20px;
 }
-#mkmpyjekqq .gt_indent_5 {
+#cdmqkujbmd .gt_indent_5 {
 text-indent: 25px;
 }
-#mkmpyjekqq .katex-display {
+#cdmqkujbmd .katex-display {
 display: inline-flex !important;
 margin-bottom: 0.75em !important;
 }
-#mkmpyjekqq div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#cdmqkujbmd div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 height: 0px !important;
 }
 </style>
@@ -4718,21 +4850,29 @@ The degree to which people with disabilities (aged 18–64) live in community se
 Community Participation
 </dt>
 <dd class="about-cat-desc">
-Access to the tools and systems that enable full participation in community life — including technology, health insurance, educational attainment, transportation, and public safety.
+Access to the tools and systems that enable full participation in community life, including technology, health insurance, educational attainment, transportation, and public safety.
 </dd>
 <dt class="domain-heading we about-cat-head">
 Work &amp; Economic
 </dt>
 <dd class="about-cat-desc">
-Economic inclusion and security for people with disabilities — measuring positive work outcomes (employment, income), negative labor force indicators (poverty, unemployment, NILF), and housing affordability.
+Economic inclusion and security for people with disabilities, measuring positive work outcomes (employment, income), negative labor force indicators (poverty, unemployment, NILF), and housing affordability.
 </dd>
 </dl>
 </div>
 <!-- ═══════════════════════════════════════════════════════════
-     FOOTER
+     SCORECARD FOOTER (methodology note)
 ════════════════════════════════════════════════════════════ -->
 <p class="footer-note">
 ADA-PARC Scorecard  ·  2024 Data  ·  Scores range 0–100; higher is better.  ·  Rankings among 51 U.S. states and territories.  ·  Rank tiers: <strong>Excellent</strong> (1–13)  ·  <strong>Good</strong> (14–26)  ·  <strong>Subpar</strong> (27–39)  ·  <strong>Poor</strong> (40–51).
+</p>
+</div>
+<div class="adaparc-footer">
+<p class="funding-note">
+The ADA-PARC is funded by the National Institute for Disability, Independent Living, and Rehabilitation Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.
+</p>
+<p>
+ADA-PARC  ·  ADA Participation Action Research Consortium  ·  Generated August 19, 2026.
 </p>
 </div>
 

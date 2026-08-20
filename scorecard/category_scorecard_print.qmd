@@ -1,0 +1,817 @@
+---
+title: ""
+params:
+  category: "WE"
+  year: 2024
+  palette: "heritage"
+  contrast: "standard"
+format:
+  html:
+    self-contained: true
+    toc: false
+    page-layout: full
+    theme: cosmo
+    css: scorecard_v3.css
+    include-in-header: font-loader.html
+    favicon: ../www/brand/PARC_blue_icon.png
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+# ─────────────────────────────────────────────────────────────────────────────
+# Category (National) Scorecard — branded, paginated "Download" report
+#
+# Rendered on demand by the Shiny app's download_cat handler in ADA_PARC.Rmd,
+# with the same params (category, year, palette, contrast) the reader
+# selected on screen. This document does NOT recompute scores: it calls
+# build_category_scorecard() in category_scorecard_core.R, the same function
+# category_scorecard.qmd (the on-screen version) calls, so the two can never
+# report different numbers for the same category. See the header comment in
+# category_scorecard_core.R.
+#
+# The one presentation choice this document makes on its own: the on-screen
+# choropleth is an interactive ggiraph widget (hover tooltips per state);
+# this document exports the SAME underlying ggplot object (p_map) to a
+# static SVG via svglite instead, the technique the National Data map
+# download already uses. Everything else unique to this document -- the
+# ADA-PARC brand masthead, grant funding footer, and print/pagination CSS --
+# follows the same pattern as state_scorecard_print.qmd.
+# ─────────────────────────────────────────────────────────────────────────────
+options(cli.width = 80)
+knitr::opts_chunk$set(dpi = 96, fig.retina = 2)
+
+library(htmltools)
+library(ggplot2)
+
+local({
+  cand <- c("category_scorecard_core.R",
+            file.path("scorecard", "category_scorecard_core.R"))
+  hit  <- cand[file.exists(cand)]
+  if (length(hit) == 0) {
+    stop("category_scorecard_print.qmd cannot locate category_scorecard_core.R. ",
+         "Render with execute_dir set to the scorecard/ directory, ",
+         "or from the project root.")
+  }
+  source(hit[1], local = FALSE)
+})
+
+ctx <- build_category_scorecard(
+  category = params$category,
+  year     = params$year,
+  palette  = params$palette,
+  contrast = params$contrast
+)
+# invisible() matters here: list2env() returns the environment it just
+# populated (this chunk's own environment == R_GlobalEnv when this document
+# is rendered from the Shiny app's download handler), and as the last
+# expression in the chunk it would otherwise auto-print. That auto-print is
+# exactly the stray "<environment: R_GlobalEnv>" line that used to appear
+# above the masthead on every rendered scorecard. Same fix already applied
+# in state_scorecard.qmd / state_scorecard_print.qmd; this file and
+# category_scorecard.qmd had fallen out of sync with that fix until now.
+invisible(list2env(ctx, environment()))
+```
+
+```{css}
+/* ── Brand masthead + funding footer ─────────────────────────────────────
+   See the identical block (and its rationale) in state_scorecard_print.qmd.
+   Fixed ADA-PARC brand maroon/gold, not the reader's chosen palette: the
+   masthead is the organization's identity, not a data encoding. */
+:root {
+  --adaparc-maroon: #6d1f2e;
+  --adaparc-gold:   #c9a84c;
+}
+
+.adaparc-banner {
+  background: var(--adaparc-maroon);
+  color: #ffffff;
+  border-bottom: 5px solid var(--adaparc-gold);
+  padding: 1rem 1.25rem;
+  margin: 0 0 1rem 0;
+}
+.adaparc-banner .banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  max-width: 9.5in;
+  margin: 0 auto;
+}
+.adaparc-banner .banner-icon { height: 2.2rem; width: auto; flex-shrink: 0; }
+.adaparc-banner .brand {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin: 0;
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+.adaparc-banner .sub {
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin: 0.15rem 0 0 0;
+  color: #f3e6c9;
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+
+.adaparc-footer {
+  max-width: 9.5in;
+  margin: 1.5rem auto 0 auto;
+  padding: 0.75rem 1.25rem 1.5rem;
+  border-top: 2px solid var(--adaparc-gold);
+  font-size: 0.9rem;
+  color: #555;
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+.adaparc-footer p { margin: 0.2rem 0; }
+.adaparc-footer .funding-note { font-weight: 600; color: #1c2b3a; }
+
+.print-bar {
+  max-width: 9.5in;
+  margin: 0 auto 1rem auto;
+  padding: 0 1.25rem;
+}
+.btn-print {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--adaparc-maroon);
+  border: 1.5px solid var(--adaparc-maroon);
+  border-radius: 6px;
+  padding: 8px 18px;
+  cursor: pointer;
+}
+.btn-print:hover  { background: #8b2737; border-color: #8b2737; }
+.btn-print:focus  { outline: 3px solid var(--adaparc-gold); outline-offset: 2px; }
+
+.print-hint {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 0.98rem;
+  color: #4a2a10;
+  background: #f8ede0;
+  border: 1.5px solid var(--adaparc-gold);
+  border-left: 5px solid var(--adaparc-maroon);
+  border-radius: 6px;
+  padding: 0.7rem 1rem;
+  margin: 0.75rem 0 0;
+  max-width: 9.5in;
+  line-height: 1.5;
+}
+.print-hint strong { color: var(--adaparc-maroon); }
+
+/* ── Static map figure ─────────────────────────────────────────────────── */
+.map-figure { margin: 0.5rem 0 0.5rem 0; text-align: center; }
+.map-figure svg { max-width: 100%; height: auto; }
+
+/* ── Pagination ────────────────────────────────────────────────────────── */
+@page {
+  size: Letter;
+  margin: 0.6in 0.5in;
+}
+.print-page-break {
+  break-before: page;
+  page-break-before: always;
+}
+
+@media print {
+  /* Same Chromium CSS-grid fragmentation fix as the National/City/State
+     downloads. See feedback_quarto_print_pagination memory. */
+  #quarto-content,
+  #quarto-content.page-columns,
+  .page-columns,
+  main.content,
+  main#quarto-document-content,
+  .cell {
+    display: block !important;
+    grid-template-columns: none !important;
+  }
+
+  .print-bar { display: none !important; }
+  #gt-table-note-search { display: none !important; }
+
+  body { font-size: 11pt; }
+
+  body,
+  .adaparc-banner {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .adaparc-banner { padding: 0.6rem 1rem; margin-bottom: 0.7rem; }
+  .adaparc-banner .banner-icon { height: 26px; }
+
+  .adaparc-footer {
+    break-inside: avoid;
+    /* Was 8pt. Bumped to keep the funding note above ~9.5pt printed, in
+       line with the project's accessibility minimum-font-size bar -- 8pt
+       reads uncomfortably small on paper even for a footer, which sits
+       oddly on a disability-rights research center's own deliverable.
+       Same fix already applied in state_scorecard_print.qmd. */
+    font-size: 9.5pt;
+    margin-top: 0.6rem;
+    padding-top: 0.4rem;
+  }
+  .adaparc-footer p { margin: 0.1rem 0; }
+
+  /* Each card is the unit a reader reasons about. */
+  .section-card, .stat-pills {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* ...but NOT the rankings cards. Those are deliberately one-page-each by
+     construction (see the row-budget chunk below), and asking an engine to
+     keep a card intact that is already sized to fill its page is asking for
+     the artifact Colin's 2026-08-20 PDF showed: Safari honoured the rule as
+     far as it could, then fragmented anyway and stranded the card's own
+     rounded bottom edge alone at the top of the FOLLOWING page (twice, on
+     printed pages 4 and 6). Releasing the constraint here removes the
+     contradiction. */
+  .section-card.rankings-section {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  /* The rankings table opens its own page rather than starting a few lines
+     from the bottom of the map section. Reused (same class) on the
+     continuation block below, so it also opens on its own page. */
+  .rankings-section { break-before: page; page-break-before: always; }
+
+  /* Print-only card treatment for the rankings pages, doing two jobs.
+     (1) No border/radius/shadow, so there is no rounded box edge that CAN
+     be stranded on a following page even if something does fragment; the
+     table's own accent top border and dark header row carry the structure
+     on paper perfectly well.
+     (2) No left/right padding, which hands the table the full ~7.5in
+     printable width instead of ~7.0in. That extra ~0.5in is what lets the
+     widest sub-index label ("Living Arrangements") sit on its own line
+     rather than being wrapped and then clipped -- see the column-width
+     rules further down. Reduced top padding buys back ~1 row of budget. */
+  .section-card.rankings-section {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0.6rem 0 0.6rem !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* A rankings heading must never be the last thing on a page with its
+     table starting on the next one. Same lesson as the city profile
+     download's stranded h3 subheads. */
+  .rankings-section h2,
+  .rankings-section .section-sub {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  /* "(continued)" label on the second/later table-page heading. Matches the
+     grey the same pattern uses in national_topic.qmd. */
+  .continued { font-weight: 500; color: #666; }
+
+  /* 2026-08-19: the rankings table used to be ONE 51-row gt table, relying
+     on Chromium/WebKit to fragment the <table> across pages and repeat its
+     <thead> via the display:table-header-group rules just below. A
+     rendered PDF showed that failing outright past the first page --
+     WebKit does not reliably repeat an auto-fragmented thead, the same gap
+     national_topic.qmd's own comments already document for the National
+     Data download. Fixed the same way that file fixes it: split the ranked
+     rows into 2 REAL, separate gt tables (each with its own <thead>, built
+     by build_rankings_gt() in category_scorecard_core.R and printed as two
+     static page blocks below -- see the long comment there for why not a
+     loop), instead of one long table plus CSS hoping the browser repeats
+     it. At the current 9.5pt / tightened-padding row height this yields
+     2 pages for a 51-row category, matching every category today; the
+     assertions in the rankings-table-build chunk fail the render loudly
+     if a page's share of rows ever exceeds what that page can physically
+     hold, rather than silently spilling them onto a bare page.
+     These display:table-header-group rules stay as a defensive fallback:
+     if either page's own table is ever taller than expected and still
+     needs to fragment across a page boundary on its own, Chromium-family
+     engines will still attempt to repeat that table's own thead. */
+  .gt_table thead { display: table-header-group !important; }
+  .gt_table tbody { display: table-row-group !important; }
+  .gt_table tfoot { display: table-footer-group !important; }
+
+  /* Tightened, print-only row/header padding (on-screen keeps gt's default
+     5px data_row.padding). Shrinks the vertical footprint of each row.
+     3px was measured at a 20.8pt row pitch in Colin's 2026-08-20 export;
+     2px takes that to roughly 19.3pt, which is where the row budgets in
+     the rankings-table-build chunk below come from. Font size is NOT
+     touched (stays 9.5pt) so this costs nothing in readability. */
+  .gt_table .gt_row { padding-top: 2px !important; padding-bottom: 2px !important; }
+  .gt_table .gt_col_heading { padding-top: 5px !important; padding-bottom: 5px !important; }
+
+  /* break-inside: avoid on <tr> is not reliably honoured by every Chromium
+     build once a cell's text wraps to two lines (confirmed 2026-08-19: a
+     downloaded PDF split "North Carolina" as "North" on one page and
+     "Carolina" on the next, mid-row). Declared !important, with both the
+     legacy and Level-4 fragmentation property, and repeated on the cells
+     themselves as well as the row, since some engines respect it on one but
+     not the other. This narrows the failure window; it is a mitigation for
+     a browser limitation the site's CSS cannot fully guarantee against
+     (see the print-hint copy below), not a 100% fix. The column-width fix
+     just below also reduces how often a state name needs to wrap onto a
+     second line in the first place, which is the other lever available
+     here. */
+  .gt_table tr {
+    break-inside: avoid !important;
+    break-inside: avoid-page !important;
+    page-break-inside: avoid !important;
+  }
+  .gt_table td, .gt_table th {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .gt_table { font-size: 9.5pt; }
+
+  /* gt's cols_width() (category_scorecard_core.R) sets fixed pixel widths
+     tuned for the on-screen table, where a wide category (e.g. Community
+     Participation's 5 sub-indices) is allowed to horizontal-scroll. Print
+     has no scrollbar: with the default auto table layout, a browser treats
+     those px widths as minimums and expands the table past the page's
+     ~7.5in printable width instead of shrinking to fit, silently pushing
+     the rightmost column(s) (Housing Access, sometimes Community Resource
+     too) off the printed page entirely. Confirmed by rendering the real gt
+     table through Chromium print-to-PDF: Housing Access was fully absent
+     and Community Resource was cut mid-column with this rule missing.
+     table-layout: fixed makes the browser treat the specified widths as
+     proportional hints and scale every column down to fit table.width
+     (100%, already set by tab_options()) instead, so all columns stay
+     visible. Print-scoped only (this document's own CSS block, not
+     scorecard_v3.css) so the on-screen table's sizing is unaffected. */
+  .gt_table { table-layout: fixed !important; width: 100% !important; }
+
+  /* Setting every <col> to width:auto (an earlier version of this rule)
+     backfired: per the CSS2.1 fixed-table-layout algorithm, when ALL
+     columns are auto and no first-row cell carries an explicit width, the
+     browser divides the table equally among every column, so
+     State/Territory (originally the widest column, 155px, sized to fit
+     "Massachusetts"/"District of Columbia") shrank to the same width as
+     Abbrev. (48px) and "Massachusetts" was clipped to "Massachuset".
+     Fix: give the leading text columns explicit percentages (by column
+     POSITION, since gt does not add a class per column) and leave the
+     numeric columns auto, so they divide the remainder evenly among
+     themselves whether the category has 3 sub-indices or 5.
+
+     2026-08-20, renumbered: the print table no longer has an Abbrev.
+     column (build_rankings_gt(drop_abbrev = TRUE) in the build chunk
+     below), so every numeric column moved one position left and these
+     selectors had to move with it. The 7% Abbrev. share was redistributed
+     to State/Territory and to the numeric columns, which is what buys the
+     sub-index headers enough room. If you ever put Abbrev. back, these
+     four selectors have to shift right again. */
+  .gt_table col:nth-child(1) { width: 8%  !important; }  /* Rank */
+  .gt_table col:nth-child(2) { width: 12% !important; }  /* Tier */
+  .gt_table col:nth-child(3) { width: 24% !important; }  /* State / Territory */
+  .gt_table col:nth-child(n+4) { width: auto !important; } /* CL Score + sub-indices */
+
+  /* THE actual cause of the clipped column headers in Colin's 2026-08-20
+     export ("Abbrev" cut mid-word, "Living Arrangement" cut on its second
+     line). It was never the widths on their own: gt ships
+     `overflow-x: hidden` on .gt_col_heading as well as on .gt_row, and the
+     override below only ever covered .gt_row -- so body cells were safe
+     and the header cells silently lost characters. Fixing the widths alone
+     would have papered over this until the next category with a longer
+     sub-index label. white-space: normal is explicit because a header that
+     needs two lines must be allowed to take two lines rather than being
+     held on one and cut. */
+  .gt_table .gt_row,
+  .gt_table .gt_col_heading {
+    overflow: visible !important;
+    overflow-wrap: anywhere;
+    white-space: normal !important;
+  }
+
+  /* The gt table's <caption> (tab_caption() in category_scorecard_core.R)
+     duplicates the "State Rankings" heading and intro sentence already
+     printed above the table, just reworded, immediately after row 51. It
+     is a genuine semantic <caption> that screen readers use to describe
+     the table, so it stays in the document rather than being deleted --
+     only visually hidden here, print-scoped, with the standard
+     clip-rect technique (not display:none, which some assistive tech also
+     hides) so sighted print readers stop seeing the repeated text but nothing
+     is removed from the accessibility tree. */
+  .gt_table caption {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* The methodology note and the NIDILRR funding acknowledgment are one
+     closing block, and in the 2026-08-20 export the funding block alone
+     was pushed onto a ninth page with nothing else on it. Grouping them
+     under one break-inside: avoid keeps them together at the foot of the
+     About This Category page. */
+  .footer-note {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  a[href]:after { content: ""; }
+}
+```
+
+```{r doc-tokens, results='asis'}
+cat(doc_header_html)
+```
+
+```{r banner, results='asis'}
+if (!data_available) {
+  cat(paste0(
+    '<div class="adaparc-banner"><div class="banner-content"><div>',
+    '<p class="brand">ADA-PARC</p>',
+    '<p class="sub">Category Scorecard</p>',
+    '</div></div></div>\n',
+    '<p style="max-width:9.5in;margin:1rem auto;padding:0 1.25rem;">',
+    'Domain scores are not available for this category. All sub-index ',
+    'scores are NA for the selected year.</p>'
+  ))
+  knitr::knit_exit()
+}
+
+cat(paste0(
+  '<div class="adaparc-banner">',
+  '<div class="banner-content">',
+  '<div>',
+  '<p class="brand">ADA-PARC</p>',
+  '<p class="sub">Category Scorecard &nbsp;·&nbsp; ',
+  htmltools::htmlEscape(cfg$name), ' &nbsp;·&nbsp; ',
+  htmltools::htmlEscape(as.character(year)), ' Data</p>',
+  '</div>',
+  '<img class="banner-icon" src="../www/brand/PARC_white_icon_knockout.png" alt="">',
+  '</div>',
+  '</div>\n'
+))
+
+cat(paste0(
+  '<div class="print-bar">',
+  '<button type="button" class="btn-print" onclick="window.print()">',
+  'Print or save as PDF</button>',
+  # Chrome/Edge/Firefox print dialogs default "Headers and footers" ON,
+  # which stamps the browser tab title, local file path, timestamp, and a
+  # generic page count across every page of an otherwise branded document
+  # -- exactly what showed up on every page of the uploaded PDF this fix
+  # was made from. CSS cannot suppress that (it is dialog UI, not page
+  # content), so this is a nudge to turn it off rather than a silent gap.
+  # Re-styled 2026-08-19 as a bordered callout with the key action bolded
+  # (was a single line of small grey text easy to skim past -- the exact
+  # PDF this fix responds to was generated with the setting left on). Same
+  # fix already applied in state_scorecard_print.qmd.
+  '<p class="print-hint"><strong>Before saving: turn &ldquo;Headers and ',
+  'footers&rdquo; OFF</strong> in the print dialog&rsquo;s More settings. ',
+  'Otherwise your browser stamps a local file path and timestamp across ',
+  'every page of this report.</p>',
+  '</div>\n'
+))
+```
+
+::: {.page-wrap}
+
+<!-- ═══════════════════════════════════════════════════════════
+     CATEGORY HERO
+════════════════════════════════════════════════════════════ -->
+<div style="`r banner_style`" role="banner">
+
+<p class="cat-eyebrow">ADA-PARC Scorecard &nbsp;·&nbsp; `r year` Data</p>
+
+<h1 style="font-family:'EB Garamond',Garamond,Georgia,serif; font-size:2.6rem; font-weight:700; color:white; margin:0 0 0.3rem; line-height:1.05;">`r cfg$name`</h1>
+
+<p class="cat-desc">`r cfg$desc`</p>
+
+```{r banner-pills, results='asis'}
+# Same stat-pill markup the on-screen scorecard shows, built once in
+# category_scorecard_core.R (stat_pills_html()).
+cat(stat_pills_html())
+```
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAP (static SVG, not the interactive ggiraph widget)
+════════════════════════════════════════════════════════════ -->
+::: {.section-card}
+
+<h2 style="`r heading_style`">State Scores — `r cfg$name`</h2>
+<p class="section-sub">States divided into four equal-population quartile groups. Alaska, Hawaii, D.C., and territories appear in the rankings table below.</p>
+
+```{r map-svg, results='asis'}
+# Same p_map ggplot object the on-screen scorecard wraps in girafe() for
+# hover tooltips (category_scorecard_core.R). Exported here to static SVG via
+# svglite instead -- the same technique ADA_PARC.Rmd's National Data map
+# download already uses for render_national_map(). svglite emits the
+# requested font-family; the browser pairs it with the EB Garamond webfont
+# loaded via font-loader.html.
+svg_tmp <- tempfile(fileext = ".svg")
+ggplot2::ggsave(
+  filename = svg_tmp, plot = p_map,
+  device = svglite::svglite,
+  width = 10, height = 6.2, bg = "white"
+)
+svg_lines <- readLines(svg_tmp, warn = FALSE)
+# Drop svglite's leading XML declaration (`<?xml version='1.0' ...?>`)
+# before handing this off to cat(). Browsers don't need it for inline SVG,
+# and leaving it in front of a raw `results='asis'` HTML block breaks
+# Pandoc's block parser badly enough that it loses track of the enclosing
+# `::: {.section-card}` fence: both the opening and closing ::: markers
+# for this card printed as literal, visible text ("::: {.section-card}")
+# on the rendered page instead of becoming a real <div>, while everything
+# else (including the map itself) still rendered correctly. Isolated with
+# a minimal pandoc repro -- this one line was the exact trigger, and
+# increasing the fence's colon count did NOT fix it, only removing this
+# line did.
+svg_lines <- svg_lines[!grepl("^<\\?xml", svg_lines)]
+map_svg <- paste(svg_lines, collapse = "\n")
+unlink(svg_tmp)
+
+map_alt <- paste0(
+  "Choropleth map of the United States showing ", cfg$name,
+  " scores by state, divided into four quartile tiers from Poor to ",
+  "Excellent. Highest score: ", top_row$NAME, " at ", f(top_row$cat_overall),
+  ". Lowest score: ", bot_row$NAME, " at ", f(bot_row$cat_overall), "."
+)
+
+cat('<div class="map-figure" role="img" aria-label="',
+    htmltools::htmlEscape(map_alt, attribute = TRUE), '">\n', sep = "")
+cat(map_svg)
+cat('\n</div>\n')
+```
+
+<p class="map-caption">Scores range 0–100; higher is better. Grey indicates states with no data in this render.</p>
+
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     RANKINGS TABLE
+     print-page-break + .rankings-section: opens on its own page. No live
+     search box in the downloaded report -- it has no purpose in a static
+     file and the print CSS above hides it defensively either way.
+
+     Split across 2 real gt tables (one per printed page, each with its own
+     header row) rather than one continuous table -- see the long comment
+     on .gt_table thead in the {css} block above for why.
+
+     2026-08-19, second pass: the first version of this fix manually
+     cat()'d gt::as_raw_html() output inside a results='asis' chunk nested
+     in a ::: fenced Div. Colin's next render showed literal "::: {...}"
+     and stray ":::" text leaking onto pages 1, 2, 3 and 7 -- Pandoc's
+     fenced-Div tracking got desynced for the REST of the document, not
+     just around the table. Diagnosis: gt's pretty-printed HTML contains
+     blank lines (inside its own <style> block, between table sections),
+     and a blank line inside a raw HTML block being cat()'d into a
+     results='asis' chunk ends Pandoc's raw-HTML-block scan early
+     (CommonMark HTML block type 6 terminates at the first blank line
+     it sees) -- everything after that point in the string gets fed back
+     through the Markdown block parser instead of passed through verbatim,
+     which is what threw off the ::: fence-nesting count for everything
+     downstream. Same bug FAMILY as the svglite XML-declaration fence-leak
+     already fixed in the map-svg chunk below (see
+     [[project_category_scorecard_print_bugfixes]]), different trigger.
+     Fix: stop hand-building raw HTML strings for the tables entirely.
+     Each page's gt table is instead simply the last value of its own
+     ordinary (non-results='asis') chunk -- exactly how the single
+     51-row `gt_table` rendered before this whole print-pagination change,
+     which never leaked. knitr/gt's own print method (not a raw HTML
+     string this file constructs and cat()s) handles it safely.
+     Consequence: the two pages are written out as two static blocks below
+     rather than generated in a loop, since a dynamically-sized run of
+     markdown+chunk blocks isn't something a single knitr execution can
+     emit. All three categories have 51 populated rows today, always
+     exactly 2 pages; the assertions in the setup chunk below fail the
+     render loudly (instead of silently dropping or spilling a page of
+     states) if that ever stops being true.
+
+     2026-08-20, third pass. Colin's export still broke, and the cause was
+     the row budget itself, not the table-splitting mechanism. The old
+     ROWS_PER_PAGE = 27 was copied from national_topic.qmd, whose table
+     pages carry different chrome, and it was never measured against THIS
+     document. Measured from the actual export (Letter 612x792pt, @page
+     margin 0.6in, so usable y runs 43.2 to 748.8):
+
+       printed page 1  first data row top y = 256.7  ->  23 rows fit
+       printed page 2  first data row top y = 191.9  ->  25 rows + note fit
+
+     The code was feeding page 1 twenty-six rows. Rows 24 to 26 spilled
+     onto a bare page with no header row and no card, and one row was
+     painted as a fragment at the page foot. Worse, the two pages never had
+     equal capacity: page 1 alone carried the gt tab_header title bar plus
+     a two-line intro, 64.8pt of extra chrome, about three rows' worth. A
+     single symmetric constant could not have been right for both.
+════════════════════════════════════════════════════════════ -->
+
+```{r rankings-table-build}
+# ── Measured row budgets ────────────────────────────────────────────────
+# Derived, not inherited. Do not copy these numbers into another document;
+# re-measure there. Arithmetic, all in points:
+#
+#   usable page height        792 - (2 x 43.2)          = 705.6   (y 43.2..748.8)
+#   chrome above first row    card pad + h2 + 1-line sub + 2-line
+#                             column header               ~ 132
+#     (measured 148.7 in the 2026-08-20 export, minus ~17 saved by the
+#      reduced print card padding in the {css} block above)
+#   row pitch                 9.5pt text + 2px padding    ~ 19.3
+#     (measured 20.8 at the old 3px padding)
+#   source note block         last page only              ~ 24
+#
+#   page 1 capacity  (748.8 - 43.2 - 132) / 19.3          = 29.7  -> 29
+#   later pages      (748.8 - 43.2 - 132 - 24) / 19.3     = 28.5  -> 28
+#
+# The constants below are set BELOW those figures on purpose. Safari and
+# Chrome disagree slightly on text metrics, and Colin exports from Safari
+# while every earlier fix in this file was validated in Chromium. Holding
+# two to three rows of slack is what makes both engines land on the same
+# pagination instead of one of them spilling a row. Even in the pessimistic
+# case where the padding reduction does not take and the pitch stays at the
+# measured 20.8, capacity is 27 and 26, so these still hold.
+FIRST_PAGE_ROWS <- 27L
+CONT_PAGE_ROWS  <- 26L
+
+n_rows <- nrow(tbl_data)
+
+# Fewest pages whose combined capacity holds every row.
+n_pages <- 1L
+while (FIRST_PAGE_ROWS + (n_pages - 1L) * CONT_PAGE_ROWS < n_rows) {
+  n_pages <- n_pages + 1L
+}
+
+# Balance the rows evenly across those pages rather than filling page 1 to
+# its cap and leaving a short last page: an even split keeps the most slack
+# on every page, which is what absorbs an engine-to-engine metrics
+# difference. 51 rows over 2 pages gives 26 and 25.
+per_page    <- as.integer(ceiling(n_rows / n_pages))
+rank_groups <- split(seq_len(n_rows), ceiling(seq_len(n_rows) / per_page))
+
+# ── Real capacity assertions ────────────────────────────────────────────
+# The previous guard was stopifnot(length(gt_pages) == 2), which only ever
+# confirmed that two tables existed. It passed on the export that was
+# visibly broken, because a table overflowing its page is still a table.
+# These check the thing that actually matters.
+page_counts <- vapply(rank_groups, length, integer(1))
+budgets     <- c(FIRST_PAGE_ROWS, rep(CONT_PAGE_ROWS, length(page_counts) - 1L))
+
+if (any(page_counts > budgets)) {
+  over <- which(page_counts > budgets)
+  stop(
+    "category_scorecard_print.qmd: rankings table page(s) ",
+    paste(over, collapse = ", "), " are over budget (",
+    paste0(page_counts[over], " rows vs ", budgets[over], " allowed",
+           collapse = "; "),
+    "). These rows would spill onto a page with no header row. Either ",
+    "re-measure the budget constants against a fresh export or reduce the ",
+    "chrome above the table.",
+    call. = FALSE
+  )
+}
+if (sum(page_counts) != n_rows) {
+  stop("category_scorecard_print.qmd: rankings pages account for ",
+       sum(page_counts), " of ", n_rows, " rows.", call. = FALSE)
+}
+
+# show_title_bar = FALSE on every page now, not just continuations. The gt
+# tab_header repeated the <h2>State Rankings</h2> and the intro sentence
+# directly above it almost word for word, so on paper it was a third copy
+# of the same text -- and it cost ~46pt, over two rows of budget, on the
+# one page that could least afford it. tab_caption() still carries the
+# table's description for screen readers (visually hidden in print, see
+# the {css} block above), so nothing is lost from the accessibility tree.
+#
+# drop_abbrev = TRUE: print only. The state name is spelled out in the
+# adjacent column, and the ~7% of width the two-letter code was taking is
+# what the sub-index headers needed to stop being clipped. See the long
+# comment on build_rankings_gt() in category_scorecard_core.R.
+gt_pages <- lapply(seq_along(rank_groups), function(k) {
+  idx <- rank_groups[[k]]
+  build_rankings_gt(
+    tbl_data[idx, , drop = FALSE],
+    tier_rows_for(idx),
+    show_title_bar   = FALSE,
+    show_source_note = (k == length(rank_groups)),
+    drop_abbrev      = TRUE
+  )
+})
+
+# The two page blocks below are static markdown, not generated in a loop
+# (see the long comment above this chunk for why a loop is not available
+# here). This is the guard for THAT constraint specifically, and it is the
+# reason the capacity checks above exist separately: this one is about the
+# document's structure, those are about whether the rows fit.
+if (length(gt_pages) != 2L) {
+  stop("category_scorecard_print.qmd has exactly 2 static rankings page ",
+       "blocks, but the row budget produced ", length(gt_pages),
+       " page(s) for ", n_rows, " rows. Add or remove a page block below ",
+       "to match.", call. = FALSE)
+}
+```
+
+::: {.section-card .rankings-section .print-page-break}
+
+<h2 style="`r heading_style_black`">State Rankings</h2>
+<!-- Deliberately one sentence, and deliberately short enough to set on a
+     single line at print width. The second sentence that used to be here
+     ("Sub-index scores are shown alongside the overall score") only
+     restated what the column headers directly below already say, and it
+     wrapped to a second line, costing a row of the table's page budget on
+     the one page with the least to spare. -->
+<p class="section-sub">All states, D.C., and Puerto Rico ranked by `r cfg$name` score.</p>
+
+```{r gt-table-page1}
+gt_pages[[1]]
+```
+
+:::
+
+::: {.section-card .rankings-section}
+
+<h2 style="`r heading_style_black`">State Rankings <span class="continued">(continued)</span></h2>
+<p class="section-sub">Ranks `r min(rank_groups[[2]])`–`r max(rank_groups[[2]])` of `r n_rows`, continued from the previous page.</p>
+
+```{r gt-table-page2}
+gt_pages[[2]]
+```
+
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     TOP / BOTTOM PERFORMERS
+════════════════════════════════════════════════════════════ -->
+::: {.section-card .tb-performers}
+
+<span class="eyebrow">At a glance</span>
+<h2 style="`r heading_style`">Top &amp; Bottom Performers</h2>
+<p class="section-sub">The five highest- and lowest-scoring states for `r cfg$name`.</p>
+
+```{r performers}
+HTML(performer_cards_html())
+```
+
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     REGIONAL BREAKDOWN
+════════════════════════════════════════════════════════════ -->
+::: {.section-card .regional-card}
+
+<span class="eyebrow">Regional comparison</span>
+<h2 style="`r heading_style`">Average Score by Census Region</h2>
+<p class="section-sub">State scores averaged within each U.S. Census region. Territories and Puerto Rico excluded.</p>
+
+```{r regional-chart, results='asis'}
+cat(regional_card_html())
+```
+
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     ABOUT THIS CATEGORY
+════════════════════════════════════════════════════════════ -->
+::: {.section-card .about-category}
+
+<span class="eyebrow">Category details</span>
+<h2 style="`r heading_style`">About This Category</h2>
+<p class="section-sub">The sub-indices that comprise the `r cfg$name` score and the measures they capture.</p>
+
+```{r about-measures, results='asis'}
+cat(about_list_html())
+```
+
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCORECARD FOOTER (methodology note)
+════════════════════════════════════════════════════════════ -->
+<p class="footer-note">
+  <strong>Data source:</strong> ADA-PARC Scorecard &nbsp;·&nbsp;
+  `r year` American Community Survey (ACS) &nbsp;·&nbsp;
+  Scores range 0&ndash;100; higher is better. &nbsp;·&nbsp;
+  Sub-indices comprising the <strong>`r cfg$name`</strong> score:
+  `r paste(cfg$sub_labels, collapse = "; ")`.
+  Alaska, Hawaii, D.C., and Puerto Rico are excluded from the map but included in the rankings table.
+</p>
+
+:::
+
+```{r funding-footer, results='asis'}
+# Same funding acknowledgment wording used on the National Data, City Data,
+# and State Scorecard downloads. Kept as a literal string per document, per
+# the existing convention of not sharing a banner/footer component across
+# report types.
+cat(paste0(
+  '<div class="adaparc-footer">',
+  '<p class="funding-note">The ADA-PARC is funded by the National ',
+  'Institute for Disability, Independent Living, and Rehabilitation ',
+  'Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.</p>',
+  '<p>ADA-PARC &nbsp;·&nbsp; ADA Participation Action Research Consortium &nbsp;·&nbsp; ',
+  'Generated ', format(Sys.Date(), "%B %d, %Y"), '.</p>',
+  '</div>'
+))
+```

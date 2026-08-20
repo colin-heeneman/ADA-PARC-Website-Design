@@ -14,27 +14,32 @@
    --tier-*-text, with the heritage fill and on_fill as fallbacks. See the note
    above those rules.
 
-   --identity-* REPLACED --dom-* IN PHASE 3.2 OF docs/palette-v2-build-plan.qmd,
-   and the rename is not cosmetic. --dom-cl and --dom-cp came from
-   ADAPARC_DOC_TOKENS, which follows the CONTRAST MODE only, and there was no
-   --dom-we at all: the Work & Economic surfaces borrowed --doc-accent, the
-   document's general accent colour, which is why every scorecard looked maroon
-   whatever palette the reader chose. --identity-* comes from the selected
-   palette's `identity` role, all three domains are now first-class, and none of
-   them is the document accent.
+   --identity-* IS GONE FROM THIS STYLESHEET AS OF 2026-08-06. It arrived in
+   phase 3.2 of docs/palette-v2-build-plan.qmd, replacing an older --dom-* set,
+   and it coloured the domain card top borders, the domain headings and the big
+   headline score in each badge.
+
+   WHY IT WENT. Colour on this site now carries ONE meaning, better or worse,
+   which is the meaning the Display panel's palette selector changes. A domain
+   is not better or worse than another domain, so colouring the three domains
+   put a second, unrelated code on the same channel and gave the reader no way
+   to tell which code a patch of colour belonged to. Every surface listed above
+   prints its domain NAME, so nothing is lost (WCAG 2.2 SC 1.4.1). The full
+   argument is in the "Domain colours: REMOVED" note in state_scorecard.qmd.
+
+   The generated block still emits --identity-*, because the role survives in
+   scripts/palettes.R for the national scorecard's Top 5 / Bottom 5 cards.
+   Nothing in THIS file reads it, so the fallbacks are not declared here;
+   check_css_fallbacks() runs with require_all=False for exactly that reason.
    ───────────────────────────────────────────────────────────────────────── */
 :root {
   --doc-ink        : #111111;
   --doc-ink-soft   : #3d3630;
   --doc-cream      : #faf7f3;
   --doc-rule       : #e5ddd3;
+  --doc-muted      : #6b7280;
+  --doc-navy       : #1c2b3a;
   --doc-accent     : #7b1717;
-  --identity-cl    : #d07048;
-  --identity-cp    : #a81808;
-  --identity-we    : #480008;
-  --on-identity-cl : #111111;
-  --on-identity-cp : #ffffff;
-  --on-identity-we : #ffffff;
 }
 
 /* ── Font note ───────────────────────────────────────────────────────────── */
@@ -86,7 +91,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 .state-banner {
   background: #ffffff;
   color: var(--doc-ink);
-  padding: 2.6rem 3rem 2.2rem;
+  padding: 3.1rem 3rem 2.7rem;
   border-radius: 12px;
   margin-bottom: 2rem;
   display: flex;
@@ -139,11 +144,12 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
   padding: 2rem 2.4rem 1.8rem;
   margin-bottom: 1.8rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border-top: 6px solid #ccc;
+  /* One colour for all three cards as of 2026-08-06; the .cl / .cp / .we
+     variants that stood here are gone. The rule separates the card from the
+     page, which is a job a single neutral does. The card's own <h2> says which
+     domain it is. */
+  border-top: 6px solid var(--doc-navy);
 }
-.domain-card.cl { border-top-color: var(--identity-cl); }
-.domain-card.cp { border-top-color: var(--identity-cp); }
-.domain-card.we { border-top-color: var(--identity-we); }
 
 /* ── Domain header row ──────────────────────────────────────────────────── */
 /* Stacked and centred: heading, accent rule, description, score badge. The
@@ -173,13 +179,17 @@ h2.domain-heading,
   line-height: 1.1;
   letter-spacing: -0.01em;
   border-bottom: none;   /* beats the Bootstrap/Quarto h2 underline */
+  /* One colour as of 2026-08-06. This heading is set at 2rem bold, so
+     doc_navy on white at 13.4:1 is far past the 3:1 large text needs and past
+     the 4.5:1 it would need if it were ever shrunk. The .cl / .cp / .we
+     variants that stood here are gone; see the :root note. */
+  color: var(--doc-navy);
 }
-.domain-heading.cl { color: var(--identity-cl); }
-.domain-heading.cp { color: var(--identity-cp); }
-.domain-heading.we { color: var(--identity-we); }
 
-/* Short accent rule under the heading. currentColor inherits the domain
-   colour, so the three cards stay in sync with no extra markup. */
+/* Short accent rule under the heading. currentColor inherits from the heading,
+   so the rule and the heading stay in sync with no extra markup. That was
+   written when the heading carried a per-domain colour; it still holds, and it
+   is why this rule needed no edit when the three collapsed into one. */
 .domain-header-row h2.domain-heading::after {
   content: "";
   display: block;
@@ -228,10 +238,14 @@ h2.domain-heading,
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.02em;
+  /* NEUTRAL, 2026-08-06. This number was the domain's identity colour, which
+     meant the page's largest, most prominent figure was coloured by which
+     card it sat in rather than by how the state was doing. The tier chip
+     immediately below it, in .rank-tier, carries the better/worse reading and
+     is filled from the palette; keeping the two on separate elements is what
+     stops one being mistaken for the other. */
+  color: var(--doc-navy);
 }
-.domain-score-badge.cl .score-val { color: var(--identity-cl); }
-.domain-score-badge.cp .score-val { color: var(--identity-cp); }
-.domain-score-badge.we .score-val { color: var(--identity-we); }
 
 .domain-score-badge .score-lbl {
   font-size: 0.85rem;
@@ -313,6 +327,28 @@ h2.domain-heading,
   align-items: center;
   justify-content: flex-end;
   min-width: 2px;
+
+  /* ── Outline, ADDED 2026-08-06, AND IT IS LOad-BEARING ────────────────────
+     The fill is set inline from tier_bg(), so a Poor bar is the LIGHT end of
+     the ramp. Measured against this bar's own #f0ebe4 track: ADA-PARC Heritage
+     Poor #fdd182 is 1.16:1, Viridis Poor #fde725 is about 1.1:1, and High
+     Contrast Mono Poor is #ffffff, which is 1.19:1 and therefore an invisible
+     bar. WCAG 2.2 SC 1.4.11 asks 3:1 of a graphical object whose boundary
+     carries meaning, and the boundary here IS the value.
+
+     This did not arise while the fill was a domain identity colour: the
+     identity role is admitted at >= 3:1 against doc_paper by construction, so
+     every bar cleared its track for free. The tier ramp carries no such
+     guarantee, because its lightest stop is meant to be light. So the bar end
+     gets the same treatment the map legend keys get, for the same reason and
+     in the same ink: --tier-stroke, which is #1c2b3a.
+
+     border-left is dropped so a bar reads as growing out of the axis rather
+     than as a detached box, and border-box keeps the inline width percentage
+     honest once the border is added. */
+  box-sizing: border-box;
+  border: 1px solid var(--tier-stroke, #1c2b3a);
+  border-left: 0;
 }
 
 .sib-value {
@@ -322,9 +358,15 @@ h2.domain-heading,
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* White on the domain fill. All three domain colours clear 5:1 against white. */
+/* The colour here is a FALLBACK ONLY and is overridden inline on every row.
+   It was white, correct while the fill was a domain colour. The fill is now
+   the row's tier, so the ink alternates down the card: near-black on the two
+   light stops, white on the two dark ones, read from on_fill by tier_ink().
+   Near-black is the safer fallback of the two, because a fallback that is only
+   reached when the inline style is missing will be sitting on whatever the
+   default background is. */
 .sib-value-in {
-  color: #ffffff;
+  color: #111111;
   padding-right: 10px;
 }
 
@@ -454,6 +496,17 @@ h3.chart-label,
   min-width: 130px;
   flex: 1;
   text-align: center;
+  /* Column layout so the rank number can be centred in the pill's free
+     vertical space and the tier chip pinned to the pill's floor, regardless
+     of how many lines the domain label above wraps to. .banner-ranks is a
+     flex row with the browser default align-items: stretch, so every pill
+     in the row already matches the height of the tallest one; the auto
+     margins below then distribute that leftover height evenly above the
+     number and below "of", which centres the number/"of" pair and pushes
+     rp-qual flush to the bottom. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .rank-pill .rp-domain {
@@ -472,6 +525,9 @@ h3.chart-label,
   font-weight: 700;
   color: var(--doc-ink);
   line-height: 1;
+  /* Centres the number (with rp-of) in the space left between the domain
+     label and the tier chip. See the layout note on .rank-pill. */
+  margin-top: auto;
 }
 
 .rank-pill .rp-of {
@@ -483,7 +539,9 @@ h3.chart-label,
 .rank-pill .rp-qual {
   font-size: 0.85rem;
   font-weight: 700;
-  margin-top: 0.25rem;
+  /* Pinned to the pill's bottom edge; pairs with rp-number's margin-top:
+     auto above. See the layout note on .rank-pill. */
+  margin-top: auto;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   /* Chip geometry. display:inline-block so the padding takes effect and the
@@ -530,6 +588,63 @@ h3.chart-label,
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
+/* Score Summary card heading. Was sharing the generic 1rem .chart-label with
+   every other minor sub-label on the page, which is why it read small for
+   the card that matters most. Gets the same roomier-card + maroon-accent
+   treatment already used for .summary-section.about-category, for the same
+   reason: the accent border is what gives a card "pop" on this page.
+
+   Sized down 2026-08-18: the first pass (2.1rem padding-top, 1.7rem title)
+   made the full 15-row card taller than one Letter page, and
+   state_scorecard_print.qmd forces this card to open on its own printed
+   page and never straddle two. Still visibly its own heading, not a
+   reversion to the old shared .chart-label. */
+.summary-section.summary-table-card {
+  padding-top: 1.2rem;
+  padding-bottom: 1rem;
+  border-top: 6px solid var(--doc-accent);
+}
+
+.summary-section.summary-table-card .eyebrow {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--doc-accent);
+  margin: 0 0 0.3rem;
+}
+
+.summary-section.summary-table-card .summary-title {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--doc-navy);
+  margin: 0 0 0.35rem;
+  line-height: 1.15;
+}
+
+/* Short accent rule under the title, matching the domain-card heading
+   pattern (.domain-header-row h2.domain-heading::after) so the two heaviest
+   headings on the page share the same device. */
+.summary-section.summary-table-card .summary-title::after {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 3px;
+  margin-top: 0.4rem;
+  background: var(--doc-accent);
+}
+
+.summary-section.summary-table-card .summary-dek {
+  font-size: 0.92rem;
+  color: var(--doc-ink-soft);
+  margin: 0.5rem 0 0.8rem;
+  max-width: 62ch;
+  line-height: 1.5;
+}
+
 /* ── Score Summary table ────────────────────────────────────────────────── */
 /* Lining tabular figures. EB Garamond ships proportional figures by default,
    which leaves columns of numbers visibly ragged; "tnum" fixes the advance
@@ -543,9 +658,11 @@ h3.chart-label,
 /* Column headings: letter-spacing and text-transform are handled here rather
    than through tab_options so the rules survive gt version differences. */
 .summary-section .gt_table .gt_col_heading {
-  letter-spacing: 0.07em;
+  /* 0.05em, down from 0.07em: four columns instead of six leaves each header
+     word more room, and tighter tracking is easier to read as all-caps. */
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 /* Kill inherited row striping. Quarto's Bootstrap layer and gt's own
@@ -566,26 +683,22 @@ h3.chart-label,
   padding: 10px 8px 2px;
 }
 
-/* Tier cell: colour square is decorative and redundant to the label, so the
-   label alone carries the meaning for screen readers and greyscale print. */
-.summary-section .tier-swatch {
+/* Tier cell: filled pill, same colour contract as .domain-score-badge
+   .rank-tier elsewhere on the page (background/colour set inline from
+   tier_bg()/tier_ink() in the qmd, so the pair always comes from the same
+   palette entry). Colour is redundant to the word, never the sole channel
+   (WCAG 1.4.1). Replaced the old colour-square-plus-caption swatch on
+   2026-08-18: at 9px plus 0.84rem caps it was easy to miss when scanning;
+   the chip form carries its own background and reads closer to 15-16px. */
+.summary-section .rank-tier {
   display: inline-block;
-  width: 9px;
-  height: 9px;
-  margin-right: 7px;
-  vertical-align: 1px;
-  flex: none;
-  /* Same reason as the tier chips above: this swatch now carries the tier FILL
-     rather than the on_white text colour, and Mono's lightest fill is #ffffff. */
-  border: 1px solid var(--tier-stroke, #1c2b3a);
-}
-
-.summary-section .tier-label {
-  color: var(--doc-ink);
   font-weight: 700;
-  font-size: 0.84rem;
-  letter-spacing: 0.04em;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
+  padding: 0.26rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--tier-stroke, #1c2b3a);
   white-space: nowrap;
 }
 
@@ -602,8 +715,9 @@ h3.chart-label,
     font-size: 0.9rem;
   }
 
-  .summary-section .tier-label {
-    font-size: 0.78rem;
+  .summary-section .rank-tier {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.55rem;
   }
 }
 
@@ -643,7 +757,17 @@ h3.chart-label,
 }
 
 .about-cat-head {
-  /* domain-heading colours already applied via .cl/.cp/.we */
+  /* Colour comes from .domain-heading, which is one neutral for all three as
+     of 2026-08-06. This is the "about ada-parc categories" block, a glossary
+     of what the three domains mean; it reports no scores, so it is the last
+     place a better/worse colour would belong.
+
+     SIZE MATTERS HERE AND NOT ON THE CARD HEADINGS. These are 1.25rem, which
+     at this document's 18px base is 22.5px bold: above the 18.66px large-text
+     boundary, so 3:1 would do, but doc_navy gives 13.4:1 either way. The
+     per-domain colours this replaced were NOT all safe at this size in every
+     palette, which is a second reason the collapse is an improvement rather
+     than a loss. */
   font-size: 1.25rem !important;
   margin: 1.1rem 0 0.25rem !important;
 }
@@ -664,6 +788,66 @@ h3.chart-label,
 .about-categories-list dd:last-of-type {
   border-bottom: none;
   padding-bottom: 0;
+}
+
+/* ── About ADA-PARC Categories: card treatment, 2026-08-18 ───────────────
+   Colin asked this card be sized to the Work & Economic domain-card that
+   precedes it on the page, by making the content roomier and more readable
+   rather than forcing a literal fixed height. Measured in a headless
+   browser against real markup and this stylesheet: the WE card (its usual
+   3 sub-index rows) comes out ~653px tall; this card with the sizing below
+   comes out ~662px, an effective match without truncating or padding the
+   copy to force it. */
+.summary-section.about-category {
+  padding-top: 2.3rem;
+  /* Maroon rather than the domain-card's navy: this card carries no domain
+     identity of its own (it is a glossary of all three), and the accent
+     gives it the "pop" asked for while still reading as this card's own
+     top rule rather than a fourth domain. */
+  border-top: 6px solid var(--doc-accent);
+}
+
+.summary-section.about-category .eyebrow {
+  display: block;
+  /* 0.85rem to match the smallest label size already used on this page
+     (.score-lbl / .score-nat / .score-rank in the domain badge), not a
+     new minimum. */
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--doc-accent);
+  margin: 0 0 0.5rem;
+}
+
+.summary-section.about-category .chart-label {
+  margin: 0 0 1.3rem;
+  font-size: 1.3rem;
+}
+
+.about-category .about-categories-list {
+  margin: 1rem 0 0;
+}
+
+/* Roomier than the base .about-cat-head / .about-cat-desc rules above,
+   which stay as the compact sizing for any other place this list appears.
+   Equal !important weight on the heading override, so specificity (two
+   classes here vs one) is what decides. Larger text only widens the
+   contrast margin already documented above, it does not narrow it. */
+.about-category .about-cat-head {
+  font-size: 1.6rem !important;
+  margin: 2.2rem 0 0.7rem !important;
+}
+
+.about-category .about-cat-head:first-child {
+  margin-top: 0 !important;
+}
+
+.about-category .about-cat-desc {
+  font-size: 1.15rem;
+  line-height: 1.95;
+  padding-bottom: 1.75rem;
+  margin-bottom: 0.2rem;
 }
 
 /* ── Focus visibility (WCAG 2.4.7 / 2.4.11) ────────────────────────────── */
@@ -758,6 +942,17 @@ button:focus-visible,
   .summary-section {
     padding: 1.25rem 1rem 1rem;
   }
+
+  /* About ADA-PARC Categories: the roomier padding-top above (2.3rem) beats
+     the shorthand just above on specificity (two classes vs one) and would
+     otherwise survive onto narrow screens where the room isn't needed. */
+  .summary-section.about-category {
+    padding-top: 1.5rem;
+  }
+
+  /* Score Summary needs no override here (unlike About ADA-PARC Categories
+     above): its desktop padding-top is now 1.2rem, already below the 1.25rem
+     shorthand this block sets, so the shared rule is sufficient as-is. */
 }
 
 /* ── Print ──────────────────────────────────────────────────────────────── */
@@ -770,11 +965,37 @@ button:focus-visible,
     box-shadow: none;
     border: 1px solid var(--doc-rule);
     border-top-width: 6px;
+    /* ADDED 2026-08-06. The shorthand above resets the top border to
+       --doc-rule, a pale warm hairline. That was harmless while .domain-card.cl
+       and friends carried the colour, because a two-class selector outranks
+       this one. Those rules are gone and the colour now lives on plain
+       .domain-card, which this shorthand ties with and beats on order, so
+       without this line every printed card loses its top rule. */
+    border-top-color: var(--doc-navy);
   }
   .state-banner {
     background: #ffffff !important;
     border: 1px solid var(--doc-rule);
     border-radius: 6px;
+  }
+
+  /* ── Sub-index bars in print ──────────────────────────────────────────
+     ADDED 2026-08-06, and it is a direct consequence of the bars taking the
+     tier ramp. A browser drops background fills when printing unless told
+     otherwise. That was tolerable while every bar in a card was one domain
+     colour, because the fill was decoration and the length carried the score.
+     The fill now carries the TIER, which is a finding, so it has to survive
+     onto paper.
+
+     Worth noting that the 1px outline on .sib-fill is a border rather than a
+     background, so bar LENGTH prints correctly even where a reader's print
+     settings override this. The tier chip beside each bar prints its own name
+     as text either way, so nothing here is the sole carrier of meaning. */
+  .sib-fill,
+  .sib-tier,
+  .rank-tier {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 

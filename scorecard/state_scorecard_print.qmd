@@ -1,0 +1,512 @@
+---
+title: ""
+params:
+  state_abbr: "NY"
+  year: 2024
+  palette: "heritage"
+  contrast: "standard"
+format:
+  html:
+    self-contained: true
+    toc: false
+    page-layout: full
+    theme: cosmo
+    css: scorecard_state.css
+    include-in-header: font-loader.html
+    favicon: ../www/brand/PARC_blue_icon.png
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+# ─────────────────────────────────────────────────────────────────────────────
+# State Scorecard — branded, paginated "Download" report
+#
+# Rendered on demand by the Shiny app's download_state handler in
+# ADA_PARC.Rmd, with the same params (state_abbr, year, palette, contrast)
+# the reader selected on screen. This document does NOT recompute scores: it
+# calls build_state_scorecard() in state_scorecard_core.R, the same function
+# state_scorecard.qmd (the on-screen version) calls, so the two can never
+# report different numbers for the same state. See the header comment in
+# state_scorecard_core.R.
+#
+# What IS unique to this document: the ADA-PARC brand masthead and grant
+# funding footer, and the print/pagination CSS below. Those intentionally
+# stay out of state_scorecard_core.R and out of state_scorecard.qmd — the
+# on-screen version runs inside the Shiny app's own navbar chrome and never
+# needs a masthead, and per the National Data download's own precedent, a
+# report type's banner/footer is hand-written for that report rather than
+# shared, so different downloadable products can diverge independently.
+# ─────────────────────────────────────────────────────────────────────────────
+options(cli.width = 80)
+knitr::opts_chunk$set(out.width = "100%", dpi = 96, fig.retina = 2)
+
+library(htmltools)
+
+local({
+  cand <- c("state_scorecard_core.R",
+            file.path("scorecard", "state_scorecard_core.R"))
+  hit  <- cand[file.exists(cand)]
+  if (length(hit) == 0) {
+    stop("state_scorecard_print.qmd cannot locate state_scorecard_core.R. ",
+         "Render with execute_dir set to the scorecard/ directory, ",
+         "or from the project root.")
+  }
+  source(hit[1], local = FALSE)
+})
+
+ctx <- build_state_scorecard(
+  state_abbr = params$state_abbr,
+  year       = params$year,
+  palette    = params$palette,
+  contrast   = params$contrast
+)
+# invisible() matters here: list2env() returns the environment it just
+# populated (this chunk's own environment == R_GlobalEnv when this document
+# is rendered from the Shiny app's download handler), and as the last
+# expression in the chunk it would otherwise auto-print. That auto-print is
+# exactly the stray "<environment: R_GlobalEnv>" line that used to appear
+# above the masthead on every rendered scorecard.
+invisible(list2env(ctx, environment()))
+```
+
+```{css}
+/* ── Brand masthead + funding footer ─────────────────────────────────────
+   Not part of scorecard_state.css: the on-screen scorecard sits inside the
+   Shiny app's own navbar and never shows a masthead, so these classes exist
+   only here. Colour tokens are the fixed ADA-PARC brand maroon/gold, NOT the
+   reader's chosen palette/contrast — the masthead is the organization's
+   identity, not a data encoding, so it does not change with Display
+   settings the way tier colours on the page below it do. */
+:root {
+  --adaparc-maroon: #6d1f2e;
+  --adaparc-gold:   #c9a84c;
+}
+
+.adaparc-banner {
+  background: var(--adaparc-maroon);
+  color: #ffffff;
+  border-bottom: 5px solid var(--adaparc-gold);
+  padding: 1rem 1.25rem;
+  margin: 0 0 1rem 0;
+}
+.adaparc-banner .banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  max-width: 8.7in;
+  margin: 0 auto;
+}
+.adaparc-banner .banner-icon { height: 2.2rem; width: auto; flex-shrink: 0; }
+.adaparc-banner .brand {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin: 0;
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+.adaparc-banner .sub {
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin: 0.15rem 0 0 0;
+  color: #f3e6c9;
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+
+.adaparc-footer {
+  max-width: 8.7in;
+  margin: 1.5rem auto 0 auto;
+  padding: 0.75rem 1.25rem 1.5rem;
+  border-top: 2px solid var(--adaparc-gold);
+  font-size: 0.9rem;
+  color: #555;
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+.adaparc-footer p { margin: 0.2rem 0; }
+.adaparc-footer .funding-note { font-weight: 600; color: #1c2b3a; }
+
+/* ── Screen-only print control ────────────────────────────────────────────
+   Hidden in print via the @media print rule below, so it never appears in
+   a saved PDF. */
+.print-bar {
+  max-width: 8.7in;
+  margin: 0 auto 1rem auto;
+  padding: 0 1.25rem;
+}
+.btn-print {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--adaparc-maroon);
+  border: 1.5px solid var(--adaparc-maroon);
+  border-radius: 6px;
+  padding: 8px 18px;
+  cursor: pointer;
+}
+.btn-print:hover  { background: #8b2737; border-color: #8b2737; }
+.btn-print:focus  { outline: 3px solid var(--adaparc-gold); outline-offset: 2px; }
+
+.print-hint {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 0.92rem;
+  color: #555;
+  margin: 0.5rem 0 0;
+}
+
+/* ── Pagination ────────────────────────────────────────────────────────────
+   An explicit page box gives print/PDF engines a defined page size so
+   forced breaks are actually honoured (without @page, some "save to PDF"
+   paths lay the whole document on one continuous page). See
+   feedback_quarto_print_pagination memory / national_topic.qmd for the full
+   write-up of why this is necessary. */
+@page {
+  size: Letter;
+  margin: 0.6in 0.5in;
+}
+.print-page-break {
+  break-before: page;
+  page-break-before: always;
+}
+
+@media print {
+  /* Quarto wraps the document in #quarto-content.page-columns, a CSS grid,
+     with main.content as a grid item. Chromium does not fragment grid
+     containers, so without this the whole document prints as one clipped
+     page and every break-before rule below is silently ignored. */
+  #quarto-content,
+  #quarto-content.page-columns,
+  .page-columns,
+  main.content,
+  main#quarto-document-content,
+  .cell {
+    display: block !important;
+    grid-template-columns: none !important;
+  }
+
+  /* The blanket ".cell { display: block !important; }" above fixes Chromium's
+     refusal to fragment a CSS grid container across pages, but it also
+     stomps scorecard_state.css's own
+       .banner-ranks > .cell,
+       .banner-ranks > .cell > .cell-output-display { display: contents; }
+     which is what keeps the four rank pills as direct flex children of
+     .banner-ranks. Losing "contents" here turned each pill's Quarto wrapper
+     into a full-width block, so the four pills that should sit in one row
+     stacked as four tall cards instead, spilling the banner across two
+     pages before a single domain card had even started. Restate "contents"
+     for just this wrapper, after the blanket rule, so it wins on source
+     order at equal specificity. */
+  .banner-ranks > .cell,
+  .banner-ranks > .cell > .cell-output-display {
+    display: contents !important;
+  }
+
+  .print-bar { display: none !important; }
+
+  body { font-size: 11.5pt; }
+
+  /* Backgrounds carry meaning here (masthead, tier chips, sub-index bar
+     fills, summary table header/stripes), so ask the engine to print them
+     rather than drop them. */
+  body,
+  .adaparc-banner {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .adaparc-banner  { padding: 0.6rem 1rem; margin-bottom: 0.7rem; }
+  .adaparc-banner .banner-icon { height: 26px; }
+
+  .adaparc-footer {
+    break-inside: avoid;
+    /* Was 8pt. Bumped to keep the funding note above ~9.5pt printed, in
+       line with the project's accessibility minimum-font-size bar — 8pt
+       reads uncomfortably small on paper even for a footer, which sits
+       oddly on a disability-rights research center's own deliverable. */
+    font-size: 9.5pt;
+    margin-top: 0.6rem;
+    padding-top: 0.4rem;
+  }
+  .adaparc-footer p { margin: 0.1rem 0; }
+
+  /* Each domain card and the summary table are the units a reader reasons
+     about; none should straddle a page break. This is already the rule
+     on-screen (see scorecard_state.css's own @media print block, which
+     still applies here too since this document links that stylesheet); it
+     is restated with the .print-page-break hook so the Score Summary table
+     always opens a fresh page rather than starting a few lines from the
+     bottom of one. Page budgeting (whether CL+CP fit together on page one,
+     for instance) has not been measured against an actual print preview
+     yet — that needs one round of visual QA against a real render. */
+  .domain-card, .summary-table-card, .about-category {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  a[href]:after { content: ""; }
+}
+```
+
+```{r doc-tokens, results='asis'}
+# Same :root token block the on-screen scorecard emits, from the same
+# palette/contrast this render used. See the fuller note in
+# state_scorecard.qmd's own doc-tokens chunk.
+cat(doc_header_html)
+```
+
+```{r banner, results='asis'}
+cat(paste0(
+  '<div class="adaparc-banner">',
+  '<div class="banner-content">',
+  '<div>',
+  '<p class="brand">ADA-PARC</p>',
+  '<p class="sub">State Scorecard &nbsp;·&nbsp; ',
+  htmltools::htmlEscape(state_name), ' &nbsp;·&nbsp; ',
+  htmltools::htmlEscape(as.character(year_label)), ' Data</p>',
+  '</div>',
+  # Same white knockout mark used on the National Data and fact sheet
+  # download banners. Decorative (alt=""): the adjacent "ADA-PARC" text
+  # already names the organization for screen readers.
+  '<img class="banner-icon" src="../www/brand/PARC_white_icon_knockout.png" alt="">',
+  '</div>',
+  '</div>\n'
+))
+
+cat(paste0(
+  '<div class="print-bar">',
+  '<button type="button" class="btn-print" onclick="window.print()">',
+  'Print or save as PDF</button>',
+  # Chrome/Edge/Firefox print dialogs default "Headers and footers" ON,
+  # which stamps the browser tab title, local file path, timestamp, and a
+  # generic page count across every page of an otherwise branded document.
+  # CSS cannot suppress that (it is dialog UI, not page content), so this
+  # is a one-line nudge to turn it off rather than a silent gap.
+  '<p class="print-hint">For a clean copy, turn off &ldquo;Headers and ',
+  'footers&rdquo; in the print dialog’s More settings before saving.</p>',
+  '</div>\n'
+))
+```
+
+::: {.page-wrap}
+
+<!-- ═══════════════════════════════════════════════════════════
+     BANNER
+════════════════════════════════════════════════════════════ -->
+::: {.state-banner}
+
+::: {.banner-left}
+# `r state_name`
+<p class="banner-sub">ADA-PARC Scorecard &nbsp;&middot;&nbsp; `r year_label` Data</p>
+:::
+
+::: {.banner-right}
+```{r gauge, fig.height=0.1, fig.width=0.1}
+make_gauge(
+  score       = s("index_adaparc"),
+  nat_score   = n("index_adaparc"),
+  gauge_label = paste0(state_name, " Overall ADA-PARC Score")
+)
+```
+<p class="overall-lbl">Overall ADA-PARC Score</p>
+:::
+
+::: {.banner-ranks}
+```{r rank-pills}
+HTML(paste0(
+  rank_pill("Overall",                 RNK$overall, n_ranked),
+  rank_pill("Community Living",        RNK$cl,      n_ranked),
+  rank_pill("Community Participation", RNK$cp,      n_ranked),
+  rank_pill("Work &amp; Economic",     RNK$we,      n_ranked)
+))
+```
+:::
+
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     COMMUNITY LIVING
+════════════════════════════════════════════════════════════ -->
+::: {.domain-card .cl}
+
+::: {.domain-header-row}
+::: {}
+<h2 class="domain-heading cl">Community Living</h2>
+<p class="domain-desc">How often people with disabilities aged 18 to 64 live in community settings rather than nursing homes or correctional facilities, and how far states invest in community-based housing resources.</p>
+:::
+::: {.domain-score-badge .cl}
+<div class="score-val">`r f(s("index_rel_community_living"))`</div>
+<div class="score-lbl">Score</div>
+<div class="score-nat">US avg: `r f(n("index_rel_community_living"))`</div>
+<div class="score-rank">`r rank_line(RNK$cl)`</div>
+:::
+:::
+
+<h3 class="chart-label">Sub-Index Scores</h3>
+
+```{r}
+#| label: cl-bars
+#| output: asis
+cat(as.character(make_subindex_bars(
+  labels = c(
+    "Living Arrangements",
+    "Community Resources",
+    "Housing Access"
+  ),
+  state_scores = c(s("index_rel_living_arrangements"),
+                   s("index_rel_community_resource"),
+                   s("index_rel_housing_access")),
+  ranks        = c(RNK$living_arrangements, RNK$community_res, RNK$housing_access)
+)))
+```
+
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     COMMUNITY PARTICIPATION
+════════════════════════════════════════════════════════════ -->
+::: {.domain-card .cp}
+
+::: {.domain-header-row}
+::: {}
+<h2 class="domain-heading cp">Community Participation</h2>
+<p class="domain-desc">Access to the tools and systems that enable full participation in community life, including technology, health insurance, educational attainment, transportation, and public safety.</p>
+:::
+::: {.domain-score-badge .cp}
+<div class="score-val">`r f(s("index_rel_community_participation"))`</div>
+<div class="score-lbl">Score</div>
+<div class="score-nat">US avg: `r f(n("index_rel_community_participation"))`</div>
+<div class="score-rank">`r rank_line(RNK$cp)`</div>
+:::
+:::
+
+<h3 class="chart-label">Sub-Index Scores</h3>
+
+```{r}
+#| label: cp-bars
+#| output: asis
+cat(as.character(make_subindex_bars(
+  labels = c(
+    "Technology Access",
+    "Education Access",
+    "Insurance Access",
+    "Transportation Access",
+    "Public Safety"
+  ),
+  state_scores = c(s("index_rel_tech"),
+                   s("index_rel_education"),
+                   s("index_rel_insurance"),
+                   s("index_rel_commute"),
+                   s("index_rel_safety")),
+  ranks        = c(RNK$tech, RNK$education, RNK$insurance,
+                   RNK$commute, RNK$safety)
+)))
+```
+
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     WORK & ECONOMIC
+════════════════════════════════════════════════════════════ -->
+::: {.domain-card .we}
+
+::: {.domain-header-row}
+::: {}
+<h2 class="domain-heading we">Work &amp; Economic</h2>
+<p class="domain-desc">Economic inclusion and security for people with disabilities, covering positive work outcomes such as employment and income, negative labor force indicators such as poverty and unemployment, and housing affordability.</p>
+:::
+::: {.domain-score-badge .we}
+<div class="score-val">`r f(s("index_rel_work_economic"))`</div>
+<div class="score-lbl">Score</div>
+<div class="score-nat">US avg: `r f(n("index_rel_work_economic"))`</div>
+<div class="score-rank">`r rank_line(RNK$we)`</div>
+:::
+:::
+
+<h3 class="chart-label">Sub-Index Scores</h3>
+
+```{r}
+#| label: we-bars
+#| output: asis
+cat(as.character(make_subindex_bars(
+  labels = c(
+    "Positive Work Score",
+    "Negative Work Score",
+    "Housing Affordability"
+  ),
+  state_scores = c(s("index_rel_positive_work"),
+                   s("index_rel_negative_work"),
+                   s("index_rel_housing_affordability")),
+  ranks        = c(RNK$positive_work, RNK$negative_work, RNK$housing_afford)
+)))
+```
+
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCORE SUMMARY TABLE
+     print-page-break: opens on its own page rather than starting a few
+     lines from the bottom of whatever page the domain cards end on.
+════════════════════════════════════════════════════════════ -->
+::: {.summary-section .summary-table-card .print-page-break}
+<span class="eyebrow">State Performance, All Indices</span>
+<h3 class="summary-title">Score Summary</h3>
+<p class="summary-dek">How `r state_name` scores and ranks across all 15 ADA-PARC indices, from the three top-level domains down to each sub-index.</p>
+
+```{r summary-table}
+# Same ready-built gt object the on-screen scorecard prints. See the note in
+# state_scorecard_core.R.
+summary_gt
+```
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     ABOUT ADA-PARC CATEGORIES
+════════════════════════════════════════════════════════════ -->
+::: {.summary-section .about-category}
+<span class="eyebrow">Reference</span>
+<h3 class="chart-label" id="about-categories">About ADA-PARC Categories</h3>
+
+<dl class="about-categories-list">
+  <dt class="domain-heading cl about-cat-head">Community Living</dt>
+  <dd class="about-cat-desc">The degree to which people with disabilities (aged 18&ndash;64) live in community settings rather than nursing homes or correctional facilities, and whether states invest in community-based housing resources.</dd>
+
+  <dt class="domain-heading cp about-cat-head">Community Participation</dt>
+  <dd class="about-cat-desc">Access to the tools and systems that enable full participation in community life, including technology, health insurance, educational attainment, transportation, and public safety.</dd>
+
+  <dt class="domain-heading we about-cat-head">Work &amp; Economic</dt>
+  <dd class="about-cat-desc">Economic inclusion and security for people with disabilities, measuring positive work outcomes (employment, income), negative labor force indicators (poverty, unemployment, NILF), and housing affordability.</dd>
+</dl>
+:::
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCORECARD FOOTER (methodology note)
+════════════════════════════════════════════════════════════ -->
+<p class="footer-note">
+  ADA-PARC Scorecard &nbsp;&middot;&nbsp;
+  `r year_label` Data &nbsp;&middot;&nbsp;
+  Scores range 0&ndash;100; higher is better. &nbsp;&middot;&nbsp;
+  Rankings among `r n_ranked` U.S. states and territories. &nbsp;&middot;&nbsp;
+  Rank tiers: `r rank_band_note()`.
+</p>
+
+:::
+
+```{r funding-footer, results='asis'}
+# Same funding acknowledgment wording used on the National Data and City
+# Data downloads (see the equivalent chunk in national_topic.qmd /
+# city_profile.qmd) and on the fact sheets. Kept as a literal string per
+# document, per the existing convention of not sharing a banner/footer
+# component across report types.
+cat(paste0(
+  '<div class="adaparc-footer">',
+  '<p class="funding-note">The ADA-PARC is funded by the National ',
+  'Institute for Disability, Independent Living, and Rehabilitation ',
+  'Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.</p>',
+  '<p>ADA-PARC &nbsp;&middot;&nbsp; ADA Participation Action Research Consortium &nbsp;&middot;&nbsp; ',
+  'Generated ', format(Sys.Date(), "%B %d, %Y"), '.</p>',
+  '</div>'
+))
+```
