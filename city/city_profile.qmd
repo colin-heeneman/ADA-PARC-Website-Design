@@ -1,0 +1,745 @@
+---
+title: ""
+params:
+  bundle: "bundle.rds"
+format:
+  html:
+    self-contained: true
+    toc: false
+    page-layout: full
+    include-in-header: ../scorecard/font-loader.html
+    favicon: ../www/brand/PARC_blue_icon.png
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+# ─────────────────────────────────────────────────────────────────────────────
+# City Data — "Download Selected City" full-profile view
+#
+# This template is rendered on demand by the City Data Shiny app when the
+# user clicks "Download Selected City". All substantive content (map, key,
+# tables, notes) is prepared by the app and passed in via a single RDS
+# bundle, so this document only handles presentation and ADA-PARC branding.
+# Keeping the data logic in the app is the single source of truth: what
+# downloads always matches what is on screen. Mirrors
+# national/national_topic.qmd, adapted for a multi-section city profile
+# instead of a single indicator.
+#
+# Bundle contents (see city_download_bundle() and output$download_city in
+# ADA_PARC.Rmd):
+#   city_label, state_label, full_title   identity (character)
+#   intro_text        headline sentence, pre-built HTML with <b> tags (character)
+#   source_note        data source sentence (character)
+#   generated          date string (character)
+#   map_svg            tract choropleth as inline SVG markup (character)
+#   map_alt_text       plain-language map summary for accessibility (character)
+#   leg_colors, leg_labels   parallel vectors for the map legend (character)
+#   race_ethnicity, sex, age_groups   demographics HTML (character, each a
+#                       heading <p> plus a full <ul class="city-demo-list">
+#                       of <li class="city-demo-tile"> stat tiles; share of
+#                       total population as the headline figure with the
+#                       count beneath, per the client's 2026-08-18 requests
+#                       -- no longer a <table>. age_groups additionally
+#                       carries the under-5 caveat as its own
+#                       <p class="city-summary-help"> between the heading
+#                       and the tiles, so this document must NOT emit
+#                       help$age_intro separately)
+#   disability_types    a full <ul class="city-demo-list"> of the same stat
+#                       tiles (character). Was <li> bullets with no wrapping
+#                       <ul> until 2026-08-18; do not wrap it.
+#   employment, earnings, poverty,
+#   health_insurance_19to64, health_insurance_65plus,
+#   education, transportation          comparison-table HTML (character)
+#   has_s1811           whether Education/Transportation are published (logical)
+#   s1811_unavailable_note   substituted note when has_s1811 is FALSE (character)
+#   housing_burden       <li> bullets only, no wrapping <ul> (character)
+#   housing_access       <li> bullets only, no wrapping <ul> (character)
+#   community_living_note   explanatory paragraph, living arrangements only
+#                       now that Housing Access has its own section (character)
+#   help                named list of explanatory paragraphs, plain text, not
+#                       pre-escaped (see help_txt() below)
+# ─────────────────────────────────────────────────────────────────────────────
+options(cli.width = 80)
+
+library(htmltools)
+library(knitr)
+
+b <- tryCatch(readRDS(params$bundle), error = function(e) NULL)
+
+ok <- !is.null(b) && all(c("city_label", "map_svg") %in% names(b))
+
+# Small helpers with safe fallbacks
+val <- function(name, default = "") {
+  if (ok && !is.null(b[[name]]) && length(b[[name]]) == 1 &&
+      !is.na(b[[name]]) && nzchar(trimws(as.character(b[[name]])))) {
+    as.character(b[[name]])
+  } else {
+    default
+  }
+}
+
+# Plain-text explanatory note, escaped once here rather than at every call
+# site. Everything in b$help is prose the app built as plain text (no HTML
+# tags), unlike the table fragments and intro_text, which already ARE HTML
+# and must not be escaped a second time.
+help_txt <- function(name) {
+  x <- b$help[[name]]
+  if (is.null(x) || is.na(x) || !nzchar(trimws(x))) return("")
+  htmltools::htmlEscape(x)
+}
+
+# One heading + optional help paragraph + one table/list fragment, wrapped so
+# print pagination treats it as one unit. Kept small and per-table (rather
+# than one wrapper per whole section) deliberately: a city with every
+# indicator published can carry five or six of these under one heading, more
+# than fits on a single physical page together, so the atomic unit here is
+# "one table and its caption," not "one domain."
+#
+# `heading`, when supplied, is rendered as the block's own <h3 class="subhead">
+# INSIDE this wrapper. Fixed 2026-08-19: subheads used to be cat() separately
+# as a free-standing sibling immediately before the call, relying on
+# `break-after: avoid` on the heading to keep it with the block that follows.
+# Chromium's print pagination does not honor that reliably against a
+# following sibling's `break-inside: avoid` -- Disability Types, Education,
+# and Poverty were each observed orphaned alone at the bottom of a page with
+# their table/list stranded at the top of the next. Every subhead must now be
+# passed through this `heading` argument rather than cat() separately, or it
+# is exposed to the same bug again.
+tbl_block <- function(help_name = NULL, html = "", heading = NULL) {
+  paste0(
+    '<div class="tbl-block">',
+    if (!is.null(heading) && nzchar(heading)) {
+      paste0('<h3 class="subhead">', heading, '</h3>')
+    } else {
+      ""
+    },
+    if (!is.null(help_name) && nzchar(help_txt(help_name))) {
+      paste0('<p class="help-note">', help_txt(help_name), '</p>')
+    } else {
+      ""
+    },
+    html,
+    '</div>'
+  )
+}
+```
+
+```{css}
+:root {
+  --adaparc-maroon: #6d1f2e;
+  --adaparc-gold:   #c9a84c;
+  --adaparc-ink:    #1c2b3a;
+}
+
+body {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  color: #111;
+  font-size: 18px;
+  line-height: 1.5;
+  max-width: 8.5in;
+  margin: 0 auto;
+  padding: 0 0.5in 0.75in 0.5in;
+}
+
+/* ── Brand banner ─────────────────────────────────────────────────────────── */
+.adaparc-banner {
+  background: var(--adaparc-maroon);
+  color: #ffffff;
+  border-bottom: 5px solid var(--adaparc-gold);
+  padding: 1rem 1.25rem;
+  margin: 0 0 1.25rem 0;
+}
+.adaparc-banner .banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.adaparc-banner .banner-icon {
+  height: 2.3rem;
+  width: auto;
+  flex-shrink: 0;
+}
+.adaparc-banner .brand {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+.adaparc-banner .sub {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0.15rem 0 0 0;
+  color: #f3e6c9;
+}
+
+h1.city-title {
+  color: var(--adaparc-maroon);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0.25rem 0 0.15rem 0;
+}
+p.city-subtitle {
+  font-size: 1.15rem;
+  color: #444;
+  margin: 0 0 0.75rem 0;
+}
+
+/* ── Headline stat ────────────────────────────────────────────────────────── */
+.lead-stat {
+  background: #f9f7f4;
+  border-left: 5px solid var(--adaparc-gold);
+  padding: 0.7rem 1rem;
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+/* ── Map figure + legend ──────────────────────────────────────────────────── */
+.map-figure { margin: 0.5rem 0 0.6rem 0; text-align: center; }
+.map-figure svg { max-width: 100%; height: auto; }
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 1.3rem;
+  margin: 0 auto 0.6rem auto;
+  max-width: 7.5in;
+  font-size: 0.95rem;
+}
+.map-legend .legend-title {
+  font-weight: 700;
+  color: var(--adaparc-ink);
+  margin-right: 0.3rem;
+}
+.map-legend .swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.map-legend .swatch i {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  border: 1px solid var(--adaparc-ink);
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+.map-summary {
+  font-size: 1rem;
+  color: #333;
+  margin: 0.4rem auto 0 auto;
+  max-width: 7in;
+  text-align: left;
+}
+.map-summary .label { font-weight: 700; color: var(--adaparc-ink); }
+
+.source-note {
+  font-size: 0.95rem;
+  color: #444;
+  margin: 0.75rem 0 0 0;
+}
+.source-note .label { font-weight: 700; }
+
+/* ── Section structure ────────────────────────────────────────────────────── */
+h2.section-title {
+  color: var(--adaparc-maroon);
+  font-size: 1.55rem;
+  font-weight: 700;
+  margin: 1.6rem 0 0.5rem 0;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid var(--adaparc-gold);
+}
+h2.section-title:first-of-type { margin-top: 0.5rem; }
+h3.subhead {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--adaparc-ink);
+  margin: 1rem 0 0.2rem 0;
+}
+p.section-help {
+  font-size: 0.98rem;
+  color: #333;
+  margin: 0 0 0.6rem 0;
+  line-height: 1.55;
+}
+p.help-note,
+.tbl-block p.city-summary-help {
+  /* .city-summary-help is the class name render_demo_list() /
+     render_comparison_table() do NOT emit, but the two literal notes
+     passed through as pre-built HTML (s1811_unavailable_note and
+     community_living_note) do carry it, since they were written for the
+     on-screen card. Styled identically to .help-note here rather than
+     rewritten, so this document does not depend on that string staying
+     byte-for-byte in sync with the app. */
+  font-size: 0.92rem;
+  color: #333;
+  margin: 0.2rem 0 0.4rem 0;
+  line-height: 1.5;
+}
+
+/* Each table (and, for the bullet lists, each list) plus its caption/help
+   text travels together across a page break as one unit. See the comment on
+   tbl_block() in the setup chunk. */
+.tbl-block {
+  margin: 0 0 0.9rem 0;
+}
+
+ul.bullet-list {
+  font-size: 1rem;
+  line-height: 1.7;
+  margin: 0.2rem 0 0.6rem 0;
+  padding-left: 1.4rem;
+}
+
+/* ── Data tables (paired with/without-disability comparisons) ───────────────
+   Reuses the same class name (.city-compare) the on-screen summary card
+   emits via render_comparison_table() in ADA_PARC.Rmd, so this is literally
+   the same markup, restyled here in the print document's own maroon/gold
+   palette rather than the live site's navy. */
+table.city-compare {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+table.city-compare caption {
+  text-align: left;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--adaparc-maroon);
+  padding: 0 0 0.25rem 0;
+  caption-side: top;
+}
+table.city-compare th, table.city-compare td {
+  border: 1px solid #d9d4c9;
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+table.city-compare thead th {
+  background: var(--adaparc-maroon);
+  color: #ffffff;
+  font-weight: 700;
+}
+table.city-compare tbody th[scope='row'] {
+  background: #f6f2ec;
+  font-weight: 600;
+}
+table.city-compare tbody tr:nth-child(even) td {
+  background: #faf8f5;
+}
+table.city-compare td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Disability Demographics stat tiles (Race/Ethnicity, Sex, Age) ──────────
+   Reuses the same class names (.city-demo-list / .city-demo-heading /
+   .city-demo-tile / .city-demo-label / .city-demo-pct / .city-demo-count /
+   .city-demo-sr) the on-screen summary card emits via render_demo_list() in
+   ADA_PARC.Rmd, restyled here in the print document's own maroon/gold
+   palette. Two figures per group, share of total population as the headline
+   with the count beneath, per the client's 2026-08-18 request; no table
+   markup. Laid out as a grid of tiles rather than the earlier single narrow
+   column, matching the on-screen card. The print rules below fix the grid to
+   two columns and keep each list whole across page breaks. */
+/* Enlarged 1rem -> 1.2rem on 2026-08-18, matching h3.subhead. At 1rem these
+   three labels were only marginally larger than the body copy and did not
+   read as the section breaks they are. */
+p.city-demo-heading {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--adaparc-maroon);
+  margin: 0.9rem 0 0.3rem 0;
+}
+/* The Age caveat now travels inside the age_groups fragment, directly under
+   its heading, so it hugs the heading rather than carrying the standalone
+   spacing .tbl-block p.city-summary-help uses elsewhere. */
+p.city-demo-heading + p.city-summary-help {
+  margin-top: 0.1rem;
+}
+ul.city-demo-list {
+  list-style: none;
+  margin: 0 0 0.7rem 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.5rem;
+}
+li.city-demo-tile {
+  background: #f9f7f4;
+  border: 1px solid #d9d4c9;
+  border-left: 4px solid var(--adaparc-maroon);
+  border-radius: 3px;
+  padding: 0.4rem 0.6rem 0.45rem 0.6rem;
+  margin: 0;
+}
+/* min-height reserves two lines for the label so the headline percentages
+   line up across a row of tiles even when one label wraps. A floor, not a
+   cap, so a longer label still gets a third line. */
+.city-demo-label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
+  min-height: 2.3rem;
+  margin-bottom: 0.15rem;
+}
+.city-demo-pct {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--adaparc-maroon);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.city-demo-count {
+  display: block;
+  font-size: 0.85rem;
+  color: #333;
+  font-variant-numeric: tabular-nums;
+}
+.city-demo-na {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+}
+/* Visually hidden wording that gives the headline percentage its meaning
+   when the tile layout cannot be seen. Standard clip pattern rather than
+   display:none, which would drop it from the accessibility tree. */
+.city-demo-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.adaparc-footer {
+  margin-top: 1.5rem;
+  padding-top: 0.75rem;
+  border-top: 2px solid var(--adaparc-gold);
+  font-size: 0.85rem;
+  color: #555;
+}
+.adaparc-footer p { margin: 0.2rem 0; }
+.adaparc-footer .funding-note {
+  font-weight: 600;
+  color: var(--adaparc-ink);
+}
+
+/* ── Screen-only print helper ─────────────────────────────────────────────── */
+.print-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin: 0 0 1rem 0;
+}
+.btn-print {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--adaparc-maroon);
+  border: 1.5px solid var(--adaparc-maroon);
+  border-radius: 6px;
+  padding: 8px 18px;
+  cursor: pointer;
+}
+.btn-print:hover { background: #8b2737; border-color: #8b2737; }
+.btn-print:focus { outline: 3px solid var(--adaparc-gold); outline-offset: 2px; }
+
+/* ── Print pagination ─────────────────────────────────────────────────────── */
+@page {
+  size: Letter;
+  margin: 0.6in 0.5in;
+}
+
+@media print {
+  /* Quarto wraps the document in #quarto-content.page-columns, a CSS grid.
+     Chromium does not fragment grid containers across pages, so without this
+     override the whole document lays out as one monolithic block and "Save
+     as PDF" clips everything past the first page. Restoring normal block
+     layout for print puts the document back on the standard fragmentation
+     path. Identical fix to national/national_topic.qmd. */
+  #quarto-content,
+  #quarto-content.page-columns,
+  .page-columns,
+  main.content,
+  main#quarto-document-content,
+  .cell {
+    display: block !important;
+    grid-template-columns: none !important;
+  }
+
+  .print-bar { display: none !important; }
+
+  body { max-width: none; padding: 0; font-size: 11.5pt; }
+
+  body,
+  .adaparc-banner,
+  table.city-compare thead th,
+  table.city-compare tbody tr:nth-child(even) td {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .adaparc-banner { padding: 0.6rem 1rem; margin-bottom: 0.7rem; }
+  .adaparc-banner .banner-icon { height: 26px; }
+  h1.city-title { font-size: 16pt; }
+  .lead-stat { padding: 0.5rem 0.8rem; margin-bottom: 0.6rem; }
+
+  .map-figure svg {
+    height: 4in !important;
+    width: auto !important;
+    max-width: 100% !important;
+  }
+
+  h2.section-title { font-size: 13pt; break-after: avoid; page-break-after: avoid; }
+  h3.subhead { break-after: avoid; page-break-after: avoid; }
+  p.section-help, p.help-note { break-after: avoid; page-break-after: avoid; }
+  /* Re-stated in pt for the same reason as .city-demo-label below: at the
+     print body size the screen rem value would set these three labels
+     larger than the h3.subhead they sit under. 11pt keeps them a clear step
+     above the 9pt tile labels and a step below the 13pt section title. */
+  p.city-demo-heading {
+    font-size: 11pt;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  p.city-demo-heading + p.city-summary-help {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* The atomic print unit: one table (or bullet list) and the note above it
+     never split across a page boundary, and never separate from their
+     caption. Whole sections are NOT forced atomic — several run longer than
+     one page for cities where every indicator is published, so forcing the
+     section would leave large blank gaps rather than a clean break. */
+  .tbl-block, ul.bullet-list, ul.city-demo-list {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  table.city-compare {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    font-size: 9pt;
+  }
+  table.city-compare th, table.city-compare td {
+    padding: 3px 6px;
+  }
+  /* Two fixed columns in print rather than the screen's auto-fill tracks:
+     at Letter width auto-fill would give three narrow columns, and the
+     longer race labels (Native Hawaiian/Other Pacific Islander) would wrap
+     to three lines inside them. Two columns keeps every label to at most
+     two lines. The break-inside rule above applies to the ul, so a whole
+     list moves to the next page rather than fragmenting -- which matters
+     more than usual here, since Chromium does not fragment grid containers
+     across pages at all (same constraint the #quarto-content override
+     above works around). Every list is short enough to fit on one page. */
+  ul.city-demo-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.35rem;
+  }
+  li.city-demo-tile {
+    padding: 3px 6px 4px 6px;
+  }
+  /* min-height is re-stated in pt because the screen value is two lines of
+     a rem-sized label; at the smaller print size that same rem value would
+     leave a visible band of empty space above every percentage. */
+  .city-demo-label { font-size: 9pt; min-height: 24pt; }
+  .city-demo-pct { font-size: 14pt; }
+  .city-demo-count { font-size: 8.5pt; }
+
+  .adaparc-footer {
+    break-inside: avoid;
+    font-size: 8pt;
+    margin-top: 0.5rem;
+    padding-top: 0.35rem;
+  }
+  a[href]:after { content: ""; }
+}
+```
+
+```{r banner, results='asis'}
+if (!ok) {
+  cat('<div class="adaparc-banner"><p class="brand">ADA-PARC</p>',
+      '<p class="sub">City Data</p></div>',
+      '<p>No city was provided to render. Please return to the ',
+      'City Data tab and try again.</p>')
+  knitr::knit_exit()
+}
+
+cat(paste0(
+  '<div class="adaparc-banner">',
+  '<div class="banner-content">',
+  '<div>',
+  '<p class="brand">ADA-PARC</p>',
+  '<p class="sub">City Data',
+  if (nzchar(val("state_label"))) paste0("  ·  ", htmltools::htmlEscape(val("state_label"))) else "",
+  '</p>',
+  '</div>',
+  # Same white knockout mark used on the National Data and fact sheet
+  # banners, so every ADA-PARC download shares one brand asset even though
+  # each document's layout stays distinct. Decorative (alt=""), the
+  # adjacent "ADA-PARC" text already names the organization.
+  '<img class="banner-icon" src="../www/brand/PARC_white_icon_knockout.png" alt="">',
+  '</div>',
+  '</div>\n'
+))
+```
+
+```{r headline, results='asis'}
+cat(paste0(
+  '<div class="print-bar">',
+  '<button type="button" class="btn-print" onclick="window.print()">',
+  'Print or save as PDF</button>',
+  '</div>\n'
+))
+
+cat(sprintf('<h1 class="city-title">%s</h1>\n', htmltools::htmlEscape(val("full_title", val("city_label")))))
+cat('<p class="city-subtitle">A city profile of outcomes for people with disabilities, from the ADA-PARC City Data tool.</p>\n')
+
+# intro_text is already-built HTML (contains <b> tags), not escaped.
+if (nzchar(val("intro_text"))) {
+  cat(sprintf('<div class="lead-stat">%s</div>\n', val("intro_text")))
+}
+```
+
+```{r map, results='asis'}
+cat('<div class="map-figure" role="img" aria-label="',
+    htmltools::htmlEscape(
+      val("map_alt_text", paste0("Tract map of ", val("city_label"), ".")),
+      attribute = TRUE
+    ),
+    '">\n', sep = "")
+cat(if (nzchar(val("map_svg"))) b$map_svg else "<p>Map unavailable.</p>")
+cat('\n</div>\n')
+
+leg_colors <- if (ok) b$leg_colors else NULL
+leg_labels <- if (ok) b$leg_labels else NULL
+if (!is.null(leg_colors) && !is.null(leg_labels) &&
+    length(leg_colors) == length(leg_labels) && length(leg_colors) > 0) {
+  swatches <- mapply(function(col, lab) {
+    paste0(
+      '<span class="swatch"><i style="background:', htmltools::htmlEscape(col, attribute = TRUE),
+      ';"></i>', htmltools::htmlEscape(lab), '</span>'
+    )
+  }, leg_colors, leg_labels)
+  cat('<div class="map-legend"><span class="legend-title">% With Disability</span>',
+      paste(swatches, collapse = ""), '</div>\n', sep = "")
+}
+
+if (nzchar(val("map_alt_text"))) {
+  cat(sprintf(
+    '<p class="map-summary"><span class="label">Summary: </span>%s</p>\n',
+    htmltools::htmlEscape(val("map_alt_text"))
+  ))
+}
+
+cat(sprintf(
+  '<p class="source-note"><span class="label">This report is sourced from: </span>%s</p>\n',
+  htmltools::htmlEscape(val("source_note", "2020-2024 American Community Survey 5-Year Estimates"))
+))
+```
+
+```{r demographics, results='asis'}
+cat('<h2 class="section-title">Disability Demographics</h2>\n')
+cat(sprintf('<p class="section-help">%s</p>\n', help_txt("demographics_intro")))
+cat(tbl_block(NULL, val("race_ethnicity")))
+cat(tbl_block(NULL, val("sex")))
+# The under-5 caveat used to be emitted here, above the age_groups fragment
+# and therefore above its "Age" heading, where it read as a closing note on
+# Sex. render_demo_list() now places it inside the fragment, under the
+# heading, for both this document and the on-screen card. Do not add it back
+# here or it will appear twice.
+cat(tbl_block(NULL, val("age_groups")))
+
+# Stat tiles since 2026-08-18, matching the demographics blocks above; the
+# fragment is a complete <ul class="city-demo-list">, so no wrapper here.
+# Heading passed through tbl_block() (not cat() separately) so it can never
+# be orphaned from its tiles across a page break -- see the comment on
+# tbl_block() in the setup chunk.
+cat(tbl_block("disability_types_intro", val("disability_types"), heading = "Disability Types"))
+```
+
+```{r community_participation, results='asis'}
+cat('<h2 class="section-title">Community Participation</h2>\n')
+cat(sprintf('<p class="section-help">%s</p>\n', help_txt("outcomes_intro")))
+
+cat(tbl_block("health_insurance", val("health_insurance_19to64"), heading = "Health Insurance"))
+cat(tbl_block(NULL, val("health_insurance_65plus")))
+
+if (isTRUE(b$has_s1811)) {
+  cat(tbl_block(NULL, val("education"), heading = "Education"))
+  cat(tbl_block(NULL, val("transportation"), heading = "Transportation"))
+} else {
+  note <- val("s1811_unavailable_note")
+  cat(tbl_block(NULL, if (nzchar(note)) note else
+    '<p class="help-note">Education and commuting figures are not published for this city.</p>',
+    heading = "Education and Transportation"))
+}
+```
+
+```{r work_economic, results='asis'}
+cat('<h2 class="section-title">Work and Economic</h2>\n')
+cat(sprintf('<p class="section-help">%s</p>\n', help_txt("outcomes_intro")))
+
+cat(tbl_block(NULL, val("employment"), heading = "Employment"))
+
+cat(tbl_block("earnings", val("earnings"), heading = "Earnings"))
+
+cat(tbl_block("poverty", val("poverty"), heading = "Poverty"))
+
+cat(tbl_block(
+  "housing_burden",
+  paste0('<ul class="bullet-list">', val("housing_burden"), '</ul>'),
+  heading = "Housing Cost Burden"
+))
+```
+
+```{r community_living, results='asis'}
+cat('<h2 class="section-title">Community Living</h2>\n')
+
+cat(tbl_block(
+  "housing_access",
+  paste0('<ul class="bullet-list">', val("housing_access"), '</ul>'),
+  heading = "Housing Access"
+))
+
+note <- val("community_living_note")
+cat(tbl_block(NULL, if (nzchar(note)) note else
+  '<p class="help-note">Living arrangement measures are not currently published at the city level.</p>'))
+```
+
+```{r footer, results='asis'}
+# Same funding acknowledgment wording as national/national_topic.qmd, kept
+# as a literal string here (not a shared function) so the download systems
+# stay independent, per the same reasoning documented there.
+cat(sprintf(
+  paste0(
+    '<div class="adaparc-footer">',
+    '<p class="funding-note">The ADA-PARC is funded by the National ',
+    'Institute for Disability, Independent Living, and Rehabilitation ',
+    'Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.</p>',
+    '<p>ADA-PARC  ·  ADA Participation Action Research Consortium  ·  ',
+    'Generated %s. Some measures are not published for every city; see the ',
+    'notes above each table for coverage.</p>',
+    '</div>'
+  ),
+  htmltools::htmlEscape(val("generated", format(Sys.Date(), "%B %d, %Y")))
+))
+```
