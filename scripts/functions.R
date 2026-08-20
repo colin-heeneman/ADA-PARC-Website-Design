@@ -511,6 +511,80 @@ render_national_map <- function(selected, palette_selected = "YlOrRd",
 }
 
 
+# City tract choropleth, static (print/download) ---------------------------
+# Companion to render_national_map(), for the "Download Selected City"
+# report. output$snapshotmap (the on-screen map) is Leaflet, which has no
+# server-side static export, so this draws the same tract polygons as a
+# plain ggplot choropleth for svglite export.
+#
+# Deliberately reads a pre-computed `fill_col` column rather than re-deriving
+# bins/colors here. `fill_col` is built once, in the city_map_data() reactive
+# in ADA_PARC.Rmd, from the same city_map_breaks / city_map_labels / palette
+# the Leaflet map uses, and both the interactive map and this static one
+# consume it. That is what guarantees the printed map and the on-screen map
+# are always in the same bins with the same colors, never a second
+# computation that could drift from the first.
+#
+# No basemap tiles. The interactive map uses CartoDB Positron tiles for
+# geographic orientation, but pulling raster tiles into a server-side render
+# means a network call at render time and a dependency on a third-party tile
+# service being reachable from wherever the Shiny process runs. Tract
+# boundaries alone are enough context for a printed reference map, and this
+# keeps the render reproducible offline.
+render_city_tract_map <- function(map_data, border_color = "#1c2b3a",
+                                  border_width = 0.3) {
+  ggplot2::ggplot(data = map_data) +
+    ggplot2::geom_sf(
+      ggplot2::aes(fill = fill_col),
+      color = border_color, linewidth = border_width
+    ) +
+    # fill_col already holds resolved hex values (see the note above), so the
+    # scale draws them verbatim rather than mapping a factor to a palette a
+    # second time.
+    ggplot2::scale_fill_identity() +
+    ggplot2::theme_void(base_family = "EB Garamond") +
+    ggplot2::theme(
+      text            = ggplot2::element_text(family = "EB Garamond"),
+      legend.position = "none",
+      plot.margin     = ggplot2::margin(4, 4, 4, 4)
+    )
+}
+
+#' Plain-language summary of a city's tract map, for alt text.
+#'
+#' Mirrors the role of altText() for the national map, but city tract counts
+#' run from 1 to several hundred, so naming individual tracts the way
+#' altText() names individual states would not be meaningful. This reports
+#' the range and, when relevant, how many tracts actually have data.
+cityMapAltText <- function(map_data, city_name,
+                           value_col = "pct_cni_total_dis_place") {
+  vals    <- suppressWarnings(as.numeric(map_data[[value_col]]))
+  n_total <- length(vals)
+  n_have  <- sum(!is.na(vals))
+
+  if (n_have == 0) {
+    return(paste0(
+      "Tract-level disability rate data is not available for ", city_name, "."
+    ))
+  }
+
+  fmt <- scales::label_percent(accuracy = 0.1, scale = 1)
+
+  coverage_note <- if (n_have < n_total) {
+    paste0(" Data was available for ", n_have, " of ", n_total, " census tracts.")
+  } else {
+    ""
+  }
+
+  paste0(
+    "This map shows the percent of residents with disabilities in each ",
+    "census tract in ", city_name, ". Tract rates ranged from ",
+    fmt(min(vals, na.rm = TRUE)), " to ", fmt(max(vals, na.rm = TRUE)), ".",
+    coverage_note
+  )
+}
+
+
 # Accessibility Functions -------------------------------------------------
 
 

@@ -90,6 +90,37 @@
 # -----------------------------------------------------------------------------
 # Added 2026-08-03, phase 2 of docs/palette-v2-build-plan.qmd.
 #
+# READ THIS FIRST: THE ROLE'S SCOPE WAS CUT ON 2026-08-06. Everything below
+# about what identity IS remains true and the admission criteria are unchanged.
+# What changed is where it is allowed to appear. It has ONE consumer now: the
+# Top 5 / Bottom 5 performer cards on the national scorecard. The state
+# scorecard's domain cards, headings, headline scores, sub-index bars and
+# summary spine no longer read it, and neither do the national scorecard's
+# banner, section headings or ranking table chrome. Those all take neutral
+# chrome, and the sub-index bars took the TIER ramp.
+#
+# WHY. Reported by Colin after living with the Display panel. The selector was
+# driving two unrelated codes at once: an ORDINAL one where colour means better
+# or worse, and a CATEGORICAL one where colour means which of three domains.
+# Both changed together when a palette was chosen, so a reader had no way to
+# learn which code any given patch of colour belonged to, and the ordinal code
+# is the one carrying the findings. The categorical code was never doing work a
+# reader needed either: every surface it coloured printed its domain NAME right
+# beside the colour, so it was reinforcement for a label that was already
+# there. The ordinal code has no such backup on a map.
+#
+# So colour across the site means better or worse, and the palette selector
+# means one thing on every page.
+#
+# WHY THE ROLE SURVIVES AT ALL, rather than being retired. The performer cards
+# are a CONTRASTING PAIR, top against bottom, and the two colours say only that
+# the two blocks differ. That is a relation between blocks, which no label
+# carries, as against a name for a block, which every label carried. identity
+# is the site's one admitted qualitative palette and that is what it is being
+# used as there. If those cards ever go neutral, this role has no consumers and
+# should be deleted along with pal_identity(), pal_on_identity(), the
+# --identity-* emission in pal_css_rules() and section 9 of check_palette.py.
+#
 # `fill` is ORDINAL. Its four values mean worse to better and the ordering is
 # carried by lightness, which is why the ramp survives greyscale and why the
 # "neg" reversal in render_national_map() is a simple flip.
@@ -549,15 +580,15 @@ ADA_PARC_TIERS <- c("poor", "below", "above", "excellent")
 # wide and wraps at the full labels. Prefer the full set everywhere else.
 ADA_PARC_TIER_LABELS <- c(
   poor      = "Poor",
-  below     = "Below Average",
-  above     = "Above Average",
+  below     = "Subpar",
+  above     = "Good",
   excellent = "Excellent"
 )
 
 ADA_PARC_TIER_LABELS_SHORT <- c(
   poor      = "Poor",
-  below     = "Below Avg",
-  above     = "Above Avg",
+  below     = "Subpar",
+  above     = "Good",
   excellent = "Excellent"
 )
 
@@ -656,6 +687,15 @@ ADAPARC_DOMAIN_LABELS <- c(
 )
 
 #' Domain identity colour, per palette.
+#'
+#' NARROW SCOPE AS OF 2026-08-06. One consumer: the Top 5 / Bottom 5 performer
+#' cards in scorecard/category_scorecard.qmd, which use two members of the
+#' triple as a contrasting pair. Do not reach for this to colour a surface by
+#' which DOMAIN it belongs to; that is the use that was removed, and the
+#' argument is in the IDENTITY note at the head of this file. The role name is
+#' now slightly misleading and is kept because renaming it would touch the
+#' catalogue, check_palette.py section 9, search_identity.py and the frontier
+#' record for no gain.
 #'
 #' UNLIKE pal_on_white(), THIS TAKES AN id AND MUST BE GIVEN ONE. Identity
 #' follows the reader's selection. A call site that omits `id` silently gets
@@ -848,12 +888,31 @@ ADAPARC_UI_TOKENS <- list(
     nav_active      = "#e8b84b",
     focus_ring      = "#0d3b8e",
     focus_ring_dark = "#ffffff",
-    ui_accent       = "#7b1717",
-    ui_accent_dark  = "#5e1111",
-    attr_text       = "#591313",
+    # Chrome accent and attribution ink. Moved off maroon to the brand navy and
+    # slate on 2026-08-11, when the blue-dominant design direction was adopted
+    # as canon and ADA_PARC.Rmd became the document that carries it. These four
+    # values previously lived in a runtime override block in ADA_PARC.Rmd,
+    # which existed only because this file was shared with a second, still
+    # maroon document. That document is gone, so the values belong here, where
+    # check_palette.py can verify them and the static mirrors must match.
+    #
+    # #013176 is sampled from the tile fill of www/brand/PARC_blue_icon.png and
+    # is the same literal as --brand-navy in
+    # factsheets/_generate/assets/factsheet-base.css; the two must move
+    # together if the approved mark shifts the blue. #ffffff on #013176 is
+    # 12.34:1.
+    #
+    # attr_text and attr_rule are slate rather than navy on purpose. They mark
+    # source attribution, which is secondary prose, and reusing the accent blue
+    # there would make attribution read as chrome. #1c2b3a is the same ink as
+    # text_body, so attribution differs from body copy by size and rule, not by
+    # hue. On attr_bg #f9f7f4 it measures 13.6:1.
+    ui_accent       = "#013176",
+    ui_accent_dark  = "#01214f",
+    attr_text       = "#1c2b3a",
     attr_bg         = "#f9f7f4",
     attr_border     = "#e2dcd4",
-    attr_rule       = "#7b1a1a"
+    attr_rule       = "#1c2b3a"
   ),
 
   high = c(
