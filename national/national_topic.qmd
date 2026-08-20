@@ -8,6 +8,7 @@ format:
     toc: false
     page-layout: full
     include-in-header: ../scorecard/font-loader.html
+    favicon: ../www/brand/PARC_blue_icon.png
 execute:
   echo: false
   warning: false
@@ -76,6 +77,17 @@ body {
   border-bottom: 5px solid var(--adaparc-gold);
   padding: 1rem 1.25rem;
   margin: 0 0 1.25rem 0;
+}
+.adaparc-banner .banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.adaparc-banner .banner-icon {
+  height: 2.3rem;
+  width: auto;
+  flex-shrink: 0;
 }
 .adaparc-banner .brand {
   font-size: 1.7rem;
@@ -169,6 +181,11 @@ table.national-table thead th:not(:first-child) { text-align: right; }
   font-size: 0.9rem;
   color: #555;
 }
+.adaparc-footer p { margin: 0.2rem 0; }
+.adaparc-footer .funding-note {
+  font-weight: 600;
+  color: var(--adaparc-ink);
+}
 
 /* ── "See next page" note ─────────────────────────────────────────────────── */
 .see-next {
@@ -251,6 +268,7 @@ table.national-table thead th:not(:first-child) { text-align: right; }
      stray page of their own. Fixing its printed height (width follows from the
      viewBox aspect ratio) leaves room for the text below it. */
   .adaparc-banner { padding: 0.7rem 1rem; margin-bottom: 0.8rem; }
+  .adaparc-banner .banner-icon { height: 30px; }
   h1.topic-title { font-size: 17pt; margin: 0 0 0.45rem 0; }
   .interp-note { margin-bottom: 0.6rem; padding: 0.5rem 0.8rem; }
   .map-figure { margin: 0.3rem 0 0.5rem 0; }
@@ -301,7 +319,13 @@ table.national-table thead th:not(:first-child) { text-align: right; }
     break-inside: avoid;
     page-break-inside: avoid;
   }
-  .adaparc-footer { break-inside: avoid; }
+  .adaparc-footer {
+    break-inside: avoid;
+    font-size: 8pt;
+    margin-top: 0.5rem;
+    padding-top: 0.35rem;
+  }
+  .adaparc-footer p { margin: 0.1rem 0; }
   a[href]:after { content: ""; }
 }
 ```
@@ -315,17 +339,30 @@ if (!ok) {
   knitr::knit_exit()
 }
 
-htmltools::tagList(
-  htmltools::div(
-    class = "adaparc-banner",
-    htmltools::p(class = "brand", "ADA-PARC"),
-    htmltools::p(
-      class = "sub",
-      paste0("National Data",
-             if (nzchar(val("category"))) paste0("  ·  ", val("category")) else "")
-    )
-  )
-) |> as.character() |> cat()
+# Built as a plain string, not htmltools tag objects: piping htmltools tags
+# through as.character() into a results='asis' chunk lets Quarto's Markdown
+# layer round-trip the markup as text instead of passing it through as raw
+# HTML (that's what printed literally on the page). Every other chunk in this
+# file already builds HTML this way; the banner is now consistent with them.
+cat(paste0(
+  '<div class="adaparc-banner">',
+  '<div class="banner-content">',
+  '<div>',
+  '<p class="brand">ADA-PARC</p>',
+  '<p class="sub">National Data',
+  if (nzchar(val("category"))) paste0("  ·  ", htmltools::htmlEscape(val("category"))) else "",
+  '</p>',
+  '</div>',
+  # Same white knockout mark used on the fact sheet banner, so the two
+  # download types share one brand asset even though their layouts stay
+  # distinct. Decorative (alt="") because the adjacent "ADA-PARC" text
+  # already names the organization for screen readers. Placed last so
+  # justify-content: space-between puts it at the right edge, clear of the
+  # title text.
+  '<img class="banner-icon" src="../www/brand/PARC_white_icon_knockout.png" alt="">',
+  '</div>',
+  '</div>\n'
+))
 ```
 
 ```{r page-one, results='asis'}
@@ -440,10 +477,21 @@ for (k in seq_along(groups)) {
 ```
 
 ```{r footer, results='asis'}
+# Same funding acknowledgment wording as fs_footer() in
+# factsheets/_generate/R/factsheet-functions.R, kept as a literal string here
+# rather than a shared function so the two download systems stay independent
+# (per Colin: national + fact sheet HTML should look distinct, not share a
+# banner/footer component).
 cat(sprintf(
-  paste0('<div class="adaparc-footer">ADA-PARC  ·  ADA Participation Action ',
-         'Consortium  ·  Generated %s. Darker map colors always indicate more ',
-         'opportunity.</div>'),
+  paste0(
+    '<div class="adaparc-footer">',
+    '<p class="funding-note">The ADA-PARC is funded by the National ',
+    'Institute for Disability, Independent Living, and Rehabilitation ',
+    'Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.</p>',
+    '<p>ADA-PARC  ·  ADA Participation Action Research Consortium  ·  ',
+    'Generated %s. Darker map colors always indicate more opportunity.</p>',
+    '</div>'
+  ),
   htmltools::htmlEscape(val("generated", format(Sys.Date(), "%B %d, %Y")))
 ))
 
