@@ -36,6 +36,7 @@ resource_files:
 - scorecard/dictionary
 - scorecard/scorecard_data
 - national/national_topic.qmd
+- city/city_profile.qmd
 editor_options:
   markdown: 
     wrap: 72
@@ -180,10 +181,10 @@ adaparc_footer <- shiny::tagList(
        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
        font-size: 15px;
        line-height: 1.6;
-       color: #591313;
+       color: #1c2b3a;
        background: #f9f7f4;
        border: 1px solid #e2dcd4;
-       border-top: 3px solid #7B1A1A;
+       border-top: 3px solid #1c2b3a;
        border-radius: 8px;
        text-align: center;
        padding: 1rem 1.5rem;
@@ -280,6 +281,16 @@ source_required("scripts", "functions.R")
 # reactives and render functions that do not share this chunk's environment.
 # Nothing below should carry a tier hex literal. See docs/color-palette-expansion.qmd.
 source_required("scripts", "palettes.R", envir = globalenv())
+
+# The blue and slate chrome accent used to be patched in here, after
+# palettes.R had been sourced, because palettes.R was shared with a second,
+# still maroon copy of this document and could not be edited for one of them.
+# That copy is gone and this document is canon, so the four tokens
+# (ui_accent, ui_accent_dark, attr_text, attr_rule) now live in the standard
+# set in scripts/palettes.R. Do not reintroduce a runtime override: values
+# there are verified by `python3 scripts/check_palette.py` and mirrored in the
+# fallback :root of www/styles.css, and a patch applied here is visible to
+# neither.
 
 ### ----- Fixed city/place map classification -----
 # City tract choropleth (output$snapshotmap) previously recomputed its color
@@ -391,7 +402,7 @@ ui <- fluidPage(
         align-items: center;
         gap: 1.5rem;
         padding: 1.25rem 0 1.125rem 0;
-        border-bottom: 2px solid #7B1A1A;
+        border-bottom: 2px solid #1c2b3a;
         margin-bottom: 1.75rem;
       }
       .home-logo-wrap {
@@ -450,7 +461,7 @@ ui <- fluidPage(
       .nav-card {
         background: #ffffff;
         border: 1px solid #e4e8ef;
-        border-top: 4px solid #7B1A1A;
+        border-top: 4px solid #1c2b3a;
         border-radius: 0 0 6px 6px;
         padding: 1.375rem 1.375rem 1.25rem 1.375rem;
         display: flex;
@@ -465,7 +476,7 @@ ui <- fluidPage(
         transition: box-shadow 0.2s ease, transform 0.15s ease;
       }
       .nav-card:hover {
-        box-shadow: 0 6px 20px rgba(123,26,26,0.12);
+        box-shadow: 0 6px 20px rgba(28,43,58,0.12);
         transform: translateY(-2px);
       }
       /* Tile tint is #eef3fa, the palest usable step of the brand navy,
@@ -544,7 +555,7 @@ ui <- fluidPage(
 
       /* ---- Callout (full-width) ---- */
       .callout-full {
-        border-left: 4px solid #7B1A1A;
+        border-left: 4px solid #1c2b3a;
         background: #f9f7f4;
         padding: 1.25rem 1.5rem;
         margin-bottom: 2rem;
@@ -555,7 +566,7 @@ ui <- fluidPage(
         font-weight: 700;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        color: #7B1A1A;
+        color: #1c2b3a;
         margin-bottom: 0.4rem;
       }
       .callout-text {
@@ -583,7 +594,7 @@ ui <- fluidPage(
         color: #1c2b3a;
         margin: 0 0 0.6rem 0;
         line-height: 1.25;
-        border-left: 3px solid #7B1A1A;
+        border-left: 3px solid #1c2b3a;
         padding-left: 0.7rem;
         border-radius: 0;
       }
@@ -616,7 +627,7 @@ ui <- fluidPage(
         padding: 4px 0;
       }
       .region-num {
-        color: #7B1A1A;
+        color: #1c2b3a;
         font-weight: 700;
         margin-right: 5px;
       }
@@ -627,7 +638,7 @@ ui <- fluidPage(
         grid-template-columns: 1fr 1fr;
         gap: 1.75rem;
         background: #ffffff;
-        border: 1.5px solid #e0d6d6;
+        border: 1.5px solid #dfe3e9;
         border-radius: 6px;
         padding: 1.375rem 1.5rem;
         margin-top: 2rem;
@@ -638,7 +649,7 @@ ui <- fluidPage(
         color: #1c2b3a;
         margin-bottom: 0.5rem;
         line-height: 1.25;
-        border-left: 3px solid #7B1A1A;
+        border-left: 3px solid #1c2b3a;
         padding-left: 0.55rem;
         border-radius: 0;
       }
@@ -662,7 +673,7 @@ ui <- fluidPage(
         margin-top: 0.2rem;
       }
       .bottom-col-body a {
-        color: #7B1A1A;
+        color: #1c2b3a;
         text-decoration: underline;
       }
       .email-button {
@@ -672,7 +683,7 @@ ui <- fluidPage(
         font-size: 1.0625rem;   /* 17px */
         font-weight: 600;
         color: white !important;
-        background-color: #7B1A1A;
+        background-color: #013176;
         border-radius: 4px;
         text-decoration: none !important;
         margin: 0.6rem 0 0.5rem 0;
@@ -680,7 +691,7 @@ ui <- fluidPage(
         transition: background-color 0.2s ease;
       }
       .email-button:hover {
-        background-color: #5e1414;
+        background-color: #01214f;
         text-decoration: none !important;
       }
       .questions-contact {
@@ -912,7 +923,7 @@ window.adaparcNavigateToTab = function(page) {
       div(class = "home-section",
         div(class = "sec-heading", "Grant Information"),
         tags$p(class = "sec-body",
-          "The ADA Participation Action Consortium is funded by the National Institute on Disability, Independent Living, and Rehabilitation Research (NIDILRR) (90DP0026 and 90DPAD0001), a Center within the Administration for Community Living (ACL), Department of Health and Human Services (HHS).",
+          "The ADA Participation Action Research Consortium is funded by the National Institute on Disability, Independent Living, and Rehabilitation Research (NIDILRR) (90DP0026 and 90DPAD0001), a Center within the Administration for Community Living (ACL), Department of Health and Human Services (HHS).",
           " The contents of this website do not necessarily represent the policy of NIDILRR, ACL, or HHS, and you should not assume endorsement by the Federal Government."
         )
       ),
@@ -1072,16 +1083,20 @@ ui <- fluidPage(
         font-family: 'EB Garamond', Garamond, Georgia, serif !important;
       }
 
-      /* Map / table section heading inside cards */
+      /* Map / table section heading inside cards. Sized in px for the same
+         Bootstrap 3 reason as the banner above: the old `1.9rem` resolved
+         against a 10px root and rendered at 19px, barely larger than the
+         17px body text around it. Shared by the map card and the table
+         card so the two section headings stay the same weight. */
       .national-map-title {
         font-family: 'EB Garamond', Garamond, Georgia, serif;
         color: #1c2b3a;
-        font-size: 1.9rem;
+        font-size: 24px;
         font-weight: 700;
-        margin-bottom: 0.65rem;
-        margin-top: 0.25rem;
-        padding-bottom: 0.4rem;
-        border-bottom: 2px solid #6d1f2e;
+        margin-bottom: 9px;
+        margin-top: 3px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid #1c2b3a;
       }
 
       /* Interpretation note under table title */
@@ -1105,14 +1120,14 @@ ui <- fluidPage(
         color: #1c2b3a;
         background: #faf5ec;
         border: 1px solid #e6d9bd;
-        border-left: 5px solid #6d1f2e;
+        border-left: 5px solid #1c2b3a;
         border-radius: 6px;
         padding: 0.7rem 1rem;
         margin: 0.35rem 0 1rem 0;
       }
       .map-interpretation-note-label {
         font-weight: 700;
-        color: #6d1f2e;
+        color: #1c2b3a;
       }
 
       /* SelectInput controls styling */
@@ -1208,9 +1223,9 @@ ui <- fluidPage(
 
       /* Download Selected Topic button */
       .btn-download-national {
-        background: #6d1f2e !important;
+        background: #013176 !important;
         color: #ffffff !important;
-        border: 1.5px solid #6d1f2e !important;
+        border: 1.5px solid #013176 !important;
         border-radius: 6px !important;
         font-family: 'EB Garamond', Garamond, Georgia, serif !important;
         font-size: 1.1rem !important;
@@ -1224,12 +1239,15 @@ ui <- fluidPage(
         text-align: left !important;
       }
       .btn-download-national:hover {
-        background: #8b2737 !important;
-        border-color: #8b2737 !important;
+        background: #01214f !important;
+        border-color: #01214f !important;
       }
       .btn-download-national:focus {
-        outline: 3px solid #c9a84c !important;
+        outline: 3px solid #0d3b8e !important;
         outline-offset: 2px !important;
+        /* White halo in the offset gap so the ring does not rely on the page
+           tone behind the button. White on #013176 is 12.34:1. */
+        box-shadow: 0 0 0 2px #ffffff !important;
       }
       /* Narrow screens: stack the columns and turn the vertical rule into a
          horizontal one above the button. */
@@ -1273,37 +1291,42 @@ ui <- fluidPage(
         font-size: 1rem !important;
         font-weight: 600 !important;
         color: #ffffff !important;
-        background: #6d1f2e !important;
-        border: 1.5px solid #6d1f2e !important;
+        background: #013176 !important;
+        border: 1.5px solid #013176 !important;
         border-radius: 4px !important;
         padding: 4px 14px !important;
         cursor: pointer !important;
         line-height: 1.5 !important;
       }
       .dt-button:hover {
-        background: #8b2737 !important;
-        border-color: #8b2737 !important;
+        background: #01214f !important;
+        border-color: #01214f !important;
       }
       .dt-button:focus {
-        outline: 3px solid #c9a84c !important;
+        outline: 3px solid #0d3b8e !important;
         outline-offset: 2px !important;
       }
 
       /* ── National Data: card layout ───────────────────────────────────────── */
 
-      /* Page header — warm beige background, maroon heading */
+      /* Page header — warm beige background, maroon heading.
+         Sized in px, not rem: this is a fluidPage(), so Bootstrap 3
+         scaffolding sets `html { font-size: 10px }` and every rem here
+         resolves against a 10px root. The old `1rem 1.5rem` padding was
+         therefore 10px/15px and the `2.6rem` heading only 26px, which is
+         why the band read as cramped. */
       .national-banner {
         background: #f9f7f4;
         border-bottom: 3px solid #e8e4db;
-        padding: 1rem 1.5rem;
+        padding: 20px 24px 18px;
         margin-bottom: 1.25rem;
         border-radius: 6px 6px 0 0;
       }
       .national-banner h1 {
-        color: #6d1f2e;
-        font-size: 2.6rem;
+        color: #1c2b3a;
+        font-size: 31px;
         font-weight: 700;
-        margin-bottom: 0.2rem;
+        margin-bottom: 6px;
       }
       .national-banner .national-intro {
         color: #2c2c2c;
@@ -1325,7 +1348,15 @@ ui <- fluidPage(
       .national-controls-card,
       .national-map-card,
       .national-table-card {
-        border-top: 4px solid #6d1f2e;
+        border-top: 4px solid #1c2b3a;
+      }
+
+      /* The map card carries more inside room than the other cards: the
+         figure is the centrepiece of this tab and was sitting tight against
+         the card edges. Paired with the taller girafe canvas below
+         (height_svg 5 -> 6), which is what actually enlarges the map. */
+      .national-map-card {
+        padding: 18px 22px 26px 22px;
       }
 
       /* Topic summary band: its own space between the controls and the map.
@@ -1334,20 +1365,24 @@ ui <- fluidPage(
       .national-summary-card {
         background: #fbf8f2;
         border: 1px solid #e6dcc6;
-        border-left: 4px solid #c9a84c;
+        border-left: 4px solid #c8a743;
         box-shadow: none;
         padding: 1.15rem 1.5rem;
       }
+      /* Spans the full card width. The former `max-width: 78ch` capped the
+         measure at roughly half the card and pushed the summary into a tall
+         narrow column, leaving the right side of the band empty. The band is
+         two or three sentences, so the taller-than-ideal measure costs less
+         than the vertical space the cap was consuming. */
       .national-summary-card .map-summary {
         display: block;
-        max-width: 78ch;
         line-height: 1.55;
       }
       .national-summary-heading {
         font-family: 'EB Garamond', Garamond, Georgia, serif;
         font-size: 19px;
         font-weight: 700;
-        color: #6d1f2e;
+        color: #1c2b3a;
         margin: 0 0 0.4rem 0;
         line-height: 1.3;
       }
@@ -1487,7 +1522,12 @@ ui <- fluidPage(
           id           = "national_map_img",
           role         = "img",
           `aria-label` = "Map of the United States. Use the topic dropdown to select a variable.",
-          girafeOutput("national_ggmap", width = "100%", height = "400px") %>% withSpinner()
+          # Height tracks the girafe canvas aspect. opts_sizing(rescale = TRUE,
+          # width = 1) scales the SVG to the container WIDTH and derives its
+          # height from the width_svg:height_svg ratio, so this value only has
+          # to be a container tall enough not to clip. At 10:6 a ~900px card
+          # renders the figure about 540px tall.
+          girafeOutput("national_ggmap", width = "100%", height = "560px") %>% withSpinner()
         )
       )
     ),
@@ -1839,8 +1879,14 @@ server <- function(input, output, session) {
     )
     girafe(
       ggobj      = gg,
+      # 10 x 6 rather than 10 x 5. The legend sits at the bottom in two rows,
+      # so the map panel was about 10 x 3.8, far wider than the Albers US
+      # outline needs; the map was height-constrained and left large empty
+      # flanks either side. A taller canvas gives the panel back to the map
+      # instead of the margins. Legend and tooltip type do not change size,
+      # since the SVG is scaled to the container width, not its height.
       width_svg  = 10,
-      height_svg = 5,
+      height_svg = 6,
       options    = list(
         opts_tooltip(
           css = paste0(
@@ -2045,6 +2091,22 @@ fmt_pct_1dp <- function(x) {
   ifelse(is.na(x), "NA", scales::percent(x / 100, accuracy = 0.1))
 }
 
+# As above, but adds precision as the value shrinks: one decimal at 1% and
+# above, two decimals under 1%, three decimals under 0.01%. One decimal
+# alone rounds small shares to 0.0% and loses them; two decimals still
+# rounds the smallest shares (well under 0.01%) to 0.00%. Used on the
+# Race/Ethnicity, Sex, and Age demographics list, where "share of total
+# population" figures routinely fall under 1%.
+fmt_pct_dynamic <- function(x) {
+  x <- as.numeric(x)
+  ifelse(is.na(x), "NA",
+         ifelse(abs(x) < 0.01,
+                scales::percent(x / 100, accuracy = 0.001),
+                ifelse(abs(x) < 1,
+                       scales::percent(x / 100, accuracy = 0.01),
+                       scales::percent(x / 100, accuracy = 0.1))))
+}
+
 fmt_num <- function(x) {
   x <- as.numeric(x)
   ifelse(is.na(x), "NA", scales::comma(x, accuracy = 1))
@@ -2078,6 +2140,24 @@ fmt_dollar <- function(x) {
 create_number_percent_string_or_na <- function(num, pct) {
   ifelse(is.na(as.numeric(pct)), "Not available",
          paste0(fmt_num(num), " (", fmt_pct_1dp(pct), ")"))
+}
+
+# As fmt_pct_1dp, but "Not available" rather than "NA" for a missing value.
+# Used where there is no paired count to fall back on the way
+# create_number_percent_string_or_na does: HUD housing access is a rate
+# with no numerator/denominator pair carried on this page.
+fmt_pct_or_na <- function(x) {
+  x <- as.numeric(x)
+  ifelse(is.na(x), "Not available", fmt_pct_1dp(x))
+}
+
+# One decimal place, "mi" suffix, "Not available" for a missing value. Used
+# for the Centers for Independent Living distance measures, which are place-
+# level straight-line distances rather than a rate with a numerator/
+# denominator pair.
+fmt_miles_or_na <- function(x) {
+  x <- as.numeric(x)
+  ifelse(is.na(x), "Not available", paste0(scales::comma(x, accuracy = 0.1), " mi"))
 }
 
 # ---------------------------------------------------------------------------
@@ -2136,6 +2216,156 @@ render_comparison_table <- function(row, rows, caption) {
   )
 }
 
+# ---------------------------------------------------------------------------
+# Disability Demographics list (Race/Ethnicity, Sex, Age) on the City Data tab
+#
+# Simplified per Colin's client's request 2026-08-18: these three groups
+# used to render as four-column tables (see git history / render_share_table()
+# for the prior version), answering three separate questions per group
+# (disability rate within the group, share of the city's PWD, share of the
+# total population). The client asked to drop back to a single, plainly
+# readable figure per group:
+#   - the number of people in that group with a disability
+#     -> pop_cni_<group>_dis
+#   - that number's share of the city's total population
+#     -> pop_cni_<group>_dis / pop_cni_total_all
+#     ("Of everyone in this city, what share is both disabled and X?")
+#
+# Both are derivable from columns already present in city_place(): the
+# disabled headcount per group (pop_cni_<group>_dis) and the city's total
+# population (pop_cni_total_all). No new pipeline variables are needed.
+# Renders as a plain <ul>, not a table, per the client's request for a
+# cleaner, simpler look; a native list still gives screen reader users list
+# structure without table markup the two figures no longer need.
+#
+# Layout, 2026-08-18 second follow-up: each group is a stat tile rather than
+# a single label/value line, and the <ul> is a responsive CSS grid, so the
+# groups fill the full-width card instead of stacking in one narrow column
+# that left most of the card empty. Inside a tile the reading order is
+# label, then the share of total population set large as the headline
+# figure, then the count on its own line. Sizing and colour live in the
+# stylesheet (.city-demo-list and friends); this function only emits markup.
+#
+# Accessibility notes on the tile markup:
+#   - the <ul>/<li> structure is unchanged, so screen readers still announce
+#     the group count and step through one group at a time;
+#   - the headline percentage is visually labelled only by its position, so
+#     a visually hidden span (.city-demo-sr) carries the words a sighted
+#     reader gets from the heading above and the count below. Without it the
+#     percentage would be read as a bare number;
+#   - nothing is encoded in colour, and the count is text, not a bar.
+#
+# The whole figure block is built in one is.na() branch rather than
+# concatenated from separately-computed pieces, so a missing group_dis
+# collapses cleanly to a single "Not available" tile rather than pairing a
+# real "Not available" with a leftover formatted "NA".
+# ---------------------------------------------------------------------------
+demo_row <- function(label, group_dis_pop) {
+  list(label = label, group_dis_pop = group_dis_pop)
+}
+
+# One tile. Split out of render_demo_list() on 2026-08-18 so the Disability
+# Types block can emit the same markup without duplicating the class names
+# in a second place. label and figure are both already-built HTML.
+demo_tile <- function(label, figure) {
+  paste0(
+    "<li class=\"city-demo-tile\">",
+    "<span class=\"city-demo-label\">", label, "</span>",
+    figure,
+    "</li>"
+  )
+}
+
+# The figure half of a tile: headline percentage, then the count beneath it.
+# Both the demographics groups and the disability types express the same
+# quantity, a share of the city's total population, so both carry the same
+# visually hidden wording. Built in one branch rather than concatenated from
+# separately-computed pieces, so a missing value collapses to a single
+# "Not available" rather than pairing a real "Not available" with a
+# leftover formatted "NA".
+demo_figure <- function(pct, count) {
+  pct   <- as.numeric(pct)
+  count <- as.numeric(count)
+  if (is.na(pct)) {
+    return("<span class=\"city-demo-na\">Not available</span>")
+  }
+  paste0(
+    "<span class=\"city-demo-pct\">",
+    fmt_pct_dynamic(pct),
+    "<span class=\"city-demo-sr\"> of the city's total population</span>",
+    "</span>",
+    if (is.na(count)) {
+      ""
+    } else {
+      paste0("<span class=\"city-demo-count\">", fmt_num(count), " people</span>")
+    }
+  )
+}
+
+# note is optional explanatory prose shown between the heading and the tiles.
+# Added 2026-08-18 for the Age block, whose under-5 caveat previously sat
+# above the "Age" heading, where it read as though it applied to Sex. It
+# carries .city-summary-help, the on-screen note class, which the download
+# template also styles (see .tbl-block p.city-summary-help in
+# city/city_profile.qmd), so the one fragment reads correctly in both.
+render_demo_list <- function(row, rows, heading, note = NULL) {
+  total_pop <- as.numeric(row$pop_cni_total_all)
+
+  items <- vapply(rows, function(r) {
+    group_dis <- as.numeric(row[[r$group_dis_pop]])
+    pct <- if (is.na(group_dis) || is.na(total_pop) || total_pop == 0) {
+      NA_real_
+    } else {
+      100 * group_dis / total_pop
+    }
+    demo_tile(r$label, demo_figure(pct, group_dis))
+  }, character(1))
+
+  paste0(
+    "<p class=\"city-demo-heading\">", heading, "</p>",
+    if (is.null(note) || !nzchar(note)) {
+      ""
+    } else {
+      paste0("<p class=\"city-summary-help\">", note, "</p>")
+    },
+    "<ul class=\"city-demo-list\">",
+    paste0(items, collapse = ""),
+    "</ul>"
+  )
+}
+
+# ---------------------------------------------------------------------------
+# Disability Types tiles
+#
+# Same tile aesthetic as the demographics lists, per Colin's 2026-08-18
+# request. Previously a plain <ul> of "Hearing - 12,345 (2.3%)" bullets.
+#
+# The percentages here come straight from the pipeline's pct_cni_* columns
+# rather than being derived from a count and a denominator, because these
+# are already shares of the city's total population (see
+# help$disability_types_intro), which is exactly what the demographics
+# tiles show. So the two blocks are directly comparable and the same
+# visually hidden wording inside .city-demo-pct is correct for both.
+#
+# No wrapping <ul> is added by the caller: this returns the complete list,
+# unlike the earlier bullets fragment.
+# ---------------------------------------------------------------------------
+type_row <- function(label, count_col, pct_col) {
+  list(label = label, count_col = count_col, pct_col = pct_col)
+}
+
+render_type_list <- function(row, rows) {
+  items <- vapply(rows, function(r) {
+    demo_tile(r$label, demo_figure(row[[r$pct_col]], row[[r$count_col]]))
+  }, character(1))
+
+  paste0(
+    "<ul class=\"city-demo-list\">",
+    paste0(items, collapse = ""),
+    "</ul>"
+  )
+}
+
 # Join-proof tract GEOID normalization (NO percent conversion)
 normalize_tract_geoid <- function(x) {
   x <- as.character(x)
@@ -2164,22 +2394,34 @@ ui <- fluidPage(
       }
 
       /* Page header banner */
+      /* Banner geometry, title and intro line are kept byte-for-byte identical
+         to .national-banner / .national-banner h1 / .national-intro so the two
+         tabs open with the same header block. Values are in px because
+         Bootstrap 3 sets html{font-size:10px}, which makes rem units render
+         ~62% of their intended size here. */
       .city-banner {
         background: #f9f7f4;
         border-bottom: 3px solid #e8e4db;
-        padding: 1rem 1.5rem;
+        padding: 20px 24px 18px;
         margin-bottom: 1.25rem;
         border-radius: 6px 6px 0 0;
       }
 
       .city-title {
-        font-size: 2.6rem;
+        font-size: 31px;
         font-weight: 700;
-        color: #6b0f0f;
-        margin-bottom: 0.2rem;
+        color: #1c2b3a;
+        margin-bottom: 6px;
       }
+      /* Overrides .city-note (weight 600, 72ch measure, line-height 1.6),
+         which applies to the body-copy notes elsewhere on the tab but not to
+         this header line. */
       .city-banner .city-note {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
         font-size: 18px;
+        font-weight: 400;
+        line-height: inherit;
+        max-width: none;
         color: #2c2c2c;
         margin-top: 0;
         margin-bottom: 0;
@@ -2211,7 +2453,7 @@ ui <- fluidPage(
       .city-controls-card,
       .city-map-card,
       .city-data-summary-card {
-        border-top: 4px solid #6b0f0f;
+        border-top: 4px solid #1c2b3a;
       }
 
       /* Controls card: label and input text — match national data styling */
@@ -2235,9 +2477,87 @@ ui <- fluidPage(
         background-color: #e8edf3 !important;
         color: #1c2b3a !important;
       }
+
+      /* ── Controls row + download action ────────────────────────────────
+         Mirrors .national-controls-split / .national-control-action in the
+         National Data tab: selectors on the left, the download behind a
+         full-height rule on the right, so the two tabs' controls read the
+         same way. */
+      .city-controls-split {
+        display: flex;
+        align-items: stretch;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+      .city-controls-row {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 1.25rem;
+      }
+      .city-control-field {
+        flex: 1 1 16rem;
+        min-width: 0;
+      }
+      .city-control-field .form-group {
+        margin-bottom: 0;
+      }
+      .city-control-action {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-left: 1px solid #d8cdb8;
+        padding-left: 1.5rem;
+      }
+      .btn-download-city {
+        background: #013176 !important;
+        color: #ffffff !important;
+        border: 1.5px solid #013176 !important;
+        border-radius: 6px !important;
+        font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        padding: 9px 20px !important;
+        cursor: pointer !important;
+        line-height: 1.4 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        white-space: normal !important;
+        text-align: left !important;
+      }
+      .btn-download-city:hover {
+        background: #01214f !important;
+        border-color: #01214f !important;
+      }
+      .btn-download-city:focus {
+        outline: 3px solid #0d3b8e !important;
+        outline-offset: 2px !important;
+        box-shadow: 0 0 0 2px #ffffff !important;
+      }
+      .btn-download-city:disabled,
+      .btn-download-city[disabled] {
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
+      }
+      @media (max-width: 900px) {
+        .city-controls-split { flex-wrap: wrap; }
+        .city-control-action {
+          flex: 1 1 100%;
+          justify-content: flex-start;
+          border-left: none;
+          border-top: 1px solid #d8cdb8;
+          padding-left: 0;
+          padding-top: 1rem;
+        }
+        .city-control-field .form-group { margin-bottom: 0.25rem; }
+      }
+
       /* City map title */
       .city-map-title {
-        color: #6b0f0f;
+        color: #1c2b3a;
         font-size: 2rem;
         font-weight: 700;
         margin-bottom: 0.6rem;
@@ -2252,7 +2572,7 @@ ui <- fluidPage(
         padding: 1.25rem 1.5rem 1.5rem 1.5rem;
         background: #ffffff;
         border: 1px solid #e0dbd2;
-        border-top: 5px solid #6b0f0f;
+        border-top: 5px solid #1c2b3a;
         border-radius: 5px;
         height: 100%;
         box-sizing: border-box;
@@ -2271,8 +2591,8 @@ ui <- fluidPage(
         font-weight: 700;
         margin: 0.25rem 0 0.9rem 0;
         padding-bottom: 0.45rem;
-        border-bottom: 2px solid #6b0f0f;
-        color: #6b0f0f;
+        border-bottom: 2px solid #1c2b3a;
+        color: #1c2b3a;
         letter-spacing: -0.01em;
       }
       .city-summary h4 {
@@ -2281,8 +2601,8 @@ ui <- fluidPage(
         margin-top: 1.4rem;
         margin-bottom: 0.4rem;
         padding-left: 0.6rem;
-        border-left: 3px solid #6b0f0f;
-        color: #6b0f0f;
+        border-left: 3px solid #1c2b3a;
+        color: #1c2b3a;
         line-height: 1.3;
       }
       .city-summary p {
@@ -2293,17 +2613,18 @@ ui <- fluidPage(
       .city-summary b {
         font-weight: 700;
       }
-      /* Sub-headings inside a summary card: Race / Ethnicity, Sex, Ages 19
-         to 64, and so on. The two descendant selectors below were written
-         for an older markup where the b element sat inside a nested div;
-         in the current markup the b element is a direct child of
-         .city-summary, so neither matched and sub-headings were rendering
-         at inherited body size, smaller than the 1.5rem list items they
-         label. The direct-child selector is the one that actually applies.
-         The other two are kept in case that markup returns. */
+      /* Sub-headings inside a summary card: Health Insurance, Education,
+         Employment, and so on. Race/Ethnicity, Sex, and Age carry their own
+         heading style, .city-demo-heading, styled below near .city-demo-list.
+         The two descendant selectors below were written for an older
+         markup where the b element sat inside a nested div; in the
+         current markup the b element is a direct child of .city-summary,
+         so neither matched and sub-headings were rendering at inherited
+         body size, smaller than the 1.5rem list items they label. The
+         direct-child selector is the one that actually applies. The other
+         two are kept in case that markup returns. */
       .city-summary > b,
       .city-summary > div > b,
-      .city-summary .city-age-item > b,
       .city-summary .col-md-12 > b {
         display: inline-block;
         font-size: 1.55rem;
@@ -2359,10 +2680,10 @@ ui <- fluidPage(
         vertical-align: top;
       }
       .city-summary table.city-compare thead th {
-        background: #6b0f0f;
+        background: #1c2b3a;
         color: #ffffff;
         font-weight: 600;
-        border-color: #6b0f0f;
+        border-color: #1c2b3a;
         font-size: 1.3rem;
       }
       .city-summary table.city-compare tbody th[scope='row'] {
@@ -2383,6 +2704,212 @@ ui <- fluidPage(
         .city-summary table.city-compare td { white-space: normal; }
         .city-summary table.city-compare tbody th[scope='row'] { width: 38%; }
       }
+
+      /* Full-width outcome cards (Community Participation, Work and
+         Economic), stacked one above the other since 2026-08-18 rather than
+         sharing a row as col-md-6 halves. With twice the width available,
+         the type inside them goes up rather than the tables simply getting
+         wider: at half width these tables were set at 1.4rem to fit, which
+         is the smallest text on the card and sits below the 1.5rem list
+         items beside it. The sizes below bring the tables level with the
+         rest of the card and give the cells room to breathe.
+
+         Gated on min-width 62em, Bootstrap 3's md breakpoint and the point
+         at which these cards would previously have split into halves.
+         Below it the card is full width for every layout anyway and the
+         compact sizes above, including the narrow-screen th width in the
+         media query directly above this one, still apply. Selectors carry
+         both class names so they outrank the base .city-summary rules on
+         specificity rather than on source order alone. */
+      @media (min-width: 62em) {
+        /* max-width, not width, so the table still fills a narrower card.
+           On a wide monitor a 100%-width three-column table pushes the two
+           value columns so far apart that the eye loses the row it is
+           reading; the cap holds the comparison within one comfortable
+           glance, the same measure the downloadable report gets from its
+           8.5in page. Well above the point where the columns would crowd. */
+        .city-summary.city-summary-stack table.city-compare {
+          font-size: 1.6rem;
+          line-height: 1.55;
+          margin: 0.45rem 0 1.4rem;
+          max-width: 110rem;
+        }
+        .city-summary.city-summary-stack table.city-compare caption {
+          font-size: 1.7rem;
+          padding-bottom: 0.4rem;
+        }
+        .city-summary.city-summary-stack table.city-compare th,
+        .city-summary.city-summary-stack table.city-compare td {
+          padding: 0.6rem 0.85rem;
+        }
+        .city-summary.city-summary-stack table.city-compare thead th {
+          font-size: 1.5rem;
+        }
+        /* The label column no longer needs 42% of a half-width card; at full
+           width that would strand the two value columns far to the right of
+           the text they belong to. */
+        .city-summary.city-summary-stack table.city-compare tbody th[scope='row'] {
+          width: 34%;
+        }
+        /* Sub-headings (Health Insurance, Employment, ...) and their notes,
+           raised to keep the same step down from heading to note to table
+           that the card had at the smaller sizes. */
+        .city-summary.city-summary-stack > b {
+          font-size: 1.75rem;
+          margin-top: 1.1rem;
+        }
+        .city-summary.city-summary-stack .city-summary-help {
+          font-size: 1.5rem;
+        }
+        .city-summary.city-summary-stack ul {
+          font-size: 1.6rem;
+        }
+      }
+
+      /* Disability Demographics stat tiles (Race/Ethnicity, Sex, Age).
+         Simplified per Colin's client's request 2026-08-18: these three
+         groups no longer render as four-column tables (count, rate within
+         group, share of city PWD, share of total population). Each group
+         now shows two figures, its share of the city's total population as
+         the headline and the count beneath it. See render_demo_list().
+
+         Laid out as a responsive grid of tiles, replacing the earlier
+         single narrow column. That column was capped at 30rem to keep a
+         short label near its value, which fixed the gap but left most of
+         this full-width card (.city-summary-wide) empty and made the eight
+         race groups read as one undifferentiated stack. auto-fill rather
+         than auto-fit is deliberate: with auto-fit a two-item list, Sex,
+         would stretch its two tiles across the entire card, so the tile
+         size would change from section to section. auto-fill holds the
+         track width steady and simply leaves the unused tracks empty.
+
+         Still a native ul/li, so screen readers announce the group count
+         and step through one group at a time. The visually hidden span
+         inside the percentage (.city-demo-sr) supplies the wording a
+         sighted reader takes from the tile layout; without it the headline
+         reads as a bare number. Nothing is carried by colour alone. */
+      .city-summary ul.city-demo-list {
+        list-style: none;
+        margin: 0.35rem 0 1.2rem 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
+        gap: 0.9rem;
+      }
+      /* Two tiles across, fixed, inside the full-width summary card.
+         Changed from the auto-fill tracks above on 2026-08-18: at a desktop
+         width auto-fill gave four or five tiles per row, which spread the
+         eight race groups and the six disability types into a wide, dense
+         band under the map. Two fixed columns run the same content down the
+         page instead, closer to the downloadable report's shape, and give
+         each tile enough width that no label wraps past two lines.
+         The auto-fill rule above still applies to any city-demo-list that
+         appears outside this card. */
+      .city-summary-wide ul.city-demo-list {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      /* Below roughly a tablet width two tiles are narrower than the long
+         race labels want, so drop to one. */
+      @media (max-width: 48em) {
+        .city-summary-wide ul.city-demo-list {
+          grid-template-columns: 1fr;
+        }
+      }
+      /* At two columns in a full-width card each tile is wide enough that
+         even the longest label (Native Hawaiian/Other Pacific Islander,
+         Ambulatory (difficulty walking or climbing stairs)) stays on one
+         line, so the two-line floor below would leave a visible empty band
+         above every percentage. Dropped to a one-line floor here only. The
+         3.9rem floor still applies between 48em and 62em, where two columns
+         are narrow enough that labels do wrap and the percentages need it
+         to stay level across a row. */
+      @media (min-width: 62em) {
+        .city-summary-wide ul.city-demo-list .city-demo-label {
+          min-height: 2rem;
+        }
+      }
+      .city-summary ul.city-demo-list li.city-demo-tile {
+        background: #faf8f5;
+        border: 1px solid #e0dbd2;
+        border-left: 4px solid #1c2b3a;
+        border-radius: 4px;
+        padding: 0.9rem 1.1rem 1rem 1.1rem;
+        margin: 0;
+      }
+      /* min-height reserves two lines for the label so the headline
+         percentages line up across a row of tiles even when one label
+         wraps (Native Hawaiian/Other Pacific Islander is the long one).
+         It is a floor, not a cap, so a third line still fits on narrow
+         screens. */
+      .city-summary ul.city-demo-list .city-demo-label {
+        display: block;
+        font-size: 1.45rem;
+        font-weight: 600;
+        color: #1c1c1c;
+        line-height: 1.35;
+        min-height: 3.9rem;
+        margin-bottom: 0.35rem;
+      }
+      .city-summary ul.city-demo-list .city-demo-pct {
+        display: block;
+        font-size: 2.8rem;
+        font-weight: 700;
+        color: #1c2b3a;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+      }
+      .city-summary ul.city-demo-list .city-demo-count {
+        display: block;
+        font-size: 1.4rem;
+        color: #3a3a3a;
+        font-variant-numeric: tabular-nums;
+        margin-top: 0.15rem;
+      }
+      .city-summary ul.city-demo-list .city-demo-na {
+        display: block;
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: #3a3a3a;
+      }
+      /* Visually hidden, but still read aloud and still found by in-page
+         search on most browsers. Standard clip pattern rather than
+         display:none, which would remove it from the accessibility tree
+         and defeat the purpose. */
+      .city-summary .city-demo-sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+      }
+      /* Sub-heading above each list (Race / Ethnicity, Sex, Age). Reuses
+         the same visual weight as the other <b> sub-headings on this card
+         (Employment, Earnings, ...) so the demographics card matches the
+         rest of the page now that it no longer relies on a table caption
+         for this label. */
+      /* Enlarged 1.55rem -> 1.85rem on 2026-08-18. At the old size these
+         three labels sat level with the body copy around them and did not
+         read as the section breaks they are. 1.85rem keeps them clearly
+         below the 2rem h4 above them (Disability Demographics) while
+         sitting well above the 1.5rem tile labels below. */
+      .city-summary p.city-demo-heading {
+        font-size: 1.85rem;
+        font-weight: 700;
+        color: #1c1c1c;
+        letter-spacing: 0.01em;
+        margin: 1.4rem 0 0.45rem 0;
+      }
+      /* The Age note now sits between the Age heading and its tiles, so it
+         needs to hug the heading rather than carry the standalone
+         paragraph spacing .city-summary-help uses elsewhere. */
+      .city-summary p.city-demo-heading + p.city-summary-help {
+        margin-top: 0.2rem;
+      }
       /* With the card-level h3 headings removed, the first sub-section
          heading sits flush at the top of each card rather than carrying
          the inter-section spacing meant to separate blocks. */
@@ -2390,24 +2917,11 @@ ui <- fluidPage(
         margin-top: 0.25rem;
       }
 
-      /* Equal-height card rows.
-         Bootstrap 3 lays .row out with floats, so two cards side by side end
-         at their own natural heights and the shorter one leaves a ragged
-         edge. Making just these rows flex containers equalises the cards.
-         flex-wrap keeps the single-column stack on narrow screens, and the
-         negative gutter margins BS3 puts on .row still apply. Scoped to this
-         class so no other row on the site is affected. */
-      .city-summary-row {
-        display: flex;
-        flex-wrap: wrap;
-      }
-      .city-summary-row > [class*='col-'] {
-        display: flex;
-        flex-direction: column;
-      }
-      .city-summary-row > [class*='col-'] > .city-summary {
-        flex: 1 1 auto;
-      }
+      /* An equal-height .city-summary-row rule used to live here, making the
+         two side-by-side outcome cards flex items so the shorter one did not
+         leave a ragged edge. Removed 2026-08-18 along with the col-md-6
+         halves themselves: every outcome card is full width now, so no two
+         cards ever sit beside each other. */
 
       /* Full-width demographics card (row two).
          Holds both Disability Demographics and Disability Types. Everything
@@ -2415,9 +2929,6 @@ ui <- fluidPage(
          version flowed the longer lists into two CSS columns to use the extra
          width, but two columns of bullets read worse than one, so the lists
          run straight down and the card simply ends where its content ends. */
-      .city-summary-wide .city-age-item > ul {
-        margin-bottom: 0.35rem;
-      }
 
       /* Full-width explanatory card, used for the Community Living domain,
          which has no city-level indicators available yet. Lighter treatment
@@ -2443,8 +2954,8 @@ ui <- fluidPage(
         font-weight: 700;
         margin: 0.25rem 0 0.9rem 0;
         padding-bottom: 0.45rem;
-        border-bottom: 2px solid #6b0f0f;
-        color: #6b0f0f;
+        border-bottom: 2px solid #1c2b3a;
+        color: #1c2b3a;
         letter-spacing: -0.01em;
       }
       .city-summary-header p {
@@ -2459,7 +2970,7 @@ ui <- fluidPage(
       .control-label {
         font-size: 20px !important;
         font-weight: 600;
-        color: #6b0f0f;
+        color: #1c2b3a;
         margin-bottom: 0.3rem;
       }
       .selectize-input,
@@ -2471,7 +2982,7 @@ ui <- fluidPage(
         font-size: 19px !important;
       }
       .selectize-input {
-        border: 1.5px solid #c8b8b8 !important;
+        border: 1.5px solid #5c6672 !important;
         border-radius: 4px !important;
         background: #fff !important;
         color: #1c1c1c !important;
@@ -2479,12 +2990,12 @@ ui <- fluidPage(
       }
       .selectize-input.focus,
       .selectize-input:focus-within {
-        border-color: #6b0f0f !important;
-        box-shadow: 0 0 0 3px rgba(107, 15, 15, 0.15) !important;
+        border-color: #0d3b8e !important;
+        box-shadow: 0 0 0 3px rgba(13, 59, 142, 0.15) !important;
         outline: none !important;
       }
       .selectize-dropdown {
-        border: 1.5px solid #c8b8b8 !important;
+        border: 1.5px solid #5c6672 !important;
         border-top: none !important;
         border-radius: 0 0 4px 4px !important;
         background: #fff !important;
@@ -2492,26 +3003,48 @@ ui <- fluidPage(
       .selectize-dropdown-content .option:hover,
       .selectize-dropdown-content .option.active,
       .selectize-dropdown-content .selected {
-        background: #6b0f0f !important;
+        background: #013176 !important;
         color: #fff !important;
       }
 
       /* ── Leaflet legend ─────────────────────────────────────────────── */
+      /* Sized in px, not rem: Bootstrap 3 scaffolding sets html font-size to
+         10px, so a rem value here renders ~62% of its intended size. The key
+         previously read 1.1rem and came out at 11px. */
       .leaflet-container .legend {
-        font-size: 1.1rem !important;
+        font-size: 17px !important;
+        line-height: 1.45 !important;
         color: #1c1c1c !important;
         background: rgba(255,255,255,1.0) !important;
-        padding: 10px 14px !important;
+        padding: 12px 16px !important;
         border-radius: 6px !important;
         box-shadow: 0 1px 4px rgba(0,0,0,0.18);
       }
       .leaflet-container .legend .info {
         background: transparent !important;
       }
+      /* Legend title sits in a leading div > strong */
+      .leaflet-container .legend div strong {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        display: inline-block;
+        margin-bottom: 4px;
+      }
+      /* Colour swatches: leaflet's inline defaults are 18px squares; scale
+         them with the larger text so the key stays legible. The black
+         outline keeps the palest bin and the white-ish no-data swatch
+         distinguishable from the legend background. */
+      .leaflet-container .legend i {
+        width: 22px !important;
+        height: 22px !important;
+        margin-right: 8px !important;
+        border: 1px solid #000 !important;
+        box-sizing: border-box !important;
+      }
 
       /* Focus ring: maroon to match new palette */
       :focus-visible {
-        outline: 3px solid #6b0f0f !important;
+        outline: 3px solid #0d3b8e !important;
         outline-offset: 2px;
       }
     "))
@@ -2536,15 +3069,31 @@ ui <- fluidPage(
       tags$section(
         role = "region",
         `aria-label` = "City selection controls",
-        fluidRow(
-          column(6,
-            selectInput(
-              "state_selector", "Select a state",
-              choices = names(state_choices),
-              selected = "Illinois"
-            )
+        div(
+          class = "city-controls-split",
+          div(
+            class = "city-controls-row",
+            div(
+              class = "city-control-field",
+              selectInput(
+                "state_selector", "Select a state",
+                choices = names(state_choices),
+                selected = "Illinois"
+              )
+            ),
+            div(class = "city-control-field", uiOutput("city_selector_ui"))
           ),
-          column(6, uiOutput("city_selector_ui"))
+          tags$section(
+            `aria-label` = "Download the selected city",
+            class = "city-control-action",
+            downloadButton(
+              "download_city",
+              "Download Selected City",
+              class        = "btn-download-city",
+              icon         = dl_icon(),
+              `aria-label` = "Download the selected city as an accessible, print-ready ADA-PARC report: map and key, then summary tables for people with disabilities in this city"
+            )
+          )
         )
       )
     ),
@@ -2685,7 +3234,16 @@ server <- function(input, output, session) {
     if (is.function(raw_palette)) raw_palette(4) else brewer.pal(4, raw_palette)
   })
 
-  output$snapshotmap <- renderLeaflet({
+  # ── Shared tract map data ─────────────────────────────────────────────────
+  # Single source of truth for BOTH the interactive Leaflet map below and the
+  # static print map built for the "Download Selected City" report
+  # (render_city_tract_map() in scripts/functions.R, called from the download
+  # handler further down). Both read this same joined, binned, colored data,
+  # so the printed map can never land in a different bin or a different
+  # colour than the one shown on screen. Was previously computed inline
+  # inside output$snapshotmap only; pulled out so the download handler can
+  # read it too without a second join-and-bin pass.
+  city_map_data <- reactive({
     req(city_tract_sf(), city_tract())
 
     sf_df <- city_tract_sf() %>%
@@ -2720,6 +3278,27 @@ server <- function(input, output, session) {
           TRUE           ~ map_colors[as.integer(pct_cat)]
         )
       )
+
+    # Append a "No data" key ONLY when some tract actually lacks a value, so
+    # the legend never explains a colour that is not on the map. This matters
+    # more now that the no-data colour varies by palette: under High Contrast
+    # Mono it is blue, which is unexplained otherwise.
+    has_gaps   <- any(is.na(data$pct_cni_total_dis_place))
+    leg_colors <- if (has_gaps) c(map_colors, map_na_color) else map_colors
+    leg_labels <- if (has_gaps) c(city_map_labels, "No data") else city_map_labels
+
+    list(
+      data         = data,
+      has_any_data = has_any_data,
+      has_gaps     = has_gaps,
+      leg_colors   = leg_colors,
+      leg_labels   = leg_labels
+    )
+  })
+
+  output$snapshotmap <- renderLeaflet({
+    md   <- city_map_data()
+    data <- md$data
 
     m <- leaflet(data) %>%
       # Muted, high-contrast neutral basemap (light gray / white) so the
@@ -2759,34 +3338,20 @@ server <- function(input, output, session) {
           autoCollapse = FALSE, minLength = 3, position = "topleft",
           zoom = 15, autoResize = FALSE, hideMarkerOnCollapse = TRUE
         )
-      ) %>%
-      addEasyprint(
-        options = easyprintOptions(
-          title      = "Download map as PNG",
-          position   = "bottomleft",
-          exportOnly = TRUE,
-          filename   = paste0(
-            "ADAPARC_",
-            gsub("[^A-Za-z0-9]+", "_", city_place()$NAME),
-            "_tract_map"
-          )
-        )
       )
+      # No addEasyprint() here. The map previously carried its own "Download
+      # map as PNG" control; that affordance is now consolidated into the
+      # single "Download Selected City" button in the controls card (see
+      # output$download_city below), which produces the full branded,
+      # accessible, print-ready report rather than a bare PNG of the map
+      # alone. Per-map download intentionally removed, not just unused.
 
-    if (has_any_data) {
-      # Append a "No data" key ONLY when some tract actually lacks a value, so
-      # the legend never explains a colour that is not on the map. This matters
-      # more now that the no-data colour varies by palette: under High Contrast
-      # Mono it is blue, which is unexplained otherwise.
-      has_gaps    <- any(is.na(data$pct_cni_total_dis_place))
-      leg_colors  <- if (has_gaps) c(map_colors, map_na_color) else map_colors
-      leg_labels  <- if (has_gaps) c(city_map_labels, "No data") else city_map_labels
-
+    if (md$has_any_data) {
       m <- m %>%
         addLegend(
           position = "topright",
-          colors   = leg_colors,
-          labels   = leg_labels,
+          colors   = md$leg_colors,
+          labels   = md$leg_labels,
           opacity  = 0.82,
           title    = "% With Disability"
         )
@@ -2808,8 +3373,22 @@ server <- function(input, output, session) {
   # ----------------------------
   # City Summary Output
   # ----------------------------
-  output$city_summary <- renderUI({
+  # ── Shared city profile bundle ────────────────────────────────────────────
+  # Single source of truth for BOTH the on-screen summary card and the
+  # downloadable full city report. Every fragment below (race_ethnicity,
+  # sex, age_groups, ...) is built exactly once here via the same
+  # render_demo_list() / render_comparison_table() helpers the page always
+  # used, and both output$city_summary and the "Download Selected City"
+  # handler read the same list, so the download can never drift from what is
+  # on screen. Mirrors national_topic_bundle() in the National Data app above.
+  city_download_bundle <- reactive({
     req(city_place())
+
+    # Cleaned "City, State" title, shared by the map heading (output$city_map_title
+    # applies the same transform separately) and this bundle's print title.
+    full_title <- city_place() %>%
+      mutate(NAME = str_replace_all(NAME, " (city|village|municipality|town), ", ", ")) %>%
+      pull(NAME)
 
     introductory_text <- paste0(
       "Based on ACS 2024 5-Year Estimates, of the city's <b>", fmt_num(city_place()$pop_cni_total_all),
@@ -2820,83 +3399,178 @@ server <- function(input, output, session) {
     # sentence off the block below it. Now that the sentence sits in its own
     # centred header, the paragraph margin handles that.
 
-    race_ethnicity <- city_place() %>%
-      transmute(
-        `White alone (non-Hispanic)` = create_number_percent_string(pop_cni_whitenonhisp_dis, pct_cni_whitenonhisp_dis),
-        `Black/African American` = create_number_percent_string(pop_cni_black_dis, pct_cni_black_dis),
-        `American Indian/Alaska Native` = create_number_percent_string(pop_cni_aian_dis, pct_cni_aian_dis),
-        Asian = create_number_percent_string(pop_cni_asian_dis, pct_cni_asian_dis),
-        `Native Hawaiian/Other Pacific Islander` = create_number_percent_string(pop_cni_nhopi_dis, pct_cni_nhopi_dis),
-        `Some other race(s) identified` = create_number_percent_string(pop_cni_raceother_dis, pct_cni_raceother_dis),
-        `Two or more races` = create_number_percent_string(pop_cni_racemulti_dis, pct_cni_racemulti_dis),
-        `Hispanic/Latino (any race)` = create_number_percent_string(pop_cni_hisp_dis, pct_cni_hisp_dis)
-      ) %>%
-      tidyr::pivot_longer(everything(), names_to = "Race/Ethnicity", values_to = "Value (%)") %>%
-      mutate(Bullets = paste0("<li>", `Race/Ethnicity`, " &mdash; ", `Value (%)`, "</li>")) %>%
-      pull(Bullets) %>%
-      str_c(collapse = "")
+    # Explanatory / methodological notes, named once here rather than as
+    # literals inside the paste0 assembly below, so the downloadable report
+    # can quote the exact same sentences rather than a second hand-copied
+    # version that could drift from the on-screen wording over time.
+    #
+    # Defined ahead of the section fragments rather than after them (where it
+    # sat until 2026-08-18) because render_demo_list() now takes age_intro as
+    # an argument, so the Age note travels inside the Age fragment to both
+    # consumers instead of each one placing it separately.
+    help <- list(
+      demographics_intro = paste0(
+        "For each Race/Ethnicity, Sex, and Age group below, the headline ",
+        "figure is that group's share of the city's total population, with ",
+        "the number of people that represents shown underneath it. ",
+        "Hispanic/Latino is an ethnicity that can include people of any ",
+        "race, so it overlaps with the race categories above it, and ",
+        "figures across groups are not meant to sum to the city total."
+      ),
+      age_intro = paste0(
+        "The Census asks about hearing and vision difficulty at every age, ",
+        "but the other four disability types (cognitive, ambulatory, ",
+        "self-care, and independent living) are only asked starting at age ",
+        "5, and independent living only from age 15. The “Under 5” ",
+        "figure below reflects hearing and vision difficulty alone, so it ",
+        "is not directly comparable to the other age groups, which draw on ",
+        "more disability types."
+      ),
+      disability_types_intro = paste0(
+        "Each percentage below is the share of the city's total population, ",
+        "not just the population with disabilities, that reports that ",
+        "specific type of disability. A person can have more than one type, ",
+        "and many do, so these categories overlap. The six figures below ",
+        "will add up to more than the city's overall disability rate, often ",
+        "to about twice it, and are not meant to sum to the total."
+      ),
+      outcomes_intro = paste0(
+        "Each indicator below is shown for residents with disabilities ",
+        "beside residents without disabilities, so the two can be compared ",
+        "directly."
+      ),
+      health_insurance = paste0(
+        "A person can hold public and private coverage at the same time, ",
+        "so those two figures are not meant to sum to the any-coverage figure."
+      ),
+      earnings = paste0(
+        "Median earnings in the past 12 months among residents ages 16 and ",
+        "over who had earnings. This is pay from work only. It does not ",
+        "include Social Security, disability benefits or investment income, ",
+        "and it leaves out residents who did not work, so it is not a ",
+        "measure of total income."
+      ),
+      poverty = paste0(
+        "Living below the federal poverty line. As of 2024, that is a ",
+        "yearly income below $14,891 for an individual or $29,678 for a ",
+        "family of four."
+      ),
+      housing_burden = paste0(
+        "Citywide figures for all households, not disability specific. A ",
+        "disability specific breakdown is not published at the city level, ",
+        "so there is no comparison to show here."
+      ),
+      housing_access = paste0(
+        "Among households in each HUD-assisted housing program, the share ",
+        "with a head of household or spouse/co-head who has a disability. ",
+        "This is a rate within an already-assisted population, not a ",
+        "citywide figure, so it should not be compared directly to the ",
+        "disability rate shown elsewhere on this page. A missing figure ",
+        "usually means the city has no households reported in that ",
+        "program, not a suppressed or unpublished value."
+      )
+      # TEMPORARILY DISABLED 2026-08-17: paired with the cil_distance block
+      # above. Re-enable once cil_weighted_mean_distance_mi is available.
+      # ,
+      # cil_distance = paste0(
+      #   "The average straight-line distance a resident with a disability ",
+      #   "would need to travel to reach the closest Center for Independent ",
+      #   "Living, weighted by where people with disabilities live within ",
+      #   "the city. This is straight-line distance, not travel time or a ",
+      #   "road route. The nearest center by distance is not always the one ",
+      #   "that serves this city: Centers for Independent Living have ",
+      #   "defined service areas, usually by county or region."
+      # )
+    )
 
-    sex <- city_place() %>%
-      transmute(
-        Male = create_number_percent_string(pop_cni_male_dis, pct_cni_male_dis),
-        Female = create_number_percent_string(pop_cni_female_dis, pct_cni_female_dis)
-      ) %>%
-      tidyr::pivot_longer(everything(), names_to = "Sex", values_to = "Value (%)") %>%
-      mutate(Bullets = paste0("<li>", `Sex`, " &mdash; ", `Value (%)`, "</li>")) %>%
-      pull(Bullets) %>%
-      str_c(collapse = "")
+    race_ethnicity <- render_demo_list(
+      city_place(),
+      list(
+        demo_row("White alone (non-Hispanic)", "pop_cni_whitenonhisp_dis"),
+        demo_row("Black/African American",     "pop_cni_black_dis"),
+        demo_row("American Indian/Alaska Native", "pop_cni_aian_dis"),
+        demo_row("Asian",                       "pop_cni_asian_dis"),
+        demo_row("Native Hawaiian/Other Pacific Islander", "pop_cni_nhopi_dis"),
+        demo_row("Some other race(s) identified", "pop_cni_raceother_dis"),
+        demo_row("Two or more races",           "pop_cni_racemulti_dis"),
+        demo_row("Hispanic/Latino (any race)",  "pop_cni_hisp_dis")
+      ),
+      "Race / Ethnicity"
+    )
+
+    sex <- render_demo_list(
+      city_place(),
+      list(
+        demo_row("Male",   "pop_cni_male_dis"),
+        demo_row("Female", "pop_cni_female_dis")
+      ),
+      "Sex"
+    )
 
     # ----------------------------------------------------------------------
     # Age
     #
-    # Two figures are given per age group because they answer different
-    # questions and are easily confused:
-    #   (1) prevalence WITHIN the age group  -> pct_cni_*_dis_of_*_place
-    #   (2) that group's share of ALL PWD    -> pct_cni_*_dis_of_totaldis_place
-    # Both are computed at place level in addACSCalculatedVariablesCity.R.
-    # Note there is no under-18 row: the ACS age bands the pipeline sums for
-    # the 18-64 and 65+ groups do not leave a clean under-18 residual here.
+    # Same two-figure list as Race/Ethnicity and Sex, via render_demo_list():
+    # count and share of the total population.
+    #
+    # Four bands, not three. An earlier version of this comment claimed
+    # disability is "never recorded" under age 5 and dropped that band
+    # entirely -- that was wrong. The ACS asks hearing and vision
+    # difficulty at every age, including under 5; only the other four
+    # types (cognitive, ambulatory, self-care, and independent living,
+    # the last restricted to age 15+) start at age 5. Census still
+    # publishes an official "has a disability" aggregate for under-5
+    # children from the two types it does ask, and the pipeline carries
+    # it as pop_cni_under5_dis_place, same numerator pattern as every
+    # other band. Confirmed against city_place_full.Rds: the four bands
+    # below sum exactly to pop_cni_total_dis_place for Los Angeles
+    # (441,455 = 441,455); the three-band version was short by exactly
+    # the under-5 count.
+    #
+    # Because the under-5 count is built from only 2 of the 6 disability
+    # types while every other band draws on all 6 (or 5, for ages 5-14),
+    # its share of the total population is not on the same footing as the
+    # other bands -- a lower under-5 share does not mean disability is
+    # rarer at that age, only that fewer question types apply. The help
+    # text below the list says so.
     # ----------------------------------------------------------------------
-    age_groups <- city_place() %>%
-      transmute(
-        `Ages 18 to 64` = paste0(
-          "<li>Disability is present in <b>",
-          fmt_pct_1dp(pct_cni_18to64_dis_of_18to64_place),
-          "</b> of this age group (", fmt_num(pop_cni_18to64_dis_place), " residents)</li>",
-          "<li>This group is <b>", fmt_pct_1dp(pct_cni_18to64_dis_of_totaldis_place),
-          "</b> of all city residents with disabilities</li>"
-        ),
-        `Ages 65 and older` = paste0(
-          "<li>Disability is present in <b>",
-          fmt_pct_1dp(pct_cni_65plus_dis_of_65plus_place),
-          "</b> of this age group (", fmt_num(pop_cni_65plus_dis_place), " residents)</li>",
-          "<li>This group is <b>", fmt_pct_1dp(pct_cni_65plus_dis_of_totaldis_place),
-          "</b> of all city residents with disabilities</li>"
-        )
-      ) %>%
-      tidyr::pivot_longer(everything(), names_to = "Age Group", values_to = "Items") %>%
-      # Each group is wrapped so the bold label and its list stay together as
-      # one unit. The wrapper is also what .city-summary .city-age-item > b
-      # hooks onto to give the label its sub-heading styling.
-      mutate(Block = paste0(
-        "<div class=\"city-age-item\"><b>", `Age Group`, "</b><ul>", Items, "</ul></div>"
-      )) %>%
-      pull(Block) %>%
-      str_c(collapse = "")
+    age_groups <- render_demo_list(
+      city_place(),
+      list(
+        demo_row("Under 5",            "pop_cni_under5_dis_place"),
+        demo_row("Ages 5 to 17",       "pop_cni_5to17_dis_place"),
+        demo_row("Ages 18 to 64",      "pop_cni_18to64_dis_place"),
+        demo_row("Ages 65 and older",  "pop_cni_65plus_dis_place")
+      ),
+      "Age",
+      # Sits between the "Age" heading and the tiles. It used to be emitted
+      # separately by each consumer, above the heading, where it read as a
+      # closing note on Sex rather than an introduction to Age.
+      note = help$age_intro
+    )
 
-    disability_types <- city_place() %>%
-      transmute(
-        Hearing = create_number_percent_string(pop_cni_total_hearing_dis, pct_cni_total_hearing_dis),
-        Vision = create_number_percent_string(pop_cni_total_vision_dis, pct_cni_total_vision_dis),
-        Cognitive = create_number_percent_string(pop_cni_total_cognitive_dis, pct_cni_total_cognitive_dis),
-        `Ambulatory (difficulty walking or climbing stairs)` = create_number_percent_string(pop_cni_total_mobility_dis, pct_cni_total_mobility_dis),
-        `Self Care (difficulty bathing or dressing)` = create_number_percent_string(pop_cni_selfcare_dis, pct_cni_selfcare_dis),
-        `Independent Living (difficulty doing errands alone)` = create_number_percent_string(pop_cni_indepliving_dis, pct_cni_indepliving_dis)
-      ) %>%
-      tidyr::pivot_longer(everything(), names_to = "Type of Disability", values_to = "Value (%)") %>%
-      mutate(Bullets = paste0("<li>", `Type of Disability`, " &mdash; ", `Value (%)`, "</li>")) %>%
-      pull(Bullets) %>%
-      str_c(collapse = "")
+    # Stat tiles, matching Race/Ethnicity, Sex and Age, per Colin's
+    # 2026-08-18 request. The returned fragment is a complete
+    # <ul class="city-demo-list">, so neither consumer wraps it in a <ul>
+    # of its own any more. Labels keep the parenthetical plain-language
+    # gloss that the bullet version carried.
+    disability_types <- render_type_list(
+      city_place(),
+      list(
+        type_row("Hearing",
+                 "pop_cni_total_hearing_dis",   "pct_cni_total_hearing_dis"),
+        type_row("Vision",
+                 "pop_cni_total_vision_dis",    "pct_cni_total_vision_dis"),
+        type_row("Cognitive",
+                 "pop_cni_total_cognitive_dis", "pct_cni_total_cognitive_dis"),
+        type_row("Ambulatory (difficulty walking or climbing stairs)",
+                 "pop_cni_total_mobility_dis",  "pct_cni_total_mobility_dis"),
+        type_row("Self Care (difficulty bathing or dressing)",
+                 "pop_cni_selfcare_dis",        "pct_cni_selfcare_dis"),
+        type_row("Independent Living (difficulty doing errands alone)",
+                 "pop_cni_indepliving_dis",     "pct_cni_indepliving_dis")
+      )
+    )
 
     # ----------------------------------------------------------------------
     # Outcome indicators, paired with/without disability
@@ -3089,6 +3763,97 @@ server <- function(input, output, session) {
       pull(Bullets) %>%
       str_c(collapse = "")
 
+    # ----------------------------------------------------------------------
+    # Housing Access (HUD POSH), Community Living domain
+    #
+    # pct_cni_hoh_hcv_dis and pct_cni_hoh_pubhousing_dis are joined onto
+    # city_place_full.Rds in city_transform_final.R from the HUD Picture of
+    # Subsidized Households place file. Same source and same variable names
+    # as the national/scorecard "Housing Access" index (see ind_src below),
+    # now also live at city geography.
+    #
+    # No with/without-disability comparison here, same reason as Housing
+    # Cost Burden: the measure is the share of an already HUD-assisted
+    # population whose head has a disability, not a citywide rate, so there
+    # is no non-disability denominator to pair it against. Bullet list, not
+    # render_comparison_table().
+    #
+    # A missing value is common and expected: it means the city has no
+    # reported households in that specific program (2,111 of 8,407 cities
+    # have Public Housing data; 5,920 have Housing Choice Voucher data),
+    # not a suppressed or unpublished figure.
+    # ----------------------------------------------------------------------
+    housing_access <- city_place() %>%
+      transmute(
+        `Housing Choice Vouchers` = fmt_pct_or_na(pct_cni_hoh_hcv_dis),
+        `Public Housing`          = fmt_pct_or_na(pct_cni_hoh_pubhousing_dis)
+      ) %>%
+      tidyr::pivot_longer(everything(), names_to = "Program", values_to = "Value") %>%
+      mutate(Bullets = paste0("<li>", Program, " &mdash; ", Value, "</li>")) %>%
+      pull(Bullets) %>%
+      str_c(collapse = "")
+
+    # ----------------------------------------------------------------------
+    # Distance to nearest Center for Independent Living, Community
+    # Participation domain (Access to Resources).
+    #
+    # TEMPORARILY DISABLED 2026-08-17: cil_weighted_mean_distance_mi is not
+    # yet joined onto city_place_full.Rds (pipeline step not finished),
+    # which threw "object 'cil_weighted_mean_distance_mi' not found" in
+    # city_place() %>% transmute(). Re-enable this block, the cil_distance
+    # entry in the help list below, and the "Access to Resources" markup in
+    # city_summary_tables once the CIL join lands in the pipeline repo.
+    #
+    # cil_weighted_mean_distance_mi, cil_nearest_center_name and
+    # cil_nearest_center_distance_mi are joined onto city_place_full.Rds in
+    # city_transform_final.R from the ACL SILC/CIL list
+    # (analysis/data/cil_centers.csv), geocoded and reduced to straight-line
+    # distances by transformCityCilData() in the pipeline repo.
+    #
+    # No with/without-disability comparison: like Housing Access, this is a
+    # place-level measure (distance from the city to a resource), not a
+    # person-level rate, so there is no non-disability denominator to pair
+    # it against. Bullet list, not render_comparison_table().
+    #
+    # Unlike Housing Access, coverage here is close to 100% -- straight-line
+    # distance is always computable, so "Not available" would mean a data
+    # problem upstream, not an expected gap the way a missing HUD program is.
+    # ----------------------------------------------------------------------
+    # cil_distance <- city_place() %>%
+    #   transmute(
+    #     `Average Distance to Nearest Center` =
+    #       fmt_miles_or_na(cil_weighted_mean_distance_mi),
+    #     `Nearest Center` = ifelse(
+    #       is.na(cil_nearest_center_name),
+    #       "Not available",
+    #       paste0(
+    #         cil_nearest_center_name, " (",
+    #         fmt_miles_or_na(cil_nearest_center_distance_mi), ")"
+    #       )
+    #     )
+    #   ) %>%
+    #   tidyr::pivot_longer(everything(), names_to = "Measure", values_to = "Value") %>%
+    #   mutate(Bullets = paste0("<li>", Measure, " &mdash; ", Value, "</li>")) %>%
+    #   pull(Bullets) %>%
+    #   str_c(collapse = "")
+
+    # Scoped to living arrangements only now that Housing Access is live.
+    # Do not fold Housing Access back into this note; the two are shown as
+    # separate subsections below.
+    community_living_note <- paste0(
+      '<p class="city-summary-help">Living arrangement measures, covering ',
+      'whether people with disabilities live at home, in non-institutional ',
+      'group quarters, or in a nursing home or correctional facility, are ',
+      'not available for individual cities. The Census publishes the ',
+      'underlying tables (S2601A, S2602, B26108) only for the nation, ',
+      'states and larger regions, so these measures appear on the National ',
+      'Data tab rather than here. This is a limit in how the Census ',
+      'releases group quarters data, not a gap in this pipeline. A partial ',
+      'estimate for the largest cities, built from Census microdata, is ',
+      'under development for a future update.</p>'
+    )
+
+
     city_summary_tables <- paste0(
 
       # ── Shared heading, centred above both columns ──────────────────────────
@@ -3110,26 +3875,31 @@ server <- function(input, output, session) {
       # demographics list. One wide card carries both, and everything inside
       # it stacks in a single vertical column at every width.
       #
-      # Neither section carries a without-disability column. Both report
-      # prevalence within a group, so that figure would be the arithmetic
-      # complement and would add a column of noise. The paired comparisons
-      # all live in row three.
+      # Race/Ethnicity, Sex, and Age render as grids of stat tiles via
+      # render_demo_list(): share of the total population as the headline
+      # figure with the count beneath, per the client's 2026-08-18 request
+      # to simplify away from the earlier four-column tables. No
+      # without-disability column: the paired with/without comparisons all
+      # live in row three.
       # ══════════════════════════════════════════════════════════════════════
       '<div class="row" style="margin-top:1.25rem;">',
       '<div class="col-md-12">',
       '<div class="city-summary city-summary-wide">',
 
       '<h4>Disability Demographics</h4>',
-      '<p class="city-summary-help">Each percentage below is the share of that specific group who have a disability, not the share of the total disabled population that group represents. Hispanic/Latino is an ethnicity that can include people of any race, so it overlaps with the race categories listed above it, and the figures are not meant to sum to the city total.</p>',
-      '<b>Race / Ethnicity</b><ul>', race_ethnicity, '</ul>',
-      '<b>Sex</b><ul>', sex, '</ul>',
-      '<b>Age</b>',
-      '<p class="city-summary-help">Two figures are given for each age group because they answer different questions. The first is how common disability is among residents of that age. The second is how much of the city\'s total disabled population that age group accounts for.</p>',
+      '<p class="city-summary-help">', help$demographics_intro, '</p>',
+      race_ethnicity,
+      sex,
+      # age_groups now carries help$age_intro itself, between the "Age"
+      # heading and the tiles. It used to be emitted here, above the
+      # heading, where it read as a note on Sex.
       age_groups,
 
       '<h4>Disability Types</h4>',
-      '<p class="city-summary-help">A person can have more than one type of disability, and many do, so these categories overlap. The six figures below will add up to more than the city\'s overall disability rate, often to about twice it, and are not meant to sum to the total.</p>',
-      '<ul>', disability_types, '</ul>',
+      '<p class="city-summary-help">', help$disability_types_intro, '</p>',
+      # A complete <ul class="city-demo-list"> of stat tiles since
+      # 2026-08-18, not bullets, so no wrapping <ul> here.
+      disability_types,
 
       '</div>',   # end .city-summary
       '</div>',   # end .col-md-12
@@ -3148,15 +3918,25 @@ server <- function(input, output, session) {
       #
       # Every block is a paired comparison table except Housing Cost Burden,
       # which has no disability dimension in B25070 or B25091.
+      #
+      # One full-width card per domain, stacked, since 2026-08-18. The two
+      # domains used to sit side by side in col-md-6 halves, which put four
+      # or five comparison tables into each half at roughly half the
+      # readable width and made the strip below the map dense and wide.
+      # Stacking them matches the downloadable report's single-column flow
+      # and lets the tables carry a larger type size (see the
+      # .city-summary-stack rules in the stylesheet). The equal-height
+      # .city-summary-row class is gone with the halves: nothing sits beside
+      # anything now, so there is no ragged edge to even out.
       # ══════════════════════════════════════════════════════════════════════
-      '<div class="row city-summary-row" style="margin-top:0.25rem;">',
+      '<div class="row" style="margin-top:0.25rem;">',
 
-      '<div class="col-md-6">',
-      '<div class="city-summary">',
+      '<div class="col-md-12">',
+      '<div class="city-summary city-summary-stack">',
       '<h4>Community Participation</h4>',
-      '<p class="city-summary-help">Each indicator below is shown for residents with disabilities beside residents without disabilities, so the two can be compared directly.</p>',
+      '<p class="city-summary-help">', help$outcomes_intro, '</p>',
       '<b>Health Insurance</b>',
-      '<p class="city-summary-help">A person can hold public and private coverage at the same time, so those two figures are not meant to sum to the any-coverage figure.</p>',
+      '<p class="city-summary-help">', help$health_insurance, '</p>',
       health_insurance_19to64,
       health_insurance_65plus,
 
@@ -3173,50 +3953,213 @@ server <- function(input, output, session) {
         paste0('<b>Education and Transportation</b>', s1811_unavailable_note)
       },
 
-      '</div>',   # end .city-summary
-      '</div>',   # end .col-md-6
+      # TEMPORARILY DISABLED 2026-08-17: cil_distance / help$cil_distance
+      # are commented out above until the CIL join lands in the pipeline.
+      # '<b>Access to Resources</b>',
+      # '<p class="city-summary-help">', help$cil_distance, '</p>',
+      # '<ul>', cil_distance, '</ul>',
 
-      '<div class="col-md-6">',
-      '<div class="city-summary">',
+      '</div>',   # end .city-summary
+      '</div>',   # end .col-md-12
+
+      '<div class="col-md-12">',
+      '<div class="city-summary city-summary-stack">',
       '<h4>Work and Economic</h4>',
-      '<p class="city-summary-help">Each indicator below is shown for residents with disabilities beside residents without disabilities, so the two can be compared directly.</p>',
+      '<p class="city-summary-help">', help$outcomes_intro, '</p>',
       '<b>Employment</b>',
       employment,
       '<b>Earnings</b>',
-      '<p class="city-summary-help">Median earnings in the past 12 months among residents ages 16 and over who had earnings. This is pay from work only. It does not include Social Security, disability benefits or investment income, and it leaves out residents who did not work, so it is not a measure of total income.</p>',
+      '<p class="city-summary-help">', help$earnings, '</p>',
       earnings,
       '<b>Poverty</b>',
-      '<p class="city-summary-help">Living below the federal poverty line. As of 2024, that is a yearly income below $14,891 for an individual or $29,678 for a family of four.</p>',
+      '<p class="city-summary-help">', help$poverty, '</p>',
       poverty,
       '<b>Housing Cost Burden</b>',
-      '<p class="city-summary-help">Citywide figures for all households, not disability specific. A disability specific breakdown is not published at the city level, so there is no comparison to show here.</p>',
+      '<p class="city-summary-help">', help$housing_burden, '</p>',
       '<ul>', housing_burden, '</ul>',
       '</div>',   # end .city-summary
-      '</div>',   # end .col-md-6
+      '</div>',   # end .col-md-12
 
       '</div>',   # end .row
 
       # ══════════════════════════════════════════════════════════════════════
       # Row four. Community Living, the fourth ADA-PARC domain.
       #
-      # No indicator in this domain is currently available at city geography.
-      # The group quarters tables S2601A, S2602 and B26108 are published only
-      # for states and larger areas, so the domain is named and explained
-      # rather than silently omitted. This card is where the HUD housing
-      # access measures will land once the place-level file is wired in.
+      # Housing Access (HUD POSH) is live at city geography as of 12 August
+      # 2026 -- see city_import_hud.R / transformCityHudData.R in the
+      # pipeline repo. Living arrangement measures (home, group quarters,
+      # nursing home, corrections) are still not: the underlying Census
+      # tables (S2601A, S2602, B26108) publish only for the nation, states
+      # and larger regions. community_living_note covers only that
+      # remaining gap now; do not fold Housing Access back into it. A
+      # PUMS-based partial estimate for large cities is a candidate for a
+      # future update (see the 9 August 2026 city data indicator status
+      # review, table four, item 6); do not claim it is live until it ships.
       # ══════════════════════════════════════════════════════════════════════
       '<div class="row" style="margin-top:0.25rem;">',
       '<div class="col-md-12">',
       '<div class="city-summary city-summary-note">',
       '<h4>Community Living</h4>',
-      '<p class="city-summary-help">ADA-PARC tracks a fourth domain, Community Living, covering where people with disabilities live and whether they live in the community or in an institution. The Census publishes those measures only for states and larger areas, not for individual cities, so they appear on the National Data tab rather than here. Housing cost burden is sometimes grouped with community living; it is shown above under Work and Economic, matching how it is classified in the ADA-PARC data dictionary.</p>',
+
+      '<b>Housing Access</b>',
+      '<p class="city-summary-help">', help$housing_access, '</p>',
+      '<ul>', housing_access, '</ul>',
+
+      community_living_note,
       '</div>',   # end .city-summary
       '</div>',   # end .col-md-12
       '</div>'    # end .row
     )
 
-    HTML(city_summary_tables)
+    # ── Scalars and map pieces, for the print banner/title/headline and the
+    # static map on the download, which need these as plain values rather
+    # than pre-assembled screen HTML. ────────────────────────────────────────
+    city_label  <- sub(",.*$", "", full_title)
+    state_label <- input$state_selector %||% sub("^.*,\\s*", "", full_title)
+
+    md <- city_map_data()
+
+    list(
+      # Identity / headline
+      city_label   = city_label,
+      state_label  = state_label,
+      full_title   = full_title,
+      intro_text   = introductory_text,
+      source_note  = "Based on 2020-2024 American Community Survey 5-Year Estimates",
+      # "generated" is deliberately NOT set here: this reactive also feeds the
+      # on-screen card, where a generation date is meaningless, and the
+      # download handler below sets it fresh at click time (matching
+      # national_topic_bundle(), which carries no "generated" field for the
+      # same reason). Setting it in both places would leave two list entries
+      # named "generated" once the handler splices this bundle together with
+      # its own, and $ / [[ silently return only the first.
+
+      # Map
+      map_data     = md$data,
+      map_alt_text = cityMapAltText(md$data, city_label),
+      leg_colors   = md$leg_colors,
+      leg_labels   = md$leg_labels,
+
+      # Section fragments, reused verbatim by both the on-screen card and the
+      # downloadable report so the two can never disagree.
+      race_ethnicity          = race_ethnicity,
+      sex                     = sex,
+      age_groups              = age_groups,
+      disability_types        = disability_types,
+      employment              = employment,
+      earnings                = earnings,
+      poverty                 = poverty,
+      health_insurance_19to64 = health_insurance_19to64,
+      health_insurance_65plus = health_insurance_65plus,
+      has_s1811               = has_s1811,
+      education               = education,
+      transportation          = transportation,
+      s1811_unavailable_note  = s1811_unavailable_note,
+      housing_burden          = housing_burden,
+      housing_access          = housing_access,
+      community_living_note   = community_living_note,
+      help                    = help,
+
+      # Full assembled on-screen HTML (unchanged from the original inline
+      # build), kept here so output$city_summary below stays a one-line
+      # consumer of this bundle.
+      city_summary_tables = city_summary_tables
+    )
   })
+
+  output$city_summary <- renderUI({
+    HTML(city_download_bundle()$city_summary_tables)
+  })
+
+  # ── Download Selected City: full branded, print-ready HTML report ────────
+  # Renders city/city_profile.qmd for the current selection into a
+  # self-contained ADA-PARC branded HTML: banner, static tract map + key,
+  # then the same summary tables shown on screen. All content is prepared
+  # here and passed via an RDS bundle so the download always matches the
+  # on-screen city summary. Mirrors the National Data "Download Selected
+  # Topic" handler above.
+  city_app_root <- normalizePath(
+    getOption("shiny.appdir", default = getwd()),
+    mustWork = FALSE
+  )
+  city_dir     <- file.path(city_app_root, "city")
+  city_qmd     <- file.path(city_dir, "city_profile.qmd")
+  city_out_dir <- file.path(tempdir(), "ada_parc_city_dl")
+  dir.create(city_out_dir, showWarnings = FALSE, recursive = TRUE)
+
+  output$download_city <- downloadHandler(
+    filename = function() {
+      b    <- city_download_bundle()
+      slug <- gsub("[^A-Za-z0-9]+", "_", paste0(b$city_label, "_", b$state_label))
+      slug <- gsub("^_|_$", "", slug)
+      paste0("ADAPARC_", slug, "_Profile_2024.html")
+    },
+    content = function(file) {
+      withProgress(
+        message = "Building your ADA-PARC city report…",
+        detail  = "This usually takes 20–35 seconds.",
+        value   = 0.15,
+        {
+          b <- city_download_bundle()
+
+          # Static counterpart to the Leaflet map, built from the exact same
+          # binned/colored data (see city_map_data() above), exported to
+          # inline SVG the same way the National Data download exports its
+          # ggiraph map. svglite emits font-family="EB Garamond"; the browser
+          # pairs it with the webfont loaded via font-loader.html.
+          gg <- render_city_tract_map(b$map_data)
+          svg_tmp <- tempfile(fileext = ".svg")
+          ggplot2::ggsave(
+            filename = svg_tmp, plot = gg,
+            device = svglite::svglite,
+            width = 7.5, height = 7, bg = "white"
+          )
+          map_svg <- paste(readLines(svg_tmp, warn = FALSE), collapse = "\n")
+          unlink(svg_tmp)
+
+          setProgress(0.4, detail = "Composing the document…")
+
+          # map_data (the sf object) is dropped: the qmd only ever needs the
+          # rendered map_svg, and RDS-ing an sf object across the separate
+          # quarto render process is weight the download does not need.
+          out_bundle <- c(
+            b[setdiff(names(b), "map_data")],
+            list(map_svg = map_svg, generated = format(Sys.Date(), "%B %d, %Y"))
+          )
+          bundle_path <- file.path(city_out_dir, "bundle.rds")
+          saveRDS(out_bundle, bundle_path)
+
+          setProgress(0.55, detail = "Rendering HTML…")
+
+          tryCatch({
+            quarto::quarto_render(
+              input          = city_qmd,
+              execute_params = list(bundle = bundle_path),
+              execute_dir    = city_dir
+            )
+            rendered <- file.path(city_dir, "city_profile.html")
+            if (file.exists(rendered)) {
+              file.copy(rendered, file, overwrite = TRUE)
+            } else {
+              writeLines("<html><body>Report could not be generated.</body></html>", file)
+            }
+            setProgress(1)
+          }, error = function(e) {
+            showNotification(
+              ui       = paste("Download failed:", conditionMessage(e)),
+              type     = "error",
+              duration = 15
+            )
+            writeLines(
+              paste0("<html><body>Report could not be generated: ",
+                     htmltools::htmlEscape(conditionMessage(e)), "</body></html>"),
+              file
+            )
+          })
+        }
+      )
+    }
+  )
 }
 
 # Run the app
@@ -3450,27 +4393,66 @@ build_source_table <- function(hierarchy, ind_df, src_lookup) {
     if (is.na(v)) "—" else v
   }
 
-  cat_colors <- list(CL = "#C9A227", CP = "#CC5500", WE = "#800000")
-
-  # Band ink is chosen per category, not fixed to white. White on the #C9A227
-  # gold is 2.0:1 and was unreadable; near-black on that same gold is 7.13:1.
-  # White stays on the orange and the maroon, where it reads 4.32:1 and 9.24:1.
-  # The 4.32:1 on orange clears the 3:1 large-text threshold because the band is
-  # set at 19px bold, above the 14pt-bold (18.66px) large-text boundary.
-  cat_ink <- list(CL = "#1c1c1c", CP = "#ffffff", WE = "#ffffff")
+  # ── Band colour, NEUTRALISED 2026-08-06 ────────────────────────────────
+  # PORTED FROM ADA_PARC.Rmd. This function is duplicated between the two
+  # documents rather than shared, so the same edit has to land twice; the
+  # scorecard .qmd files and scripts/palettes.R ARE shared, so the rest of the
+  # 2026-08-06 colouring rework reaches this document with no edit here.
+  #
+  # These were three category literals, #C9A227 gold, #CC5500 orange and
+  # #800000 maroon, one per ADA-PARC domain, with a per-category ink chosen to
+  # survive each of them.
+  #
+  # WHY THEY ARE GONE. Colour on this site now carries ONE meaning: better or
+  # worse. That is what the Display panel's palette selector changes, and it is
+  # the only thing a reader should have to learn. A domain is not better or
+  # worse than another domain, so colouring the three domains put a second,
+  # unrelated code on the same channel, and the reader had no way to tell which
+  # code a given block of colour belonged to. Every band here still prints its
+  # domain NAME, so nothing is lost by removing it (WCAG 2.2 SC 1.4.1).
+  #
+  # This table shows no scores at all, only which indicators feed which index,
+  # so there is no better/worse to encode and the whole thing is chrome.
+  #
+  # BAND is doc_navy and BAND_TINT is a neutral grey at the same weight the
+  # old %s22 alpha suffix produced. Written as literals to match the rest of
+  # this sub-app, which is built from inline styles rather than tokens; they
+  # mirror ADAPARC_DOC_TOKENS$standard[["doc_navy"]] and are checked by eye
+  # against it, not by check_palette.py, which does not read this file.
+  #
+  # White on #1c2b3a is 14.4:1 and #1c2b3a on #eef0f4 is 12.6:1, both well clear
+  # of AA at any size.
+  #
+  # BAND_TINT IS 1.14:1 AGAINST WHITE AND THAT IS FINE. It is a decorative
+  # banding, not a boundary carrying meaning, so WCAG 2.2 SC 1.4.11 does not
+  # reach it, and the tint it replaced was equally faint by construction: the
+  # old code appended `22` to the category hex, a 13 percent alpha. The
+  # index-level rows are told apart from the indicator rows beneath them by
+  # indentation, bold weight and a border-top, three cues that survive
+  # greyscale, zoom and a custom stylesheet. If anything the hierarchy reads
+  # more plainly now, because the category band above is a full-strength
+  # neutral rather than a mid-weight colour of its own.
+  #
+  # NOT CHANGED, AND DELIBERATELY: index_hierarchy still carries a `color` and
+  # `bg` per category, read only by category_column_ui(). That whole Reference
+  # panel is built into `reference_panel` and never placed in the UI in either
+  # document, so it renders nowhere. Left alone rather than half-edited. If it
+  # is ever restored it needs this same treatment, and it also needs its
+  # `color:white` header band re-inked: white on the #C9A227 gold is 2.0:1.
+  BAND      <- "#1c2b3a"
+  BAND_INK  <- "#ffffff"
+  BAND_TINT <- "#eef0f4"
 
   rows <- list()
   for (cat_id in names(hierarchy)) {
     cat_info  <- hierarchy[[cat_id]]
-    cat_color <- cat_colors[[cat_id]]
-    band_ink  <- cat_ink[[cat_id]]
     rows[[length(rows) + 1]] <- tags$tr(
       tags$td(
         colspan = "3",
         style = sprintf(
           paste0("background:%s;color:%s;font-weight:700;font-size:19px;",
                  "padding:13px 19px;letter-spacing:0.01em;"),
-          cat_color, band_ink
+          BAND, BAND_INK
         ),
         cat_info$label
       )
@@ -3480,10 +4462,10 @@ build_source_table <- function(hierarchy, ind_df, src_lookup) {
         tags$td(
           colspan = "3",
           style = sprintf(
-            paste0("background:%s22;color:#1c2b3a;font-weight:700;font-size:16px;",
+            paste0("background:%s;color:#1c2b3a;font-weight:700;font-size:16px;",
                    "padding:11px 19px 11px 27px;border-top:1px solid #eee;",
                    "letter-spacing:0.01em;"),
-            cat_color
+            BAND_TINT
           ),
           idx_info$label
         )
@@ -3671,12 +4653,14 @@ app_css <- "
      chrome below is sized in px so the rendered size is what is written.
      Untouched rem values are left as-is to avoid rescaling the whole app. */
 
-  .app-header { padding: 27px 0 16px; border-bottom: 2px solid #e0dbd2; margin-bottom: 27px; }
-  .app-header h2 { font-size: 37px; font-weight: 700; color: #6d1f2e; margin: 0 0 12px; letter-spacing: -0.015em; line-height: 1.1; }
+  /* Header is centred on the container. The lead paragraph keeps a measure
+     cap so centring does not push it to a hard-to-scan full-width line. */
+  .app-header { padding: 27px 0 16px; border-bottom: 2px solid #e0dbd2; margin-bottom: 27px; text-align: center; }
+  .app-header h2 { font-size: 37px; font-weight: 700; color: #1c2b3a; margin: 0 0 12px; letter-spacing: -0.015em; line-height: 1.1; }
   /* Pure black on the #f9f7f4 page ground is 19.5:1. */
-  .app-header p { color: #000000; font-size: 19px; margin: 0; line-height: 1.65; }
-  .app-header .revision-badge { display: inline-block; background: #6d1f2e; color: white; font-size: 1rem; font-weight: 700; padding: 4px 12px; border-radius: 4px; margin-left: 12px; vertical-align: middle; letter-spacing: 0.04em; }
-  .controls-box { background: white; border-radius: 10px; border-top: 4px solid #6d1f2e; padding: 24px 28px 22px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .app-header p { color: #000000; font-size: 19px; margin: 0 auto; line-height: 1.65; max-width: 760px; }
+  .app-header .revision-badge { display: inline-block; background: #1c2b3a; color: white; font-size: 1rem; font-weight: 700; padding: 4px 12px; border-radius: 4px; margin-left: 12px; vertical-align: middle; letter-spacing: 0.04em; }
+  .controls-box { background: white; border-radius: 10px; border-top: 4px solid #1c2b3a; padding: 24px 28px 22px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
   .controls-box label { font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 0.07em; color: #1c2b3a; margin-bottom: 8px; display: block; }
   .controls-box .form-group { margin-bottom: 0; }
   .controls-box select, .controls-box select.form-control {
@@ -3687,11 +4671,11 @@ app_css <- "
     padding: 9px 11px;
     line-height: 1.35;
   }
-  /* Generate: site slate blue (--navy in www/styles.css). White on
-     #1c2b3a is 13.2:1; the #152233 hover is 15.4:1. */
-  .btn-generate { background: #1c2b3a !important; color: #ffffff !important; border: none !important; border-radius: 6px !important; font-family: 'EB Garamond', Georgia, serif !important; font-size: 17px !important; font-weight: 700 !important; padding: 14px 21px !important; margin-top: 34px; width: 100%; }
-  .btn-generate:hover, .btn-generate:focus { background: #152233 !important; color: #ffffff !important; }
-  .btn-download { background: white !important; color: #000000 !important; border: 1.5px solid #6d1f2e !important; border-radius: 6px !important; font-family: 'EB Garamond', Georgia, serif !important; font-size: 17px !important; font-weight: 700 !important; padding: 14px 21px !important; margin-top: 34px; width: 100%; }
+  /* Generate: the interactive blue, matching every other primary button on
+     the site. White on #013176 is 12.34:1; the #01214f hover is 15.77:1. */
+  .btn-generate { background: #013176 !important; color: #ffffff !important; border: none !important; border-radius: 6px !important; font-family: 'EB Garamond', Georgia, serif !important; font-size: 17px !important; font-weight: 700 !important; padding: 14px 21px !important; margin-top: 34px; width: 100%; }
+  .btn-generate:hover, .btn-generate:focus { background: #01214f !important; color: #ffffff !important; }
+  .btn-download { background: white !important; color: #000000 !important; border: 1.5px solid #013176 !important; border-radius: 6px !important; font-family: 'EB Garamond', Georgia, serif !important; font-size: 17px !important; font-weight: 700 !important; padding: 14px 21px !important; margin-top: 34px; width: 100%; }
   .btn-download:hover { background: #f9f7f4 !important; }
   .btn-download:disabled, .btn-download[disabled] { opacity: 0.45 !important; cursor: not-allowed !important; }
   .placeholder-box { background: white; border-radius: 10px; padding: 70px 28px; text-align: center; color: #1c2b3a; font-size: 19px; line-height: 1.6; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
@@ -3703,9 +4687,14 @@ app_css <- "
      here, so nothing applied and the tabs fell back to the BS3 default
      link blue (#337ab7). Both selector forms are carried below.
      Black on white is 21:1; the maroon active state is 9.6:1 and is not
-     the only selection cue, since the underline rule carries it too. */
-  .nav-tabs { border-bottom: 2px solid #e0dbd2; margin-bottom: 0; }
-  .nav-tabs > li { margin-bottom: -2px; }
+     the only selection cue, since the underline rule carries it too.
+     The switcher is centred on the container. Bootstrap 3 floats each
+     `li` left, so centring needs the float cleared and the items set to
+     inline-block; `text-align: center` alone would do nothing to a float.
+     The `.tab-content` below inherits nothing from this, so panel text
+     stays left aligned. */
+  .nav-tabs { border-bottom: 2px solid #e0dbd2; margin-bottom: 0; text-align: center; }
+  .nav-tabs > li { margin-bottom: -2px; float: none; display: inline-block; }
   .nav-tabs > li > a,
   .nav-tabs .nav-link {
     font-family: 'EB Garamond', Georgia, serif;
@@ -3721,7 +4710,7 @@ app_css <- "
   }
   .nav-tabs > li > a:hover, .nav-tabs > li > a:focus,
   .nav-tabs .nav-link:hover {
-    color: #6d1f2e !important;
+    color: #1c2b3a !important;
     background: transparent !important;
     border: none !important;
     box-shadow: inset 0 -3px 0 #d8cdb8;
@@ -3730,13 +4719,13 @@ app_css <- "
   .nav-tabs > li.active > a:hover,
   .nav-tabs > li.active > a:focus,
   .nav-tabs .nav-link.active {
-    color: #6d1f2e !important;
+    color: #1c2b3a !important;
     background: transparent !important;
     border: none !important;
-    box-shadow: inset 0 -4px 0 #6d1f2e;
+    box-shadow: inset 0 -4px 0 #013176;
   }
   .tab-content { padding-top: 24px; }
-  :focus-visible { outline: 3px solid #c9a84c !important; outline-offset: 2px; }
+  :focus-visible { outline: 3px solid #0d3b8e !important; outline-offset: 2px; }
   .ref-section-note { font-size: 1rem; color: #444; font-style: normal; margin: 0 0 0.9rem; }
 "
 
@@ -3831,7 +4820,7 @@ ui <- fluidPage(
           ),
           tags$p(
             style = "font-size:17px;color:#1c2b3a;line-height:1.75;margin:0 0 15px;",
-            "The ADA-PARC (Americans with Disabilities Act — Policy and Research Collaborative) ",
+            "The ADA-PARC (Americans with Disabilities Act Participation Action Research Consortium) ",
             "Scorecard is a comprehensive, evidence-based tool for measuring how well each U.S. ",
             "state supports the full inclusion and wellbeing of people with disabilities. ",
             "Grounded in the civil rights framework of the ADA, the scorecard evaluates states ",
@@ -4003,7 +4992,15 @@ server <- function(input, output, session) {
             overwrite = TRUE
           )
           setProgress(1)
-          rendered_with$state <- ds
+          # state_abbr travels with palette/contrast now, not just the display
+          # settings. The "Download" button re-renders state_scorecard_print.qmd
+          # from this record rather than copying the on-screen file (see
+          # download_state below), so if that render ever ran off input$state_abbr
+          # directly, a reader who changed the dropdown after Generate but before
+          # Download would get a report for the wrong state under the old
+          # state's file name. Recording which state this render actually used
+          # closes that gap.
+          rendered_with$state <- c(ds, list(state_abbr = input$state_abbr))
           state_rendered(TRUE)
           shinyjs::enable("download_state")
         }, error = function(e) {
@@ -4033,18 +5030,75 @@ server <- function(input, output, session) {
     }
   })
 
+  # ── Download Selected State: full branded, paginated report ────────────────
+  # Renders scorecard/state_scorecard_print.qmd, not a copy of the on-screen
+  # iframe file. That file (state_scorecard.html) is built for the app's
+  # embedded iframe view and carries none of the pagination, brand masthead,
+  # or grant funding footer a standalone downloaded report needs — mirrors
+  # the National Data "Download Selected Topic" and City Data "Download
+  # Selected City" handlers above. state_scorecard_print.qmd calls the same
+  # build_state_scorecard() the on-screen version calls (state_scorecard_core.R),
+  # so the scores in the download can never disagree with what was on screen.
+  #
+  # Rendered from rendered_with$state, the record of what the LAST successful
+  # "Generate Scorecard" click actually used, not from input$state_abbr / the
+  # live Display settings directly. Those can drift from what is on screen if
+  # the reader changes the dropdown or palette after generating but before
+  # downloading; rendering off the same record the stale-hint check already
+  # uses keeps the download matching the report the reader is looking at.
+  state_print_qmd <- file.path(scorecard_dir, "state_scorecard_print.qmd")
+
   output$download_state <- downloadHandler(
     filename = function() {
-      state_label <- names(state_choices)[state_choices == input$state_abbr]
+      rw   <- rendered_with$state
+      abbr <- if (!is.null(rw$state_abbr)) rw$state_abbr else input$state_abbr
+      state_label <- names(state_choices)[state_choices == abbr]
       paste0("ADAPARC_", gsub("[^A-Za-z0-9]+", "_", state_label),
              "_Scorecard_2024", display_suffix("state"), ".html")
     },
     content = function(file) {
-      if (file.exists(file.path(sc_out_dir, "state_output.html"))) {
-        file.copy(file.path(sc_out_dir, "state_output.html"), file)
-      } else {
-        writeLines("<html><body>No scorecard generated yet.</body></html>", file)
-      }
+      withProgress(
+        message = "Building your ADA-PARC report…",
+        detail  = "This usually takes 15–25 seconds.",
+        value   = 0.2,
+        {
+          rw <- rendered_with$state
+          if (is.null(rw)) {
+            writeLines(
+              "<html><body>No scorecard generated yet. Click “Generate Scorecard” first.</body></html>",
+              file
+            )
+            return(invisible(NULL))
+          }
+          tryCatch({
+            quarto::quarto_render(
+              input          = state_print_qmd,
+              execute_params = list(state_abbr = rw$state_abbr, year = 2024,
+                                    palette  = rw$palette,
+                                    contrast = rw$contrast),
+              execute_dir    = scorecard_dir
+            )
+            rendered <- file.path(scorecard_dir, "state_scorecard_print.html")
+            if (file.exists(rendered)) {
+              file.copy(rendered, file, overwrite = TRUE)
+            } else {
+              writeLines("<html><body>Report could not be generated.</body></html>", file)
+            }
+            setProgress(1)
+          }, error = function(e) {
+            showNotification(
+              ui       = paste("Download failed:", conditionMessage(e)),
+              type     = "error",
+              duration = 15
+            )
+            writeLines(
+              paste0("<html><body>Report could not be generated: ",
+                     htmltools::htmlEscape(conditionMessage(e)), "</body></html>"),
+              file
+            )
+          })
+        }
+      )
     }
   )
 
@@ -4077,7 +5131,12 @@ server <- function(input, output, session) {
             overwrite = TRUE
           )
           setProgress(1)
-          rendered_with$cat <- ds
+          # category travels with palette/contrast now, not just the display
+          # settings, for the same reason state_abbr does on the state
+          # scorecard above: the "Download" button re-renders
+          # category_scorecard_print.qmd from this record rather than copying
+          # the on-screen file (see download_cat below).
+          rendered_with$cat <- c(ds, list(category = input$category))
           cat_rendered(TRUE)
           shinyjs::enable("download_cat")
         }, error = function(e) {
@@ -4107,18 +5166,72 @@ server <- function(input, output, session) {
     }
   })
 
+  # ── Download Selected Category: full branded, paginated report ─────────────
+  # Renders scorecard/category_scorecard_print.qmd, not a copy of the
+  # on-screen iframe file. Mirrors download_state above and the National/City
+  # Data download handlers: category_scorecard_print.qmd calls the same
+  # build_category_scorecard() the on-screen version calls
+  # (category_scorecard_core.R), so the scores in the download can never
+  # disagree with what was on screen, and it exports the choropleth to a
+  # static SVG instead of the interactive ggiraph widget.
+  #
+  # Rendered from rendered_with$cat, the record of what the LAST successful
+  # "Generate Scorecard" click actually used, for the same reason
+  # download_state reads rendered_with$state rather than input$category /
+  # the live Display settings directly.
+  cat_print_qmd <- file.path(scorecard_dir, "category_scorecard_print.qmd")
+
   output$download_cat <- downloadHandler(
     filename = function() {
-      cat_label <- names(cat_choices)[cat_choices == input$category]
+      rw   <- rendered_with$cat
+      catv <- if (!is.null(rw$category)) rw$category else input$category
+      cat_label <- names(cat_choices)[cat_choices == catv]
       paste0("ADAPARC_", gsub("[^A-Za-z0-9]+", "_", cat_label),
              "_Scorecard_2024", display_suffix("cat"), ".html")
     },
     content = function(file) {
-      if (file.exists(file.path(sc_out_dir, "cat_output.html"))) {
-        file.copy(file.path(sc_out_dir, "cat_output.html"), file)
-      } else {
-        writeLines("<html><body>No scorecard generated yet.</body></html>", file)
-      }
+      withProgress(
+        message = "Building your ADA-PARC report…",
+        detail  = "This usually takes 15–25 seconds.",
+        value   = 0.2,
+        {
+          rw <- rendered_with$cat
+          if (is.null(rw)) {
+            writeLines(
+              "<html><body>No scorecard generated yet. Click “Generate Scorecard” first.</body></html>",
+              file
+            )
+            return(invisible(NULL))
+          }
+          tryCatch({
+            quarto::quarto_render(
+              input          = cat_print_qmd,
+              execute_params = list(category = rw$category, year = 2024,
+                                    palette  = rw$palette,
+                                    contrast = rw$contrast),
+              execute_dir    = scorecard_dir
+            )
+            rendered <- file.path(scorecard_dir, "category_scorecard_print.html")
+            if (file.exists(rendered)) {
+              file.copy(rendered, file, overwrite = TRUE)
+            } else {
+              writeLines("<html><body>Report could not be generated.</body></html>", file)
+            }
+            setProgress(1)
+          }, error = function(e) {
+            showNotification(
+              ui       = paste("Download failed:", conditionMessage(e)),
+              type     = "error",
+              duration = 15
+            )
+            writeLines(
+              paste0("<html><body>Report could not be generated: ",
+                     htmltools::htmlEscape(conditionMessage(e)), "</body></html>"),
+              file
+            )
+          })
+        }
+      )
     }
   )
 
@@ -4220,14 +5333,55 @@ fact_sheets <- list(
     subtitle = "Adults with Disabilities Age 25 and Over",
     desc     = "Compares educational attainment between adults with and without disabilities, from those who did not complete high school through to those holding a bachelor's degree or higher.",
     file     = "factsheet-education.html"
+  ),
+  list(
+    id       = "technology",
+    category = "Community Participation",
+    title    = "Technology Access",
+    subtitle = "Computers, Home Internet and Smartphones",
+    desc     = "Shows how many people with disabilities live in a household with a computer, an internet subscription and a smartphone, and why the three measures have to be read together rather than one at a time.",
+    file     = "factsheet-technology.html"
   )
 )
 
 # Category display order, matching the ADA-PARC outcome domains as presented on
 # the rest of the site. Categories with no sheets yet still render with a
-# "coming soon" note so the structure signals where new sheets will appear;
-# Community Participation is in that state until its four sheets are built.
+# "coming soon" note so the structure signals where new sheets will appear.
+# No category is in that state now: all ten sheets are built, Technology Access
+# last, once the PUMS rebuild gave it reproducible figures. This registry is
+# back in step with ADA_PARC.Rmd as of 10 August 2026.
 fs_categories <- c("Community Living", "Work & Economic", "Community Participation")
+
+# ── Layout ────────────────────────────────────────────────────────────────
+# A single centred column. Heading, rule, subline, navigation and document all
+# sit on one vertical axis, so nothing has to be found off to one side.
+#
+# This replaces the master-and-detail split of 9 August 2026, whose sticky left
+# rail pushed the document into a wide right-hand column. The sheets themselves
+# are laid out at 900px (factsheets/_generate/assets/factsheet-base.css
+# .page-wrapper), so on a 1440px page the document read as pinned to the right
+# rather than presented.
+#
+# Navigation is two tiers: a row of category tabs, then the sheets belonging to
+# the selected category. Ten sheets split 4 / 2 / 4 across the three
+# categories, so the sheet row never wraps at full width and the whole
+# navigation block stays under about 100px tall. That is what buys the space
+# the rail used to take, and it is why the tiers must not be collapsed into one
+# flat row of ten: at ten pills the row wraps to three lines and the saving is
+# gone.
+#
+# Colour follows the blue-dominant canon: #1c2b3a for the heading and body
+# ink, brand navy #013176 for the selected pill, the category underline, the
+# centred rule and the primary button, #01214f for its hover, #0d3b8e for
+# focus rings, #e4e8ef for hairlines, #f5f8fc for hover tints and #c9d3e0 for
+# the resting pill edge. Gold is deliberately absent: in this document it
+# marks explanatory prose, not structure.
+#
+# ALL SIZES ARE IN px, NOT rem. fluidPage() loads Bootstrap 3, whose scaffolding
+# sets html { font-size: 10px }, so rem values in a sub-app style block resolve
+# against a 10px root. An earlier version of this page was written in rem and
+# was rendering its body copy at 13px rather than the intended 20.8px. See
+# project memory "Bootstrap 3 rem Trap".
 
 ui <- fluidPage(
   tags$head(
@@ -4240,234 +5394,310 @@ ui <- fluidPage(
         background: #f9f7f4;
         margin: 0;
       }
+      /* The inactive category groups are hidden with the boolean HTML
+         attribute. Its user-agent rule is display: none, which any display
+         declaration in author CSS overrides, so it has to be restated here or
+         a hidden group would still be laid out. */
+      [hidden] { display: none !important; }
+
       .fs-page {
-        max-width: 1080px;
+        max-width: 1000px;
         margin: 0 auto;
-        padding: 2.25rem 1.75rem 3rem;
+        padding: 30px 24px 44px;
+      }
+
+      /* ── Page heading ─────────────────────────────────────────────── */
+      .fs-head {
+        text-align: center;
+        max-width: 68ch;
+        margin: 0 auto 22px;
       }
       .fs-heading {
-        font-size: 2.6rem;
+        font-size: 34px;
         font-weight: 700;
-        color: #6b0f0f;
-        margin: 0 0 0.4rem;
-        border-left: 5px solid #c8a743;
-        padding-left: 0.75rem;
+        color: #1c2b3a;
+        margin: 0;
+      }
+      /* Centred navy rule in place of the left border the other tabs use. A
+         left rule under centred text reads as a layout fault rather than as an
+         accent. Gold is deliberately absent from this page: it marks
+         explanatory prose, see .national-summary-card, so spending it on
+         structure here would blur what it means elsewhere. */
+      .fs-rule {
+        width: 72px;
+        height: 3px;
+        background: #013176;
+        margin: 12px auto 14px;
       }
       .fs-subheading {
-        font-size: 1.4rem;
-        color: #1c1c1c;
-        margin: 0 0 2rem 0;
-        padding-left: 0.75rem;
-        line-height: 1.6;
-      }
-      /* ── Categorized list ─────────────────────────────────────────── */
-      .fs-category {
-        margin-bottom: 2.25rem;
-      }
-      .fs-category-heading {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: #6b0f0f;
-        margin: 0 0 0.9rem;
-        padding: 0.15rem 0 0.15rem 0.75rem;
-        border-left: 5px solid #c8a743;
-      }
-      .fs-list {
-        list-style: none;
+        font-size: 19px;
+        color: #1c2b3a;
         margin: 0;
-        padding: 0;
-        border: 1px solid #e0dbd2;
-        border-radius: 5px;
-        overflow: hidden;
-        background: #fff;
+        line-height: 1.55;
       }
-      .fs-row {
+
+      /* ── Tier one: categories ─────────────────────────────────────── */
+      .fs-cats {
         display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        padding: 1.35rem 1.6rem;
-        border-top: 1px solid #ece7de;
-      }
-      .fs-row:first-child {
-        border-top: none;
-      }
-      .fs-row:hover {
-        background: #fbf9f6;
-      }
-      .fs-row-main {
-        flex: 1 1 auto;
-        min-width: 0;
-      }
-      .fs-row-title {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: #1c1c1c;
-        margin: 0 0 0.3rem;
-      }
-      .fs-row-desc {
-        font-size: 1.3rem;
-        color: #1c1c1c;
-        line-height: 1.6;
-        margin: 0;
-      }
-      .fs-empty-cat {
-        padding: 1.35rem 1.6rem;
-        font-size: 1.3rem;
-        color: #4a4a4a;
-        font-style: italic;
-      }
-      @media (max-width: 620px) {
-        .fs-row { flex-direction: column; align-items: stretch; gap: 0.9rem; }
-      }
-      .fs-btn-row {
-        display: flex;
-        gap: 0.65rem;
+        justify-content: center;
         flex-wrap: wrap;
-        flex: 0 0 auto;
+        gap: 32px;
+        border-bottom: 1px solid #e4e8ef;
+        margin: 0 auto 18px;
       }
-      .fs-btn-view {
-        flex: 1;
-        min-width: 80px;
-        background: #6b0f0f;
-        color: #fff !important;
+      .fs-cat {
+        background: transparent;
         border: none;
-        border-radius: 4px;
-        padding: 0.6rem 1rem;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -1px;
+        padding: 8px 2px 10px;
         font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 1.2rem;
-        font-weight: 600;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: #4a5560;
         cursor: pointer;
+      }
+      .fs-cat:hover { color: #013176; }
+      /* Selection carries three cues, not colour alone: a navy underline, a
+         colour change and the underline's own weight. */
+      .fs-cat[aria-selected='true'] {
+        color: #013176;
+        border-bottom-color: #013176;
+      }
+      .fs-cat:focus-visible {
+        outline: 3px solid #0d3b8e;
+        outline-offset: 2px;
+      }
+
+      /* ── Tier two: sheets in the selected category ────────────────── */
+      .fs-sheets {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .fs-sheets-panel {
+        margin: 0 0 24px;
+      }
+      /* #c9d3e0 rather than the --border hairline #e4e8ef: at 1.4:1 on white
+         the hairline disappears at pill scale and the row reads as loose text
+         rather than as controls. */
+      .fs-tab {
+        background: #fff;
+        border: 1.5px solid #c9d3e0;
+        border-radius: 999px;
+        padding: 8px 18px;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 17px;
+        line-height: 1.4;
+        color: #1c2b3a;
+        cursor: pointer;
+      }
+      .fs-tab:hover {
+        border-color: #013176;
+        background: #f5f8fc;
+      }
+      .fs-tab[aria-selected='true'] {
+        background: #013176;
+        border-color: #013176;
+        color: #fff;
+        font-weight: 700;
+      }
+      /* Focus ink is chosen against what sits BEHIND the ring, not against the
+         control it surrounds. outline-offset is positive, so the ring lands on
+         the page ground in every state, selected or not, and one rule covers
+         both. #0d3b8e is the focus token; on #f9f7f4 it measures about
+         8:1, well past the 3:1 floor for a non-text indicator. */
+      .fs-tab:focus-visible {
+        outline: 3px solid #0d3b8e;
+        outline-offset: 2px;
+      }
+      .fs-sheets-empty {
         text-align: center;
-        transition: background 0.15s;
+        font-size: 17px;
+        color: #4a5560;
+        font-style: italic;
+        margin: 0;
+      }
+
+      /* ── Viewer ───────────────────────────────────────────────────── */
+      .fs-viewer {
+        background: #fff;
+        border: 1px solid #e4e8ef;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 1px 5px rgba(28,43,58,0.08);
+      }
+      /* The viewer head is now only the two actions. Title, subtitle and
+         description were removed on 9 August 2026: the sheet's own banner
+         states the topic and category three lines further down, so the header
+         was repeating what the document already said and pushing the document
+         itself off the first screen. The registry text survives as the
+         visually hidden heading below, which is what names the panel and
+         catches focus on selection. */
+      .fs-viewer-head {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 14px 18px;
+        border-bottom: 1px solid #e4e8ef;
+      }
+      .fs-viewer-title:focus-visible {
+        outline: 3px solid #0d3b8e;
+        outline-offset: 3px;
+      }
+      .fs-btn-dl, .fs-btn-open {
+        border-radius: 4px;
+        padding: 9px 16px;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 16px;
+        font-weight: 600;
+        text-align: center;
         text-decoration: none;
         display: inline-block;
         line-height: 1.4;
-      }
-      .fs-btn-view:hover, .fs-btn-view:focus {
-        background: #8c1515;
-        color: #fff !important;
-        text-decoration: none;
-        outline: 2px solid #c8a743;
-        outline-offset: 2px;
-      }
-      .fs-btn-view.active {
-        background: #c8a743;
-        color: #1c1c1c !important;
+        white-space: nowrap;
+        transition: background 0.15s;
       }
       .fs-btn-dl {
-        flex: 1;
-        min-width: 80px;
-        background: #fff;
-        color: #6b0f0f !important;
-        border: 1.5px solid #6b0f0f;
-        border-radius: 4px;
-        padding: 0.6rem 1rem;
-        font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 1.2rem;
-        font-weight: 600;
-        cursor: pointer;
-        text-align: center;
-        transition: background 0.15s;
-        text-decoration: none;
-        display: inline-block;
-        line-height: 1.4;
+        background: #013176;
+        color: #fff !important;
+        border: 1.5px solid #013176;
       }
       .fs-btn-dl:hover, .fs-btn-dl:focus {
-        background: #fdf5f5;
-        color: #6b0f0f !important;
+        background: #01214f;
+        border-color: #01214f;
+        color: #fff !important;
         text-decoration: none;
-        outline: 2px solid #c8a743;
+      }
+      .fs-btn-open {
+        background: #fff;
+        color: #013176 !important;
+        border: 1.5px solid #013176;
+      }
+      .fs-btn-open:hover, .fs-btn-open:focus {
+        background: #f5f8fc;
+        color: #013176 !important;
+        text-decoration: none;
+      }
+      /* Same rule as the pills. The ring sits outside the button, on the white
+         card, so both buttons take the focus token whatever their own fill
+         is. */
+      .fs-btn-dl:focus-visible, .fs-btn-open:focus-visible {
+        outline: 3px solid #0d3b8e;
         outline-offset: 2px;
       }
-      .fs-preview-wrap {
-        border: 1px solid #e0dbd2;
-        border-radius: 4px;
-        overflow: hidden;
-        background: #fff;
-        box-shadow: 0 1px 5px rgba(0,0,0,0.06);
-      }
-      .fs-preview-bar {
-        background: #1c1c1c;
-        color: #fff;
-        padding: 0.7rem 1.25rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 1.2rem;
-        gap: 1rem;
-      }
-      .fs-preview-bar span {
-        font-weight: 600;
-        color: #e8e8e8;
-      }
-      .fs-preview-bar a {
-        color: #c8a743;
-        font-weight: 600;
-        text-decoration: none;
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
-      .fs-preview-bar a:hover {
-        text-decoration: underline;
-      }
       #fs_frame {
+        display: block;
         width: 100%;
         height: 78vh;
+        min-height: 560px;
         border: none;
-        display: none;
+        background: #fff;
       }
-      .fs-empty {
-        height: 260px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #1c1c1c;
-        font-size: 1.35rem;
-        background: #fafaf8;
-        font-style: normal;
+
+      /* Screen-reader-only live region for load announcements. */
+      .fs-sr-only {
+        position: absolute;
+        width: 1px; height: 1px;
+        padding: 0; margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      /* ── Narrow screens ───────────────────────────────────────────── */
+      /* Both navigation rows already wrap on their own, so no alternative
+         control is needed. Below 940px the page simply stops being wider than
+         the 900px document and the frame shortens to keep the navigation and
+         the top of the sheet on screen together. */
+      @media (max-width: 940px) {
+        .fs-cats { gap: 22px; }
+        #fs_frame { height: 72vh; }
+      }
+      @media (max-width: 620px) {
+        .fs-page { padding: 20px 14px 34px; }
+        .fs-heading { font-size: 28px; }
+        .fs-subheading { font-size: 18px; }
+        .fs-cats { gap: 16px; }
+        .fs-cat { font-size: 14px; letter-spacing: 0.05em; }
+        .fs-tab { font-size: 16px; padding: 8px 14px; }
+        .fs-viewer-head { flex-direction: column; }
       }
     "))
   ),
 
   div(class = "fs-page",
 
-    h2(class = "fs-heading", "ADA-PARC Fact Sheets"),
-    p(class = "fs-subheading",
-      "Accessible, interactive fact sheets on disability community living indicators. ",
-      "Select any fact sheet to preview it below, or download the HTML file directly."
+    div(class = "fs-head",
+      h2(class = "fs-heading", "ADA-PARC Fact Sheets"),
+      div(class = "fs-rule", `aria-hidden` = "true"),
+      p(class = "fs-subheading",
+        "Choose a fact sheet to read, or download."
+      )
     ),
 
-    # Categorized list — one section per category, each a list of fact sheet rows
+    # ── Tier one: category tabs ───────────────────────────────────────
+    # ARIA tablist. Each category tab controls its own group of sheet tabs,
+    # which is a tabpanel. Roving tabindex: exactly one category tab is in the
+    # tab order at a time and arrow keys move between them.
+    tags$nav(class = "fs-cats", role = "tablist",
+      `aria-label` = "Fact sheet categories",
+      lapply(fs_categories, function(cat) {
+        slug <- gsub("[^a-z0-9]+", "-", tolower(cat))
+        tags$button(
+          class           = "fs-cat",
+          id              = paste0("fs_cat_", slug),
+          role            = "tab",
+          type            = "button",
+          `aria-selected` = "false",
+          `aria-controls` = paste0("fs_grp_", slug),
+          tabindex        = "-1",
+          cat
+        )
+      })
+    ),
+
+    # ── Tier two: the sheets in each category ─────────────────────────
+    # One panel per category, all but the selected one hidden. Each panel
+    # holds its own tablist, whose tabs all point at the single document
+    # viewer, so aria-controls is constant and the viewer's aria-labelledby is
+    # updated on selection instead.
     lapply(fs_categories, function(cat) {
       sheets_in_cat <- Filter(function(fs) fs$category == cat, fact_sheets)
-      tags$section(class = "fs-category", `aria-label` = cat,
-        h3(class = "fs-category-heading", cat),
+      slug <- gsub("[^a-z0-9]+", "-", tolower(cat))
+      div(
+        id                = paste0("fs_grp_", slug),
+        class             = "fs-sheets-panel",
+        role              = "tabpanel",
+        `aria-labelledby` = paste0("fs_cat_", slug),
+        hidden            = NA,
         if (length(sheets_in_cat) == 0) {
-          div(class = "fs-list",
-            p(class = "fs-empty-cat", "Fact sheets for this category are coming soon.")
-          )
+          p(class = "fs-sheets-empty", "Coming soon.")
         } else {
-          tags$ul(class = "fs-list",
+          div(class = "fs-sheets", role = "tablist",
+            `aria-label` = paste(cat, "fact sheets"),
             lapply(sheets_in_cat, function(fs) {
-              tags$li(class = "fs-row",
-                div(class = "fs-row-main",
-                  h4(class = "fs-row-title", fs$title),
-                  p(class = "fs-row-desc", fs$desc)
-                ),
-                div(class = "fs-btn-row",
-                  tags$button(
-                    class   = "fs-btn-view",
-                    id      = paste0("view_", fs$id),
-                    onclick = paste0("loadFS('", fs$file, "', '", fs$title, "', this)"),
-                    "View"
-                  ),
-                  tags$a(
-                    class    = "fs-btn-dl",
-                    href     = paste0("factsheets/", fs$file),
-                    download = fs$file,
-                    "Download"
-                  )
-                )
+              # Sheet metadata rides on data-* attributes rather than a JS
+              # literal, so htmltools handles the escaping. Several
+              # descriptions contain apostrophes.
+              tags$button(
+                class           = "fs-tab",
+                id              = paste0("fs_tab_", fs$id),
+                role            = "tab",
+                type            = "button",
+                `aria-selected` = "false",
+                `aria-controls` = "fs_panel",
+                tabindex        = "-1",
+                `data-file`     = fs$file,
+                `data-title`    = fs$title,
+                `data-sub`      = fs$subtitle,
+                `data-desc`     = fs$desc,
+                fs$title
               )
             })
           )
@@ -4475,57 +5705,156 @@ ui <- fluidPage(
       )
     }),
 
-    # Preview pane
-    div(class = "fs-preview-wrap",
-      div(class = "fs-preview-bar",
-        tags$span(id = "fs_current_title", ""),
-        tags$a(
-          id     = "fs_open_new",
-          href   = "#",
-          target = "_blank",
-          rel    = "noopener",
-          style  = "display:none",
-          "Open in new tab \u2197"
-        )
+    # ── Viewer ────────────────────────────────────────────────────────
+    div(class = "fs-viewer", id = "fs_panel", role = "tabpanel",
+        `aria-labelledby` = "",
+      div(class = "fs-viewer-head",
+        # Visually hidden, but still the panel's heading. It gives the tabpanel
+        # an accessible name, it is where focus lands when a sheet is chosen,
+        # and it carries the registry description, which a sighted reader now
+        # gets from the sheet itself but a screen reader user would otherwise
+        # lose entirely.
+        h3(class = "fs-sr-only fs-viewer-title", id = "fs_title",
+           tabindex = "-1", ""),
+        p(class = "fs-sr-only", id = "fs_desc", ""),
+        tags$a(class = "fs-btn-dl",   id = "fs_dl",   href = "#", download = NA, "Download"),
+        tags$a(class = "fs-btn-open", id = "fs_open", href = "#", target = "_blank",
+               rel = "noopener", "Open in new tab")
       ),
-      tags$iframe(
-        id      = "fs_frame",
-        src     = "",
-        title   = "Fact Sheet viewer",
-        tabindex = "0"
-      ),
-      div(id = "fs_empty", class = "fs-empty",
-        "Select a fact sheet above to preview it here."
-      )
-    )
+      tags$iframe(id = "fs_frame", src = "", title = "Fact sheet")
+    ),
 
-  ), # end .fs-page
+    div(id = "fs_live", class = "fs-sr-only", role = "status",
+        `aria-live` = "polite")
+  ),
 
-  # Vanilla JS — no Shiny messages needed
   tags$script(HTML("
-    function loadFS(file, title, btn) {
-      var frame    = document.getElementById('fs_frame');
-      var empty    = document.getElementById('fs_empty');
-      var label    = document.getElementById('fs_current_title');
-      var openLink = document.getElementById('fs_open_new');
-      var url      = 'factsheets/' + file;
+    (function () {
+      var cats = Array.prototype.slice.call(document.querySelectorAll('.fs-cat'));
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.fs-tab'));
+      if (!cats.length || !tabs.length) return;
 
-      // Update active button highlight
-      document.querySelectorAll('.fs-btn-view').forEach(function(b) {
-        b.classList.remove('active');
+      // Exactly one sheet tab per group stays in the tab order: the selected
+      // one where there is one, otherwise the first. Without this a keyboard
+      // user would have to tab through every sheet in the group.
+      function syncRoving() {
+        Array.prototype.slice.call(document.querySelectorAll('.fs-sheets'))
+          .forEach(function (list) {
+            var items = Array.prototype.slice.call(list.querySelectorAll('.fs-tab'));
+            if (!items.length) return;
+            var sel = items.filter(function (i) {
+              return i.getAttribute('aria-selected') === 'true';
+            })[0];
+            items.forEach(function (i) { i.tabIndex = -1; });
+            (sel || items[0]).tabIndex = 0;
+          });
+      }
+
+      function showCat(cat, moveFocus) {
+        cats.forEach(function (c) {
+          var on  = (c === cat);
+          var grp = document.getElementById(c.getAttribute('aria-controls'));
+          c.setAttribute('aria-selected', on ? 'true' : 'false');
+          c.tabIndex = on ? 0 : -1;
+          if (grp) {
+            if (on) grp.removeAttribute('hidden');
+            else    grp.setAttribute('hidden', '');
+          }
+        });
+        // Changing category deliberately does not load a sheet. The document
+        // on screen stays put until a sheet is chosen, so browsing the
+        // categories never throws away what the reader was looking at.
+        if (moveFocus) cat.focus();
+      }
+
+      function fromEl(el) {
+        return {
+          file:  el.getAttribute('data-file'),
+          title: el.getAttribute('data-title'),
+          sub:   el.getAttribute('data-sub'),
+          desc:  el.getAttribute('data-desc')
+        };
+      }
+
+      function apply(t, moveFocus) {
+        var d   = fromEl(t);
+        var url = 'factsheets/' + d.file;
+
+        tabs.forEach(function (x) {
+          x.setAttribute('aria-selected', x === t ? 'true' : 'false');
+        });
+        syncRoving();
+
+        // Both of these are visually hidden. They are the panel's accessible
+        // name and description, not on-screen chrome.
+        document.getElementById('fs_title').textContent = d.title + '. ' + d.sub + '.';
+        document.getElementById('fs_desc').textContent  = d.desc;
+
+        var dl = document.getElementById('fs_dl');
+        dl.href = url;
+        dl.setAttribute('download', d.file);
+        dl.setAttribute('aria-label', 'Download ' + d.title + ' fact sheet');
+
+        var op = document.getElementById('fs_open');
+        op.href = url;
+        op.setAttribute('aria-label', 'Open ' + d.title + ' fact sheet in a new tab');
+
+        var frame = document.getElementById('fs_frame');
+        frame.src = url;
+        frame.title = d.title + ' fact sheet';
+
+        document.getElementById('fs_panel').setAttribute('aria-labelledby', t.id);
+        document.getElementById('fs_live').textContent = d.title + ' fact sheet loaded.';
+
+        // Focus lands on the viewer heading, so a keyboard or screen reader
+        // user is put where the content actually changed. Suppressed on the
+        // initial load, which nobody asked for.
+        if (moveFocus) document.getElementById('fs_title').focus();
+      }
+
+      cats.forEach(function (c, i) {
+        c.addEventListener('click', function () { showCat(c, false); });
+        c.addEventListener('keydown', function (e) {
+          var next = null;
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = cats[(i + 1) % cats.length];
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = cats[(i - 1 + cats.length) % cats.length];
+          else if (e.key === 'Home') next = cats[0];
+          else if (e.key === 'End')  next = cats[cats.length - 1];
+          if (!next) return;
+          e.preventDefault();
+          // Automatic activation here: switching category only swaps a row of
+          // buttons, so there is nothing expensive to fetch on an arrow press.
+          showCat(next, true);
+        });
       });
-      btn.classList.add('active');
 
-      // Load in iframe
-      frame.src          = url;
-      frame.style.display = 'block';
-      empty.style.display = 'none';
+      tabs.forEach(function (t) {
+        t.addEventListener('click', function () { apply(t, false); });
+        t.addEventListener('keydown', function (e) {
+          var group = Array.prototype.slice.call(
+            t.parentNode.querySelectorAll('.fs-tab'));
+          var i = group.indexOf(t);
+          var next = null;
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = group[(i + 1) % group.length];
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = group[(i - 1 + group.length) % group.length];
+          else if (e.key === 'Home') next = group[0];
+          else if (e.key === 'End')  next = group[group.length - 1];
+          if (!next) return;
+          e.preventDefault();
+          // Manual activation: arrow keys move focus only, and Enter or Space
+          // loads the sheet (a <button> fires click for both natively). The
+          // automatic-activation variant would fetch a roughly 100KB document
+          // on every arrow press, which APG warns against for panels whose
+          // content is expensive to load.
+          next.focus();
+        });
+      });
 
-      // Update bar
-      label.textContent  = title;
-      openLink.href      = url;
-      openLink.style.display = 'inline';
-    }
+      // Open on the first category and its first sheet, so neither the sheet
+      // row nor the viewer is ever an empty box.
+      showCat(cats[0], false);
+      apply(tabs[0], false);
+    })();
   "))
   , adaparc_footer
 )
@@ -4544,9 +5873,9 @@ library(htmltools)
 tags$style(HTML("
   /* ── Help page layout ───────────────────────────────────────────── */
   .help-wrap {
-    max-width: 680px;
-    margin: 2.5rem auto;
-    padding: 0 1.5rem 3rem 1.5rem;
+    max-width: 850px;
+    margin: 3.125rem auto;
+    padding: 0 1.875rem 3.75rem 1.875rem;
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
   }
 
@@ -4554,23 +5883,23 @@ tags$style(HTML("
   .help-banner {
     background: #f9f7f4;
     border-bottom: 3px solid #e8e4db;
-    padding: 1rem 1.5rem;
-    margin-bottom: 1.25rem;
+    padding: 1.25rem 1.875rem;
+    margin-bottom: 1.5625rem;
     border-radius: 6px 6px 0 0;
   }
 
   .help-heading {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 3rem;
+    font-size: 3.75rem;
     font-weight: 700;
-    color: #6d1f2e;
-    margin: 0 0 0.25rem 0;
+    color: #1c2b3a;
+    margin: 0 0 0.3125rem 0;
     letter-spacing: -0.01em;
   }
 
   .help-subheading {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 1.6rem;
+    font-size: 2rem;
     color: #2c2c2c;
     font-style: normal;
     margin: 0;
@@ -4581,24 +5910,24 @@ tags$style(HTML("
     background: #ffffff;
     border: 1px solid #e4e8ef;
     border-radius: 4px;
-    padding: 1.5rem 1.75rem;
-    margin-bottom: 1.25rem;
+    padding: 1.875rem 2.1875rem;
+    margin-bottom: 1.5625rem;
   }
 
   .help-card-title {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 1.25rem;
+    font-size: 1.5625rem;
     font-weight: 700;
-    color: #591313;
-    margin: 0 0 0.6rem 0;
+    color: #1c2b3a;
+    margin: 0 0 0.75rem 0;
   }
 
   .help-card p {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 1.4rem;
+    font-size: 1.75rem;
     color: #1c2b3a;
     line-height: 1.75;
-    margin: 0 0 1rem 0;
+    margin: 0 0 1.25rem 0;
   }
 
   /* ── Palette selector within card ──────────────────────────────── */
@@ -4606,58 +5935,80 @@ tags$style(HTML("
   .help-card label,
   .help-card h4 {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 1.4rem !important;
+    font-size: 1.75rem !important;
     font-weight: 600;
     color: #1c2b3a;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
   }
 
   .help-card .form-control,
   .help-card .selectize-input,
   .help-card .selectize-dropdown {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 1.15rem;
+    font-size: 1.4375rem;
     border-color: #d0d7e2;
   }
 
   .help-card .selectize-input.focus {
     border-color: #c8a743 !important;
-    box-shadow: 0 0 0 3px rgba(200, 167, 67, 0.2) !important;
+    box-shadow: 0 0 0 3px rgba(13, 59, 142, 0.2) !important;
   }
 
   .help-palette-note {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 1.6rem;
+    font-size: 2rem;
     color: #1c2b3a;
     font-style: normal;
-    margin-top: 0.6rem;
+    margin-top: 0.75rem;
     margin-bottom: 0;
   }
 
   /* ── Contact Us button ──────────────────────────────────────────── */
+  .help-contact {
+    text-align: center;
+    margin-top: 1.5625rem;
+  }
+
+  .help-contact p {
+    margin-bottom: 1.25rem;
+  }
+
   .help-wrap .email-button {
-    color: #7B1A1A !important;
-    background-color: #ffffff !important;
+    display: inline-block;
+    padding: 0.625rem 1.5rem;
+    font-family: 'EB Garamond', Garamond, Georgia, serif !important;
+    font-size: 1.4375rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    background-color: #013176 !important;
     border: none !important;
+    border-radius: 4px !important;
+    text-decoration: none !important;
   }
 
   .help-wrap .email-button:hover,
   .help-wrap .email-button:focus {
-    color: #7B1A1A !important;
-    background-color: #ffffff !important;
+    color: #ffffff !important;
+    background-color: #01214f !important;
+  }
+
+  .help-wrap .email-button:focus {
+    outline: 3px solid #0d3b8e !important;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px #ffffff !important;
   }
 
   /* -- Glossary definition list -------------------------------------- */
   .glossary-list {
-    margin: 0.25rem 0 1.25rem 0;
+    margin: 0.3125rem 0 1.5625rem 0;
   }
 
   .glossary-list dt {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 1.4rem;
+    font-size: 1.75rem;
     font-weight: 700;
-    color: #591313;
-    margin-top: 1.1rem;
+    color: #1c2b3a;
+    margin-top: 1.375rem;
   }
 
   .glossary-list dt:first-of-type {
@@ -4666,35 +6017,36 @@ tags$style(HTML("
 
   .glossary-list dd {
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 1.4rem;
+    font-size: 1.75rem;
     color: #1c2b3a;
     line-height: 1.7;
-    margin: 0.2rem 0 0 0;
+    margin: 0.25rem 0 0 0;
   }
 
   .btn-glossary-download {
     display: inline-block;
-    padding: 0.5rem 1.2rem;
+    padding: 0.625rem 1.5rem;
     font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-    font-size: 1.15rem !important;
+    font-size: 1.4375rem !important;
     font-weight: 600 !important;
     color: #ffffff !important;
-    background-color: #7B1A1A !important;
+    background-color: #013176 !important;
     border: none !important;
     border-radius: 4px !important;
     text-decoration: none !important;
-    margin-top: 0.5rem;
+    margin-top: 0.625rem;
   }
 
   .btn-glossary-download:hover,
   .btn-glossary-download:focus {
-    background-color: #5e1414 !important;
+    background-color: #01214f !important;
     color: #ffffff !important;
   }
 
   .btn-glossary-download:focus {
-    outline: 3px solid #c8a743 !important;
+    outline: 3px solid #0d3b8e !important;
     outline-offset: 2px;
+    box-shadow: 0 0 0 2px #ffffff !important;
   }
 "))
 
@@ -4850,15 +6202,16 @@ div(class = "help-wrap",
   ),
 
   # Contact note
-  tags$p(
-    "For questions about the data, methodology, or site functionality, please reach out to our team.",
-    class = "help-palette-note",
-    style = "margin-top: 1.5rem;"
-  ),
-  tags$a(
-    href  = "mailto:joyhammel@uic.edu",
-    class = "email-button",
-    "Contact Us"
+  div(class = "help-contact",
+    tags$p(
+      "For questions about the data, methodology, or site functionality, please reach out to our team.",
+      class = "help-palette-note"
+    ),
+    tags$a(
+      href  = "mailto:joyhammel@uic.edu",
+      class = "email-button",
+      "Contact Us"
+    )
   )
 
   , adaparc_footer
