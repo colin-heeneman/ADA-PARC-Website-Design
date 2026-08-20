@@ -59,6 +59,12 @@ September 2025 nursing home sheet, and corrects its denominator; see the note
 under Community Living below, and `docs/factsheets_audit.qmd` for the wider
 plan.
 
+**Technology Access** is the tenth and last, added 7 August 2026. It was held
+back from the July build because its source could not be reproduced, and it is
+built here on the PUMS rebuild described in `docs/tech-access-rebuild-plan.qmd`.
+It is the only sheet not drawn from published ACS summary tables, which changes
+its population; see its own section at the foot of this document.
+
 ## Methodology
 
 Tiers are equal-count quartiles via `quantile(type = 7)` + `findInterval`, with
@@ -71,13 +77,16 @@ per-indicator direction:
 | Living in Institution | % PWD institutional; nursing; correctional    | low = Excellent  | single      |
 | HCBS                  | community-living spending per recipient       | high = Excellent | single      |
 | Housing               | % HoH w/ disability (PH; HCV)                 | high = Excellent | per-map     |
-| Poverty               | % below poverty (PWD; no-dis)                 | low = Excellent  | pooled pair |
+| Poverty               | % below poverty, all ages + 3 age bands       | low = Excellent  | per-map     |
+| Technology Access     | % PWD w/ computer; internet; smartphone       | high = Excellent | per-map     |
 
 "Magnitude only" means the map keeps the four-color sequential ramp but drops
 the Excellent/Poor labeling, because the indicator has no defensible better or
 worse direction. See `FS_TIER_LABELS_MAGNITUDE` in `R/factsheet-functions.R`.
 
-Scope is 50 states + DC (USA and Puerto Rico excluded).
+Scope is 50 states + DC (USA and Puerto Rico excluded). Two sheets carry Puerto
+Rico in their tables where a figure exists, Housing and Technology Access, and
+neither puts it on a map or lets it move the quartile breaks.
 
 ```{r load-data}
 #| label: load-data
@@ -560,110 +569,432 @@ print(cl |>
 
 # Poverty factsheet
 
-Two maps (with-disability, without-disability) share **one pooled quartile
-scale** computed across both series and all 52 jurisdictions (50 states + DC +
-Puerto Rico). Pooling matches the published methodology and keeps colors
-comparable across the two maps; PR is included in the *scale* so the legend
-spans the real data range, but PR is shown only in the table, never on the
-maps. Direction is `low_good` (lowest poverty = Excellent). Tables are
-alphabetical three-column blocks (split A-M / M-W + PR); a with-disability rate
-above 25% is flagged red.
+Rebuilt 10 August 2026. The sheet was a single measure, ages 18 to 64, with
+three summary-stat cards. It is now an **all-ages headline** with the three age
+bands beneath it, and the cards are gone.
 
-Variables: `pct_cni_18to64_poverty_dis`, `pct_cni_18to64_poverty_nodis`.
+Two things had to be true before this was publishable. First, the three age
+bands had to be computed the same way; until 10 August 2026 they were not, and
+`docs/poverty-factsheet-plan.qmd` section 3 records what was wrong. Second, the
+all-ages figure had to be exact rather than a weighted approximation, which it
+is: C18130 partitions the population for whom poverty status is determined into
+exactly these three age groups, so the all-ages rate is the sum of the three
+numerators over the sum of the three denominators.
+
+**Two scale regimes, and the split between them is deliberate.**
+
+*The all-ages pair is one comparative map and shares one scale.* Breaks are
+quartiles of the with-disability and without-disability series **pooled**, and a
+single key sits under the pair. This is what `render_national_map()` does for
+every `display_type == "comp"` indicator in the dashboard: it builds
+`combined_var <- c(estimate, estimate_2)`, cuts both panels on those breaks and
+draws one shared legend. Matching it here means a shade means the same rate on
+both fact sheet panels and the same rate again on the national map of the same
+indicator. The gap between the two panels *is* the disparity, read directly off
+the colour rather than off two sets of legend numbers.
+
+*The three age maps stay self-ranked, one scale each.* They are not a
+comparative pair; they are three populations that differ in level for reasons
+that have nothing to do with state performance. Pooling across them produced 38
+Excellent and zero Poor on the 65-plus map and zero Excellent on the 18-64 map,
+which says only that poverty falls after 65. Each of the three keeps
+`fs_assign_tiers(x, "low_good")` with no `breaks` argument over the 51 states
+and DC, Puerto Rico excluded so it cannot stretch a break, and each gets
+13 / 12 / 13 / 13 states.
+
+**The pooled pair does not carry Excellent and Poor.** On every other map those
+words are claims about where a state sits **among states**. Pooled across
+disability status they would become claims about which side of the national
+disability gap a panel is on: zero Excellent and 24 Poor with disability,
+26 Excellent and zero Poor without. The colour ramp is unchanged and still runs
+dark = lower rate, but the shared key, the tooltips and the SVG descriptions on
+this pair name the four bands by position on the scale rather than by
+performance, so nothing asserts that 24 states are Poor at serving disabled
+residents when what is showing is a national gap. `ADAPARC_TIER_LABEL_BAND_LOW`
+in `assets/adaparc-map.js` holds those labels; the age maps are untouched and
+still read Excellent through Poor.
+
+The cost on the age maps is real and is handled rather than hidden. Excellent on
+the 65-plus map is not the same rate as Excellent on the 18-64 map, so every
+legend prints its own numeric range on all four chips, and the captions say the
+scales differ.
+
+Direction is `low_good` throughout. A with-disability rate above 25% is flagged
+in the all-ages table, and the flag carries a visually hidden text label so it
+is not conveyed by colour alone.
+
+**The introduction quotes no typed numbers.** Every figure in the prose arrives
+as a `{token}` filled from `pov_values` at render time, and
+`fs_assert_no_tokens()` stops the build if one fails to resolve. Employment and
+Education still type theirs; they should be migrated next.
+
+Variables: `pct_cni_allages_poverty_dis` / `_nodis`, and the `under18`, `18to64`
+and `65plus` equivalents, with their `pop_cni_*_poverty_*` counts.
 
 ```{r poverty-data}
 #| label: poverty-data
 pr_row <- national |> filter(ABBR == "PR")
+us_row <- national |> filter(ABBR == "USA")
 
 pv <- states_df |>
   transmute(
     fips, ABBR, name = NAME,
-    dis = pct_cni_18to64_poverty_dis,
-    nod = pct_cni_18to64_poverty_nodis
+    all_dis   = pct_cni_allages_poverty_dis,
+    all_nod   = pct_cni_allages_poverty_nodis,
+    u18_dis   = pct_cni_under18_poverty_dis,
+    u18_nod   = pct_cni_under18_poverty_nodis,
+    a1864_dis = pct_cni_18to64_poverty_dis,
+    a1864_nod = pct_cni_18to64_poverty_nodis,
+    a65_dis   = pct_cni_65plus_poverty_dis,
+    a65_nod   = pct_cni_65plus_poverty_nodis,
+    n_all_dis = pop_cni_allages_poverty_dis,
+    n_u18_dis = pop_cni_under18_poverty_dis,
+    n_1864_dis = pop_cni_18to64_poverty_dis,
+    n_65_dis  = pop_cni_65plus_poverty_dis
   )
 
-# Pooled scale: both series across 51 states + DC + PR.
-pooled <- c(pv$dis, pv$nod,
-            pr_row$pct_cni_18to64_poverty_dis,
-            pr_row$pct_cni_18to64_poverty_nodis)
-pov_breaks <- fs_tier_breaks(pooled)
+# The partition is the whole basis of the all-ages figure, so it is asserted
+# here as well as in the pipeline. This repository reads a copied Rds; a guard
+# that only runs in the repository that wrote the file does not protect the
+# sheet that reads it.
+stopifnot(
+  "all-ages poverty count must equal the sum of the three age bands" =
+    all(abs((pv$n_u18_dis + pv$n_1864_dis + pv$n_65_dis) - pv$n_all_dis) < 1e-6)
+)
 
+# The all-ages pair is this sheet's one comparative map, so it shares a scale
+# across disability status the way the dashboard's comp indicators do: quartiles
+# of the two series pooled, both panels cut on those breaks, one key. Puerto
+# Rico stays out of the pooled vector for the same reason it stays off the maps,
+# at roughly 47 percent all ages it would stretch the top break on its own.
+pov_all_breaks <- fs_tier_breaks(c(pv$all_dis, pv$all_nod))
+
+# The three age maps are not a comparative pair and keep the house standard, one
+# self-ranked scale each. No `breaks` argument, so fs_assign_tiers computes its
+# own from the series it is tiering.
 pv <- pv |>
   mutate(
-    tier_dis = fs_assign_tiers(dis, "low_good", breaks = pov_breaks),
-    tier_nod = fs_assign_tiers(nod, "low_good", breaks = pov_breaks)
+    tier_all_dis = fs_assign_tiers(all_dis, "low_good", breaks = pov_all_breaks),
+    tier_all_nod = fs_assign_tiers(all_nod, "low_good", breaks = pov_all_breaks),
+    tier_u18     = fs_assign_tiers(u18_dis,   "low_good"),
+    tier_1864    = fs_assign_tiers(a1864_dis, "low_good"),
+    tier_65      = fs_assign_tiers(a65_dis,   "low_good")
   )
 
-# Sanity: tier distribution on each map series.
-list(pwd = table(pv$tier_dis, useNA = "ifany"),
-     nod = table(pv$tier_nod, useNA = "ifany"))
+# Breaks kept for the legends. One entry for the shared all-ages scale, because
+# there is now one key for the pair, and one per age map. Recomputing here with
+# the same function on the same vector is the only way to label a chip with the
+# range it actually represents.
+pov_breaks <- list(
+  all_shared = pov_all_breaks,
+  u18        = fs_tier_breaks(pv$u18_dis),
+  a1864      = fs_tier_breaks(pv$a1864_dis),
+  a65        = fs_tier_breaks(pv$a65_dis)
+)
+
+# Equal-count quartiles over 51 jurisdictions must land 13/12/13/13 on each of
+# the three self-ranked age maps. A lopsided count there means a tie has
+# collapsed a break and the tier labels stop meaning what they say.
+tier_counts <- vapply(
+  c("tier_u18", "tier_1864", "tier_65"),
+  function(col) as.integer(table(factor(pv[[col]],
+    levels = c("excellent", "above", "below", "poor")))),
+  integer(4))
+stopifnot(
+  "every self-ranked poverty age map must be an equal-count quartile split" =
+    all(abs(tier_counts - nrow(pv) / 4) <= 1)
+)
+
+# The pooled pair is deliberately lopsided panel by panel, that asymmetry is the
+# disparity. What must still hold is that the two panels together are an
+# equal-count split of the pooled vector, which is what makes the shared key's
+# printed ranges true of both.
+band_counts <- vapply(
+  c("tier_all_dis", "tier_all_nod"),
+  function(col) as.integer(table(factor(pv[[col]],
+    levels = c("excellent", "above", "below", "poor")))),
+  integer(4))
+# Slack of 2 rather than 1: the pooled vector is 102 values, so a tie sitting on
+# a break moves more states than it can on a 51-value map.
+stopifnot(
+  "the pooled all-ages pair must be an equal-count split across both panels" =
+    all(abs(rowSums(band_counts) - nrow(pv) / 2) <= 2)
+)
+
+list(age_maps = tier_counts, all_ages_pooled = band_counts)
+```
+
+```{r poverty-national}
+#| label: poverty-national
+# National figures, and the values the introduction and the section leads quote.
+#
+# Nothing here is typed into docs/factsheet-prose.docx. The prose carries tokens
+# and this chunk fills them, so the sentences track the vintage instead of
+# needing to be checked against it. If a token is misspelled in the document,
+# fs_assert_no_tokens() stops the render rather than publishing a stray brace.
+pov_national <- tibble::tibble(
+  group = c("All ages", "Under 18", "18 to 64", "65 and over"),
+  pwd = c(us_row$pct_cni_allages_poverty_dis,
+          us_row$pct_cni_under18_poverty_dis,
+          us_row$pct_cni_18to64_poverty_dis,
+          us_row$pct_cni_65plus_poverty_dis),
+  no_disability = c(us_row$pct_cni_allages_poverty_nodis,
+                    us_row$pct_cni_under18_poverty_nodis,
+                    us_row$pct_cni_18to64_poverty_nodis,
+                    us_row$pct_cni_65plus_poverty_nodis)
+) |>
+  mutate(ratio = pwd / no_disability)
+
+# Bare numbers, because the prose supplies the word "percent" itself. A
+# formatter that emitted "20.4%" would read as "20.4% percent" in the sentence.
+num1 <- function(x) formatC(x, format = "f", digits = 1)
+
+pov_values <- c(
+  pov_dis_all    = num1(us_row$pct_cni_allages_poverty_dis),
+  pov_nod_all    = num1(us_row$pct_cni_allages_poverty_nodis),
+  pov_ratio_1864 = num1(us_row$pct_cni_18to64_poverty_dis /
+                        us_row$pct_cni_18to64_poverty_nodis),
+  pov_count_dis  = paste0(num1(us_row$pop_cni_allages_poverty_dis / 1e6),
+                          " million"),
+  # The composition framing the removed NCD sentence was reaching for, computed
+  # from our own data. People with disabilities are a modest share of the
+  # population and a larger share of the people below the line.
+  pov_share_of_pop = num1(
+    us_row$pop_cni_allages_povbase_dis /
+      (us_row$pop_cni_allages_povbase_dis + us_row$pop_cni_allages_povbase_nodis) * 100),
+  pov_share_of_poor = num1(
+    us_row$pop_cni_allages_poverty_dis /
+      (us_row$pop_cni_allages_poverty_dis + us_row$pop_cni_allages_poverty_nodis) * 100)
+)
+
+pov_national |> mutate(across(where(is.numeric), \(x) round(x, 2)))
+pov_values
 ```
 
 ```{r poverty-build}
 #| label: poverty-build
-build_poverty <- function(pv, pr_row, pov_breaks, acs_year, cfg) {
-  ranges <- fs_ranges_closed(pov_breaks, digits = 0)
+build_poverty <- function(pv, pr_row, pov_breaks, acs_year, cfg, values) {
+  # One decimal, not zero. Now that each map is ranked against itself the middle
+  # bands are narrow: 65-plus splits at 13.1, 14.1 and 15.4, which rounds to
+  # "13%-14%" and "14%-15%" and reads as though the tiers were rounded into each
+  # other. The extra digit is what makes a self-ranked scale legible.
+  rng  <- lapply(pov_breaks, fs_ranges_closed, digits = 1)
+  pct1 <- function(x) fmt_pct(x, 1)
 
-  pr_dis <- pr_row$pct_cni_18to64_poverty_dis
-  pr_nod <- pr_row$pct_cni_18to64_poverty_nodis
+  # One legend per scale, not per map. The all-ages pair shares a scale and so
+  # gets one key for both panels; the age maps are self-ranked and get theirs
+  # through spec$legend_ranges.
+  #
+  # chip_labels is what changes between the two regimes. The self-ranked maps
+  # rank states among states and keep Excellent through Poor. The pooled pair
+  # ranks bands of one common rate scale across two populations, so its chips
+  # name the band instead, for the reason set out in the prose above this chunk
+  # and beside ADAPARC_TIER_LABEL_BAND_LOW in assets/adaparc-map.js.
+  FS_CHIPS_PERF <- c(excellent = "Excellent", above = "Above Average",
+                     below = "Below Average", poor = "Poor")
+  FS_CHIPS_BAND <- c(excellent = "Lowest band", above = "Second lowest",
+                     below = "Second highest", poor = "Highest band")
 
-  # ---- maps (PR excluded) ----
-  pwd_js <- fs_map_js(
-    obj_name = "POV_PWD", container_id = "map-pwd", desc_id = "pwd-map-desc",
-    data = pv |> filter(!is.na(tier_dis)) |>
-      transmute(fips, tier = tier_dis, display = fmt_pct(dis, 1)),
-    value_label = "Poverty rate (with disability)",
-    svg_title = "Poverty rate among working-age people with disabilities, by U.S. state",
+  legend_for <- function(ranges, label, aria, chip_labels = FS_CHIPS_PERF) {
+    paste0(
+'      <div class="map-legend" aria-label="', fs_esc(aria), '" style="margin:.5rem 0 .75rem;">
+        <span style="font-size:.875rem;font-weight:600;color:var(--navy);margin-right:.25rem;">', label, '</span>
+        <span class="tier-chip excellent">', chip_labels[["excellent"]], ' (', ranges[["excellent"]], ')</span>
+        <span class="tier-chip above">', chip_labels[["above"]], ' (', ranges[["above"]], ')</span>
+        <span class="tier-chip below">', chip_labels[["below"]], ' (', ranges[["below"]], ')</span>
+        <span class="tier-chip poor">', chip_labels[["poor"]], ' (', ranges[["poor"]], ')</span>
+      </div>')
+  }
+
+  pr_all_dis <- pr_row$pct_cni_allages_poverty_dis
+  pr_all_nod <- pr_row$pct_cni_allages_poverty_nodis
+
+  # ---- headline map pair (PR excluded from the maps, present in the tables) ----
+  # Both panels are cut on the pooled all-ages breaks and both take the band
+  # label set, so a tooltip on either says which band of the shared scale a
+  # state falls in rather than claiming a performance tier.
+  all_dis_js <- fs_map_js(
+    obj_name = "POV_ALL_DIS", container_id = "map-all-dis",
+    desc_id = "all-dis-map-desc",
+    data = pv |> filter(!is.na(tier_all_dis)) |>
+      transmute(fips, tier = tier_all_dis, display = pct1(all_dis)),
+    value_label = "Poverty rate, all ages (with disability)",
+    tier_labels = "band_low",
+    svg_title = "Poverty rate among people with disabilities of all ages, by U.S. state",
     svg_desc = paste0("Choropleth of the 50 states and DC shaded by the share of ",
-      "working-age people with disabilities living below the poverty line. ",
-      "Full data is in the table below."))
+      "people with disabilities of any age living below the poverty line. ",
+      "Darker shading is a lower rate. The scale is shared with the map of ",
+      "people without disabilities beside it, so the two can be compared ",
+      "shade for shade. Full data is in the table below."))
 
-  nod_js <- fs_map_js(
-    obj_name = "POV_NOD", container_id = "map-nod", desc_id = "nod-map-desc",
-    data = pv |> filter(!is.na(tier_nod)) |>
-      transmute(fips, tier = tier_nod, display = fmt_pct(nod, 1)),
-    value_label = "Poverty rate (no disability)",
-    svg_title = "Poverty rate among working-age people without disabilities, by U.S. state",
+  all_nod_js <- fs_map_js(
+    obj_name = "POV_ALL_NOD", container_id = "map-all-nod",
+    desc_id = "all-nod-map-desc",
+    data = pv |> filter(!is.na(tier_all_nod)) |>
+      transmute(fips, tier = tier_all_nod, display = pct1(all_nod)),
+    value_label = "Poverty rate, all ages (no disability)",
+    tier_labels = "band_low",
+    svg_title = "Poverty rate among people without disabilities of all ages, by U.S. state",
     svg_desc = paste0("Choropleth of the 50 states and DC shaded by the share of ",
-      "working-age people without disabilities living below the poverty line. ",
-      "Full data is in the table below."))
+      "people without disabilities of any age living below the poverty line. ",
+      "Darker shading is a lower rate, on the same scale as the map of people ",
+      "with disabilities beside it, so this map is broadly darker. Full data ",
+      "is in the table below."))
 
-  # ---- alphabetical tables (PR appended to the second half) ----
+  # ---- alphabetical all-ages tables (PR appended to the second half) ----
   pv_ord <- pv[order(pv$name), ]
   first  <- pv_ord[1:26, ]
   second <- pv_ord[27:nrow(pv_ord), ]
 
   left_table <- fs_poverty_table(
-    caption = "States A-M: Percent below poverty line, ages 18-64",
-    aria_label = "Poverty rates, states A through M",
-    names = first$name, dis = first$dis, nod = first$nod)
+    caption = "States A-M: Percent below poverty line, all ages",
+    aria_label = "Poverty rates for all ages, states A through M",
+    names = first$name, dis = first$all_dis, nod = first$all_nod)
 
   right_table <- fs_poverty_table(
-    caption = "States M-W &amp; Puerto Rico: Percent below poverty line, ages 18-64",
-    aria_label = "Poverty rates, states M through W and Puerto Rico",
+    caption = "States M-W &amp; Puerto Rico: Percent below poverty line, all ages",
+    aria_label = "Poverty rates for all ages, states M through W and Puerto Rico",
     names = c(second$name, "Puerto Rico"),
-    dis   = c(second$dis, pr_dis),
-    nod   = c(second$nod, pr_nod))
+    dis   = c(second$all_dis, pr_all_dis),
+    nod   = c(second$all_nod, pr_all_nod))
+
+  # ---- the three age bands, people with disabilities ----
+  age_specs <- list(
+    list(
+      id = "pov-under18", heading = "Children Under 18",
+      map_title     = "Children with Disabilities Below the Poverty Line, by State",
+      table_heading = "Children with Disabilities Below the Poverty Line, by State",
+      value_col = "u18_dis", tier_col = "tier_u18", direction = "low_good",
+      value_label = "Poverty rate, under 18",
+      svg_title = "Poverty rate among children with disabilities, by U.S. state",
+      svg_desc = paste0("Choropleth of the 50 states and DC shaded by performance ",
+        "tier. Darker maroon (Excellent) marks the lowest share of children with ",
+        "disabilities living below the poverty line; lighter gold (Poor) marks ",
+        "the highest."),
+      legend_ranges = rng$u18,
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the lowest share of disabled children below the ",
+        "poverty line. <em>Lighter gold</em> marks the highest. Each of the ",
+        "three age maps is ranked against itself, so the ranges on the legend ",
+        "differ from map to map. Read them before comparing one age group ",
+        "with another."),
+      caption = paste0(
+        "Darker maroon = a lower share of children with disabilities living ",
+        "below the poverty line (better). Puerto Rico (",
+        fmt_pct(pr_row$pct_cni_under18_poverty_dis, 1),
+        ") is not shown. Source: U.S. Census Bureau, American Community Survey ",
+        "5-year estimates (", acs_year - 4, "&ndash;", acs_year,
+        "), Table C18130."),
+      col_headers = c("State", "Percent", "Children"),
+      cell_cols = c("u18_dis", "n_u18_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      lead = cfg$under18_lead, values = values),
+
+    list(
+      id = "pov-1864", heading = "Working-Age Adults, 18 to 64",
+      map_title     = "Working-Age Adults with Disabilities Below the Poverty Line, by State",
+      table_heading = "Working-Age Adults with Disabilities Below the Poverty Line, by State",
+      value_col = "a1864_dis", tier_col = "tier_1864", direction = "low_good",
+      value_label = "Poverty rate, 18 to 64",
+      svg_title = paste0("Poverty rate among working-age adults with ",
+                         "disabilities, by U.S. state"),
+      svg_desc = paste0("Choropleth of the 50 states and DC shaded by performance ",
+        "tier. Darker maroon (Excellent) marks the lowest share of working-age ",
+        "adults with disabilities living below the poverty line; lighter gold ",
+        "(Poor) marks the highest."),
+      legend_ranges = rng$a1864,
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the lowest share of working-age disabled adults ",
+        "below the poverty line. <em>Lighter gold</em> marks the highest."),
+      caption = paste0(
+        "Darker maroon = a lower share of working-age adults with disabilities ",
+        "living below the poverty line (better). Puerto Rico (",
+        fmt_pct(pr_row$pct_cni_18to64_poverty_dis, 1),
+        ") is not shown. Source: U.S. Census Bureau, American Community Survey ",
+        "5-year estimates (", acs_year - 4, "&ndash;", acs_year,
+        "), Table C18130."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("a1864_dis", "n_1864_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      lead = cfg$age1864_lead, values = values),
+
+    list(
+      id = "pov-65plus", heading = "Adults 65 and Over",
+      map_title     = "Older Adults with Disabilities Below the Poverty Line, by State",
+      table_heading = "Older Adults with Disabilities Below the Poverty Line, by State",
+      value_col = "a65_dis", tier_col = "tier_65", direction = "low_good",
+      value_label = "Poverty rate, 65 and over",
+      svg_title = paste0("Poverty rate among adults 65 and over with ",
+                         "disabilities, by U.S. state"),
+      svg_desc = paste0("Choropleth of the 50 states and DC shaded by performance ",
+        "tier. Darker maroon (Excellent) marks the lowest share of adults 65 ",
+        "and over with disabilities living below the poverty line; lighter gold ",
+        "(Poor) marks the highest."),
+      legend_ranges = rng$a65,
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw rate. <em>Darker ",
+        "maroon</em> marks the lowest share of disabled adults 65 and over ",
+        "below the poverty line. <em>Lighter gold</em> marks the highest."),
+      caption = paste0(
+        "Darker maroon = a lower share of adults 65 and over with disabilities ",
+        "living below the poverty line (better). Puerto Rico (",
+        fmt_pct(pr_row$pct_cni_65plus_poverty_dis, 1),
+        ") is not shown. Source: U.S. Census Bureau, American Community Survey ",
+        "5-year estimates (", acs_year - 4, "&ndash;", acs_year,
+        "), Table C18130."),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("a65_dis", "n_65_dis"),
+      cell_fmts = list(pct1, fmt_count),
+      lead = cfg$age65plus_lead, values = values)
+  )
+
+  age_sections <- lapply(age_specs, fs_indicator_section, data = pv)
+
+  # ---- the three bands side by side ----
+  # The tier tables above scatter a state's three figures across three separate
+  # sections, so a state's own profile across the life course appears nowhere.
+  # This is the same reason Technology Access carries a wide table.
+  age_left <- fs_state_table(
+    caption = "States A-M: Percent below poverty line by age, people with disabilities",
+    aria_label = "Poverty rates by age for people with disabilities, states A through M",
+    names = first$name,
+    cols = list(first$u18_dis, first$a1864_dis, first$a65_dis),
+    col_headers = c("State", "Under 18", "18 to 64", "65 and over"))
+
+  age_right <- fs_state_table(
+    caption = "States M-W &amp; Puerto Rico: Percent below poverty line by age, people with disabilities",
+    aria_label = "Poverty rates by age for people with disabilities, states M through W and Puerto Rico",
+    names = c(second$name, "Puerto Rico"),
+    cols = list(
+      c(second$u18_dis,   pr_row$pct_cni_under18_poverty_dis),
+      c(second$a1864_dis, pr_row$pct_cni_18to64_poverty_dis),
+      c(second$a65_dis,   pr_row$pct_cni_65plus_poverty_dis)),
+    col_headers = c("State", "Under 18", "18 to 64", "65 and over"))
 
   extra_css <-
-'    .summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.25rem 0; }
-    .summary-stat { background: #f5f7fa; border: 1px solid var(--border); border-radius: 6px; padding: .9rem 1.1rem; text-align: center; }
-    .summary-stat .stat-number { font-size: 2rem; font-weight: 700; color: #c2410c; line-height: 1.1; }
-    .summary-stat .stat-label { font-size: .85rem; color: #4a5a67; margin-top: .25rem; line-height: 1.35; }
-    .maps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+'    .maps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
     .map-figure { margin: 0; }
     .table-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
     .state-table-wrapper { overflow-x: auto; }
-    table caption { font-size: .87rem; font-style: italic; color: #4a5a67; caption-side: top; text-align: left; padding-bottom: .5rem; font-weight: 600; }
+    /* .875rem is the type floor set in factsheet-base.css; see the comment
+       above .map-caption there. This rule is poverty-only, so the visible
+       captions on the other nine sheets still take the browser default. */
+    table caption { font-size: .875rem; font-style: italic; color: #4a5a67; caption-side: top; text-align: left; padding-bottom: .5rem; font-weight: 600; }
     thead th.disability-col { background: #2e4a64; }
+    /* The 25 percent flag is carried by colour and font weight, which a screen
+       reader cannot convey and a colour-blind reader may not distinguish, so
+       fs_poverty_table() also appends a text label inside an .sr-only span.
+       That class is defined in factsheet-base.css and is not repeated here. */
     td.high-poverty { color: #b91c1c; font-weight: 600; }
     @media (max-width: 680px) { .maps-grid, .table-columns { grid-template-columns: 1fr; } }
     @media print { .maps-grid, .table-columns { grid-template-columns: 1fr 1fr; } }'
 
   head_html <- fs_html_head(
-    title = "Working-Age People Living in Poverty | ADA-PARC Factsheet",
-    description = paste0("ADA-PARC factsheet on poverty rates among working-age ",
-      "people with and without disabilities (ages 18-64), with state-by-state data."),
+    title = "People Living in Poverty | ADA-PARC Factsheet",
+    description = paste0("ADA-PARC factsheet on poverty rates among people with ",
+      "and without disabilities, all ages and by age group, with state-by-state data."),
     extra_css = extra_css)
 
   header_html <- fs_header("Poverty", "Work &amp; Economic")
@@ -671,51 +1002,48 @@ build_poverty <- function(pv, pr_row, pov_breaks, acs_year, cfg) {
   main_html <- paste0(
 '
 ', fs_population_note(
-  "Working-age people, ages 18 to 64",
-  paste0("Poverty among people 65 and over is shaped by Social Security and ",
-         "Medicare rather than by participation in work, so it is not ",
-         "combined with the working-age figures here.")), '
-', fs_intro(cfg$intro, acs_year = acs_year), '
+  "People of all ages for whom poverty status is determined",
+  paste0("The Census Bureau does not assess poverty status for everyone. People ",
+         "living in group quarters, including nursing homes, correctional ",
+         "facilities and college dormitories, and unrelated individuals under ",
+         "15, are outside every figure on this sheet. Institutional residence ",
+         "is covered on the <em>Living in Institution</em> sheet.")), '
+', fs_intro(cfg$intro, acs_year = acs_year, values = values), '
 
-', fs_summary_stats(cfg$summary_stats), '
-
-    <h2 class="section-heading">State Maps</h2>
-    <p>Maps compare poverty rates for working-age people <em>with</em> disabilities (left) and <em>without</em> disabilities (right). Puerto Rico data appears in the table but is not shown on the maps.</p>
+    <h2 class="section-heading">All Ages</h2>
+', fs_lead(cfg$allages_lead, values = values), '
 
     <div class="direction-note" role="note">
-      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the most favorable outcomes (Excellent), here the lowest poverty rates. <em>Lighter gold</em> marks the least favorable outcomes (Poor), the highest rates.
+      <strong>How to read the colors.</strong> <strong>Both maps share one scale and one key.</strong> A shade means the same poverty rate on either map, so the two can be read against each other directly and the difference between them is the disability gap. <em>Darker maroon</em> is a lower poverty rate, the more favorable outcome. <em>Lighter gold</em> is a higher rate. Because the scale is shared, the bands are not evenly filled on either map: the map of people with disabilities sits mostly in the higher bands and the map of people without disabilities mostly in the lower ones. That imbalance is the finding, not a ranking of the states on it. The three maps further down, which cover people with disabilities only, are each ranked against themselves and use performance tiers instead.
     </div>
 
-    <div class="map-legend" aria-label="Performance tiers for poverty rate, from Excellent (lowest rate) to Poor (highest rate)" style="margin-bottom:.75rem;">
-      <span style="font-size:.85rem;font-weight:600;color:var(--navy);margin-right:.25rem;">Poverty rate:</span>
-      <span class="tier-chip excellent">Excellent (', ranges[["excellent"]], ')</span>
-      <span class="tier-chip above">Above Average (', ranges[["above"]], ')</span>
-      <span class="tier-chip below">Below Average (', ranges[["below"]], ')</span>
-      <span class="tier-chip poor">Poor (', ranges[["poor"]], ')</span>
-    </div>
+', legend_for(rng$all_shared, "Poverty rate, all ages, both maps:",
+              paste0("Shared scale for both all-ages maps, from the lowest ",
+                     "poverty rate band to the highest"),
+              chip_labels = FS_CHIPS_BAND), '
 
     <div class="maps-grid">
       <figure class="map-figure">
-        <h3 class="map-title" id="pwd-map-heading">Poverty Rate, People <em>with</em> Disabilities</h3>
-        <div id="map-pwd" class="map-container" aria-labelledby="pwd-map-heading pwd-map-desc">
-          <p id="pwd-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+        <h3 class="map-title" id="all-dis-map-heading">People <em>with</em> Disabilities</h3>
+        <div id="map-all-dis" class="map-container" aria-labelledby="all-dis-map-heading all-dis-map-desc">
+          <p id="all-dis-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
           <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
         </div>
-        <figcaption class="map-caption">Darker maroon = lower poverty rate for working-age people with disabilities (better). Puerto Rico (', fmt_pct(pr_dis, 1), ') is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (', acs_year - 4, '&ndash;', acs_year, ').</figcaption>
+        <figcaption class="map-caption">Darker maroon = a lower poverty rate for people with disabilities of any age (better), on the shared scale in the key above. Puerto Rico (', fmt_pct(pr_all_dis, 1), ') is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (', acs_year - 4, '&ndash;', acs_year, '), Table C18130.</figcaption>
       </figure>
 
       <figure class="map-figure">
-        <h3 class="map-title" id="nod-map-heading">Poverty Rate, People <em>without</em> Disabilities</h3>
-        <div id="map-nod" class="map-container" aria-labelledby="nod-map-heading nod-map-desc">
-          <p id="nod-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+        <h3 class="map-title" id="all-nod-map-heading">People <em>without</em> Disabilities</h3>
+        <div id="map-all-nod" class="map-container" aria-labelledby="all-nod-map-heading all-nod-map-desc">
+          <p id="all-nod-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
           <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
         </div>
-        <figcaption class="map-caption">Darker maroon = lower poverty rate for working-age people without disabilities (better). Rates here are notably lower overall than for people with disabilities. Puerto Rico (', fmt_pct(pr_nod, 1), ') is not shown.</figcaption>
+        <figcaption class="map-caption">Darker maroon = a lower poverty rate for people without disabilities (better), on the same shared scale. This map is broadly darker than the one beside it, and that difference is the disability gap read straight off the color. Puerto Rico (', fmt_pct(pr_all_nod, 1), ') is not shown.</figcaption>
       </figure>
     </div>
 
-    <h2 class="section-heading">Percent of People (Ages 18&ndash;64) Below the Poverty Line, by State</h2>
-    <p>Disability poverty rates bolded in red indicate states where more than 25% of working-age people with disabilities live below the poverty line.</p>
+    <h2 class="section-heading">Percent of People Below the Poverty Line, All Ages, by State</h2>
+    <p>Disability poverty rates shown in bold red mark states where more than 25% of people with disabilities live below the poverty line.</p>
 
     <div class="table-columns">
 ', left_table, '
@@ -723,11 +1051,29 @@ build_poverty <- function(pv, pr_row, pov_breaks, acs_year, cfg) {
 ', right_table, '
     </div>
 
+    <h2 class="section-heading">By Age</h2>
+    <p>The three maps below cover people with disabilities only. Each is ranked against itself, in equal-count quarters, so a state&rsquo;s shade says where it stands among states <em>within that age group</em> rather than how the age groups compare with each other. Poverty is markedly lower after 65 than before it, and the legends carry the numbers that show it. Rates for people without disabilities in each age group are in the fact sheet data rather than mapped here.</p>
+
+', age_sections[[1]]$html, '
+', age_sections[[2]]$html, '
+', age_sections[[3]]$html, '
+
+    <h2 class="section-heading">Poverty by Age, People with Disabilities, by State</h2>
+    <p>The tables above group states into performance tiers, one age band at a time. This table puts a state&rsquo;s three figures side by side, so a single state can be read across the life course.</p>
+
+    <div class="table-columns">
+', age_left, '
+
+', age_right, '
+    </div>
+
 ', fs_footnotes(cfg$footnotes, acs_year = acs_year), '
 ')
 
   footer_html  <- fs_footer()
-  scripts_html <- fs_scripts(paste0(pwd_js, "\n\n", nod_js))
+  scripts_html <- fs_scripts(paste0(
+    all_dis_js, "\n\n", all_nod_js, "\n\n",
+    paste(vapply(age_sections, function(s) s$js, character(1)), collapse = "\n\n")))
 
   fs_write_file(
     path = file.path(out_dir, "factsheet-poverty.html"),
@@ -736,7 +1082,8 @@ build_poverty <- function(pv, pr_row, pov_breaks, acs_year, cfg) {
     scripts_html = scripts_html)
 }
 
-poverty_path <- build_poverty(pv, pr_row, pov_breaks, acs_year, content$poverty)
+poverty_path <- build_poverty(pv, pr_row, pov_breaks, acs_year,
+                              content$poverty, pov_values)
 poverty_path
 ```
 
@@ -745,9 +1092,34 @@ poverty_path
 #| echo: false
 cat("Wrote:", poverty_path, "\n")
 cat("File size:", file.info(poverty_path)$size, "bytes\n\n")
-cat("Pooled tier breaks (", acs_year, " vintage): ",
-    paste(formatC(pov_breaks, format = "f", digits = 2), collapse = ", "), "\n", sep = "")
-cat("States with disability poverty > 25%: ", sum(pv$dis > 25, na.rm = TRUE), "\n")
+for (nm in names(pov_breaks)) {
+  cat("Breaks, ", nm, ": ",
+      paste(formatC(pov_breaks[[nm]], format = "f", digits = 2), collapse = ", "),
+      "\n", sep = "")
+}
+cat("\nTier counts, self-ranked age maps (must be 13/12/13/13 on 51 jurisdictions):\n")
+print(tier_counts)
+cat("\nBand counts, pooled all-ages pair (lopsided by design; the row sums are",
+    "\nthe equal-count split, 25/26 across both panels):\n")
+print(band_counts)
+cat("States above 25% (all ages, PWD): ", sum(pv$all_dis > 25, na.rm = TRUE), "\n")
+cat("States above 25% (18-64, PWD):    ", sum(pv$a1864_dis > 25, na.rm = TRUE), "\n\n")
+
+# The removed NCD sentence claimed people with disabilities are over half of
+# those in long-term poverty. Nothing on the sheet claims that any more. This
+# prints the composition figures the prose does use, so they are visible in the
+# validation report rather than only inside the rendered HTML.
+cat("PWD share of the poverty universe: ", pov_values[["pov_share_of_pop"]], "%\n", sep = "")
+cat("PWD share of people below the line: ", pov_values[["pov_share_of_poor"]], "%\n", sep = "")
+
+stopifnot(
+  "no summary-stat cards should remain on the poverty sheet" =
+    !grepl("summary-stat", readLines(poverty_path, warn = FALSE) |> paste(collapse = "")),
+  "the NCD citation should be gone" =
+    !grepl("National Council on Disability",
+           readLines(poverty_path, warn = FALSE) |> paste(collapse = ""))
+)
+cat("Checked: no summary-stat cards, no NCD citation.\n")
 ```
 
 # Employment factsheet
@@ -1437,7 +1809,7 @@ build_hcbs <- function(hcbs, cfg, source_year = 2023, subpop_note = NULL) {
 
   # Per-factsheet CSS: the "About These Data" note box (maroon canon accent).
   extra_css <-
-'    .about-data { background: #f7f0ef; border-left: 4px solid var(--tier-excellent-bg); border-radius: 0 6px 6px 0; padding: 1rem 1.25rem; margin: 1.75rem 0 0; }
+'    .about-data { background: #f7f0ef; border-left: 4px solid var(--tier-excellent-bg); border-radius: 0 6px 6px 0; padding: 1rem 1.25rem; margin: 1rem 0 1.5rem; }
     .about-data-title { font-size: 1.15rem; font-weight: 700; color: var(--navy); margin: 0 0 .4rem; }
     .about-data p { margin: 0; font-size: .95rem; line-height: 1.6; }'
 
@@ -1459,6 +1831,7 @@ build_hcbs <- function(hcbs, cfg, source_year = 2023, subpop_note = NULL) {
          "all people with disabilities. Spending per recipient therefore says ",
          "how far a state&rsquo;s dollars go for the people it already serves, ",
          "not how many people it serves.")), '
+', fs_about(cfg$about), '
 ', fs_intro(cfg$intro, source_year = source_year), '
 
     <h2 class="section-heading">State Map</h2>
@@ -1534,8 +1907,6 @@ build_hcbs <- function(hcbs, cfg, source_year = 2023, subpop_note = NULL) {
 ', right_ratio, '
       </div>
     </div>
-
-', fs_about(cfg$about), '
 
 ', fs_footnotes(cfg$footnotes, source_year = source_year,
                aria_label = "Data sources and notes"), '
@@ -2143,14 +2514,20 @@ print(cm |>
 
 # Educational Attainment factsheet
 
-Three mapped sections plus a table reporting what the three leave out.
+Three mapped sections. A fourth section reporting what the three leave out is
+written and tested but held back for the v1 client review; see
+`edu_show_remainder` in the build chunk below.
 
 **The three categories are not exhaustive.** Adults whose highest attainment is
 some college without a degree, or an associate's degree, fall into none of them.
 That is 29 percent of adults with disabilities nationally, so the three
 published shares sum to between 63 and 79 percent depending on the state.
-`fs_edu_measures()` derives the remainder exactly as 100 less the three, and it
-gets its own table so a third of the population is not silently missing.
+`fs_edu_measures()` derives the remainder exactly as 100 less the three, and the
+`edu-validate` chunk still checks it on every render, whether or not the sheet
+shows it. When `edu_show_remainder` is set back to `TRUE`, the remainder table,
+its lead-in, the two introduction paragraphs that describe it and footnote 2 all
+return together. Note that while it is hidden the sheet presents three shares
+that do not sum to 100 without saying so on the page.
 
 **Directions differ by measure.** Less than high school is low-is-better and
 bachelor's or higher is high-is-better; both are tiered. High school or
@@ -2201,7 +2578,18 @@ edu_national |> mutate(across(where(is.numeric), \(x) round(x, 2)))
 
 ```{r edu-build}
 #| label: edu-build
-build_education <- function(edu, acs_year, cfg) {
+
+# Deferred for v1 client review, 2026-08-10. The "some college or associate's"
+# remainder is real and the sheet is more honest with it, but Colin wants the
+# client to see the three published measures first. Set this to TRUE to restore,
+# in one move, the two introduction paragraphs, the "Uncounted Middle" table and
+# its lead-in, and footnote 2. Nothing is deleted; the prose lives in
+# content/factsheet-content.yml under the *_deferred keys, and the derivation in
+# fs_edu_measures() and the edu-validate checks are untouched.
+edu_show_remainder <- FALSE
+
+build_education <- function(edu, acs_year, cfg,
+                            show_remainder = edu_show_remainder) {
 
   pct1 <- function(x) fmt_pct(x, 1)
 
@@ -2337,17 +2725,44 @@ build_education <- function(edu, acs_year, cfg) {
 
   # The uncounted middle, derived as the exact complement of the three published
   # categories. This is the sheet's honesty check: without it, roughly a third
-  # of adults would be missing from the page with no explanation.
-  other_table <- fs_compare_table(
-    caption = paste0("Some college without a degree, or an associate's degree. ",
-                     "Derived as 100 percent less the three categories above, ",
-                     "so it is exact rather than estimated."),
-    aria_label = paste0("Percentage of adults whose highest attainment is some ",
-                        "college or an associate's degree, people with ",
-                        "disabilities compared with people without disabilities"),
-    names = edu$name[ord],
-    dis   = edu$edu_other_dis[ord],
-    nod   = edu$edu_other_nodis[ord])
+  # of adults would be missing from the page with no explanation. Held back for
+  # the v1 client review; see edu_show_remainder above.
+  remainder_html <- if (show_remainder) {
+    other_table <- fs_compare_table(
+      caption = paste0("Some college without a degree, or an associate's degree. ",
+                       "Derived as 100 percent less the three categories above, ",
+                       "so it is exact rather than estimated."),
+      aria_label = paste0("Percentage of adults whose highest attainment is some ",
+                          "college or an associate's degree, people with ",
+                          "disabilities compared with people without disabilities"),
+      names = edu$name[ord],
+      dis   = edu$edu_other_dis[ord],
+      nod   = edu$edu_other_nodis[ord])
+
+    paste0(
+'    <h2 class="section-heading">The Uncounted Middle</h2>
+
+', paste0("    <p>", unlist(cfg$remainder_table_lead_deferred), "</p>",
+          collapse = "\n"), '
+
+', other_table)
+  } else {
+    ""
+  }
+
+  # The introduction and the footnotes both carry a paragraph about the
+  # remainder; they appear only when the table they refer to does.
+  intro_paras <- if (show_remainder) {
+    c(unlist(cfg$intro), unlist(cfg$intro_remainder_note_deferred))
+  } else {
+    unlist(cfg$intro)
+  }
+
+  footnote_items <- if (show_remainder) {
+    c(unlist(cfg$footnotes), unlist(cfg$footnotes_remainder_deferred))
+  } else {
+    unlist(cfg$footnotes)
+  }
 
   head_html <- fs_html_head(
     title = "Educational Attainment | ADA-PARC Factsheet",
@@ -2368,7 +2783,7 @@ build_education <- function(edu, acs_year, cfg) {
          "the chance to finish the education they are going to complete. ",
          "Children and younger adults still in school are outside this ",
          "universe.")), '
-', fs_intro(cfg$intro, acs_year = acs_year), '
+', fs_intro(intro_paras, acs_year = acs_year), '
 
 ', sections, '
 
@@ -2379,13 +2794,9 @@ build_education <- function(edu, acs_year, cfg) {
 
 ', bach_compare, '
 
-    <h2 class="section-heading">The Uncounted Middle</h2>
+', remainder_html, '
 
-', paste0("    <p>", unlist(cfg$remainder_table_lead), "</p>", collapse = "\n"), '
-
-', other_table, '
-
-', fs_footnotes(cfg$footnotes, acs_year = acs_year), '
+', fs_footnotes(footnote_items, acs_year = acs_year), '
 ')
 
   fs_write_file(
@@ -2433,3 +2844,347 @@ print(edu |>
 
 
 
+
+# Technology Access factsheet
+
+Three maps and three sets of tier tables: the share of people with disabilities
+living in a household with a **computer** (`pwd_computer_pct`), an **internet
+subscription** (`pwd_int_pct`) and a **smartphone** (`pwd_smartphone_pct`). All
+three are `high_good`; there is no reading on which less access is the better
+outcome, so none of them is shaded by magnitude. A fourth section puts the three
+figures side by side in one alphabetical table, because the tier tables scatter
+a single state's three results across three separate boxes and the substitution
+of a phone for a computer is only visible when they are read together.
+
+**This sheet is measured differently from every other sheet here, and that is
+the thing to know about it.** The other nine read published ACS summary tables
+over the civilian noninstitutionalized population. `LAPTOP`, `ACCESSINET` and
+`SMARTPHONE` are ACS **housing record** variables with no published table at the
+state level, so these figures are tabulated from the Public Use Microdata Sample
+with person weights (`PWGTP`). The universe is therefore people with
+disabilities **living in occupied housing units**, and everyone in group
+quarters is outside it. That is a narrower population than the Community Living
+sheets use, which is why the population note says so at the top of the page
+rather than in a footnote.
+
+The three indicators share one denominator in every jurisdiction by
+construction, because the three questions are asked of the same households. That
+identity is the property the July 2026 rebuild exists to restore, and it is
+asserted below before anything is built: if it fails, the data is wrong, not the
+sheet. See `docs/tech-access-rebuild-plan.qmd` for the defect it replaced and
+`scripts/audit_tech_access.R` for the standing acceptance test.
+
+**Puerto Rico.** The quartile breaks are computed over the 51 comparable
+jurisdictions, as on every other sheet, and PR is then binned against those same
+breaks. It lands in the Poor group on all three measures and sorts to the foot of
+that table on its own value. It is not on the maps, because the base map does not
+draw it and its figures would set the colour scale for everyone else.
+
+**The PUMS vintage is read from the data, not typed here.** The `{pums_year}` and
+`{pums_start}` tokens in the prose are filled from the `adaparc_tech_provenance`
+attribute that `national_transform_final.R` attaches to `national_data.Rds`, so a
+citation cannot print a year the figures did not come from. `acs_year` is never
+used on this sheet.
+
+```{r tech-data}
+#| label: tech-data
+tech_prov <- attr(national, "adaparc_tech_provenance")
+
+stopifnot(
+  "national_data.Rds carries no adaparc_tech_provenance attribute. It predates the PUMS rebuild; re-run national_transform_final.R." =
+    !is.null(tech_prov),
+  "Technology provenance records no vintage_year" =
+    !is.null(tech_prov$vintage_year)
+)
+pums_year <- as.integer(tech_prov$vintage_year)
+
+# The identity test, restated at the point of use. Recovering each denominator
+# by dividing a count by its own percentage is how the original defect was
+# found, so the check is done from the published columns rather than trusted
+# from upstream. Group quarters residents are outside all three, so the three
+# bases must agree to within rounding in every jurisdiction.
+tech_universe <- national |>
+  filter(!ABBR %in% "USA") |>
+  transmute(
+    ABBR,
+    den_computer   = pwd_computer   / (pwd_computer_pct   / 100),
+    den_internet   = pwd_int        / (pwd_int_pct        / 100),
+    den_smartphone = pwd_smartphone / (pwd_smartphone_pct / 100),
+    spread = pmax(den_computer, den_internet, den_smartphone) -
+             pmin(den_computer, den_internet, den_smartphone))
+
+stopifnot(
+  "The three technology indicators do not share a denominator. Do not publish this sheet; see docs/tech-access-rebuild-plan.qmd section 8." =
+    all(tech_universe$spread / tech_universe$den_computer < 0.001)
+)
+
+# 51 comparable jurisdictions set the scale; Puerto Rico is binned against it.
+tech_states <- states_df |>
+  transmute(
+    fips, ABBR, name = NAME,
+    computer   = pwd_computer_pct,   n_computer   = pwd_computer,
+    internet   = pwd_int_pct,        n_internet   = pwd_int,
+    smartphone = pwd_smartphone_pct, n_smartphone = pwd_smartphone)
+
+tech_breaks <- lapply(c(computer = "computer", internet = "internet",
+                        smartphone = "smartphone"),
+                      function(v) fs_tier_breaks(tech_states[[v]]))
+
+# fips is NA for Puerto Rico, which is what keeps it off the maps;
+# fs_indicator_section() drops rows the base map cannot draw. It is binned
+# against the breaks computed above rather than changing them, and it sorts to
+# the foot of its tier table on its own value like any other row.
+tech_pr <- national |>
+  filter(ABBR == "PR") |>
+  transmute(
+    fips = NA_character_, ABBR, name = NAME,
+    computer   = pwd_computer_pct,   n_computer   = pwd_computer,
+    internet   = pwd_int_pct,        n_internet   = pwd_int,
+    smartphone = pwd_smartphone_pct, n_smartphone = pwd_smartphone)
+
+tech <- bind_rows(tech_states, tech_pr) |>
+  mutate(
+    tier_computer   = fs_assign_tiers(computer,   "high_good", tech_breaks$computer),
+    tier_internet   = fs_assign_tiers(internet,   "high_good", tech_breaks$internet),
+    tier_smartphone = fs_assign_tiers(smartphone, "high_good", tech_breaks$smartphone))
+
+# National figures, for checking the numbers quoted in docs/factsheet-prose.docx
+# when the vintage moves. The introduction types 72.8, 86.2, 89.6, 96.6, 85.2,
+# 95.2, 13.4, 12.4, 22.8 and 11.7 million as fixed text.
+usa_row  <- national |> filter(ABBR == "USA")
+usa_base <- usa_row$pwd_computer / (usa_row$pwd_computer_pct / 100)
+
+tech_national <- tibble::tibble(
+  measure  = c("Computer", "Internet", "Smartphone"),
+  pwd      = c(usa_row$pwd_computer_pct,  usa_row$pwd_int_pct,  usa_row$pwd_smartphone_pct),
+  nodis    = c(usa_row$pwod_computer_pct, usa_row$pwod_int_pct, usa_row$pwod_smartphone_pct),
+  have     = c(usa_row$pwd_computer, usa_row$pwd_int, usa_row$pwd_smartphone)) |>
+  mutate(gap = nodis - pwd, lack = usa_base - have)
+
+list(pums_vintage = tech_prov$vintage_label,
+     national = tech_national |> mutate(across(where(is.numeric), \(x) round(x, 2))),
+     tiers = lapply(tech[c("tier_computer", "tier_internet", "tier_smartphone")],
+                    table, useNA = "ifany"))
+```
+
+```{r tech-build}
+#| label: tech-build
+build_technology <- function(tech, pums_year, cfg) {
+
+  pct1 <- function(x) fmt_pct(x, 1)
+
+  source_line <- paste0(
+    "Source: U.S. Census Bureau, American Community Survey 5-year Public Use ",
+    "Microdata Sample (", pums_year - 4, "&ndash;", pums_year,
+    "), tabulated by ADA-PARC.")
+
+  specs <- list(
+    list(
+      id = "tech-computer", heading = NULL,
+      map_title     = "People with Disabilities Living in a Household with a Computer, by State",
+      table_heading = "People with Disabilities Living in a Household with a Computer, by State",
+      value_col = "computer", tier_col = "tier_computer",
+      direction = "high_good",
+      value_label = "Computer access",
+      svg_title = paste0("People with disabilities living in a household with ",
+                         "a laptop or desktop computer, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the highest share of people with ",
+        "disabilities living in a household with a computer; lighter gold ",
+        "(Poor) marks the lowest. Full data is in the tables below."),
+      legend_best = "highest share", legend_worst = "lowest share",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw share. <em>Darker ",
+        "maroon</em> marks the most favorable outcomes (Excellent), here the ",
+        "highest share of people with disabilities living in a household with ",
+        "a computer. <em>Lighter gold</em> marks the least favorable (Poor)."),
+      caption = paste0(
+        "Darker maroon = a higher percentage of people with disabilities ",
+        "living in a household with a laptop or desktop computer (better). ",
+        source_line),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("computer", "n_computer"),
+      cell_fmts = list(pct1, fmt_count),
+      table_note = paste0(
+        "Excellent = the largest share living in a household with a computer. ",
+        "Poor = the smallest share."),
+      lead = cfg$computer_lead),
+
+    list(
+      id = "tech-internet", heading = "Internet Access",
+      map_title     = "People with Disabilities Living in a Household with an Internet Subscription, by State",
+      table_heading = "People with Disabilities Living in a Household with an Internet Subscription, by State",
+      value_col = "internet", tier_col = "tier_internet",
+      direction = "high_good",
+      value_label = "Internet access",
+      svg_title = paste0("People with disabilities living in a household with ",
+                         "an internet subscription, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the highest share of people with ",
+        "disabilities living in a household with an internet subscription; ",
+        "lighter gold (Poor) marks the lowest."),
+      legend_best = "highest share", legend_worst = "lowest share",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw share. <em>Darker ",
+        "maroon</em> marks the most favorable outcomes (Excellent), here the ",
+        "highest share with a household internet subscription. <em>Lighter ",
+        "gold</em> marks the least favorable (Poor). The states differ less on ",
+        "this measure than on the other two, so the bands are narrow; read the ",
+        "legend ranges, not the shade alone."),
+      caption = paste0(
+        "Darker maroon = a higher percentage of people with disabilities ",
+        "living in a household with an internet subscription of any kind, paid ",
+        "or provided free (better). ", source_line),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("internet", "n_internet"),
+      cell_fmts = list(pct1, fmt_count),
+      table_note = paste0(
+        "Excellent = the largest share with a household internet subscription. ",
+        "Poor = the smallest share."),
+      lead = cfg$internet_lead),
+
+    list(
+      id = "tech-smartphone", heading = "Smartphone Access",
+      map_title     = "People with Disabilities Living in a Household with a Smartphone, by State",
+      table_heading = "People with Disabilities Living in a Household with a Smartphone, by State",
+      value_col = "smartphone", tier_col = "tier_smartphone",
+      direction = "high_good",
+      value_label = "Smartphone access",
+      svg_title = paste0("People with disabilities living in a household with ",
+                         "a smartphone, by U.S. state"),
+      svg_desc = paste0(
+        "Choropleth of the 50 states and DC shaded by performance tier. Darker ",
+        "maroon (Excellent) marks the highest share of people with ",
+        "disabilities living in a household with a smartphone; lighter gold ",
+        "(Poor) marks the lowest."),
+      legend_best = "highest share", legend_worst = "lowest share",
+      direction_note = paste0(
+        "States are shaded by performance tier, not by raw share. <em>Darker ",
+        "maroon</em> marks the most favorable outcomes (Excellent), here the ",
+        "highest share living in a household with a smartphone. <em>Lighter ",
+        "gold</em> marks the least favorable (Poor). A strong result here does ",
+        "not offset a weak one on the computer map; read the two together."),
+      caption = paste0(
+        "Darker maroon = a higher percentage of people with disabilities ",
+        "living in a household with a smartphone (better). ", source_line),
+      col_headers = c("State", "Percent", "People"),
+      cell_cols = c("smartphone", "n_smartphone"),
+      cell_fmts = list(pct1, fmt_count),
+      table_note = paste0(
+        "Excellent = the largest share living in a household with a ",
+        "smartphone. Poor = the smallest share."),
+      lead = cfg$smartphone_lead)
+  )
+
+  built    <- lapply(specs, fs_indicator_section, data = tech)
+  sections <- paste(vapply(built, `[[`, character(1), "html"), collapse = "\n")
+  map_js   <- paste(vapply(built, `[[`, character(1), "js"),   collapse = "\n\n")
+
+  ord <- order(tech$name)
+
+  combined <- fs_state_table(
+    caption = paste0("Computer, internet and smartphone access among people ",
+                     "with disabilities, by state"),
+    aria_label = paste0("Percentage of people with disabilities living in a ",
+                        "household with a computer, with an internet ",
+                        "subscription, and with a smartphone, by state"),
+    names = tech$name[ord],
+    cols  = list(tech$computer[ord], tech$internet[ord], tech$smartphone[ord]),
+    col_headers = c("State", "Computer", "Internet", "Smartphone"),
+    emphasis_col = 1)
+
+  head_html <- fs_html_head(
+    title = "Technology Access | ADA-PARC Factsheet",
+    description = paste0(
+      "ADA-PARC factsheet on technology access among people with ",
+      "disabilities, covering computers, home internet subscriptions and ",
+      "smartphones, with state-by-state data."),
+    extra_css = "")
+
+  header_html <- fs_header("Technology Access", "Community Participation")
+
+  main_html <- paste0(
+'
+', fs_population_note(
+  "People with disabilities living in occupied housing units",
+  paste0("The three questions are asked of households, so this sheet counts ",
+         "people living in a house or apartment. People living in nursing ",
+         "homes, group homes, correctional facilities or other group quarters ",
+         "are outside the count and outside the base. That is a narrower ",
+         "population than the one used on the Community Living fact sheets, ",
+         "which count everyone.")), '
+', fs_intro(cfg$intro, pums_year = pums_year), '
+
+', sections, '
+
+    <h2 class="section-heading">All Three Measures Together</h2>
+
+', paste0("    <p>", unlist(cfg$combined_table_lead), "</p>", collapse = "\n"), '
+
+', combined, '
+
+', fs_footnotes(cfg$footnotes, pums_year = pums_year), '
+')
+
+  fs_write_file(
+    path = file.path(out_dir, "factsheet-technology.html"),
+    head_html = head_html, header_html = header_html,
+    main_html = main_html, footer_html = fs_footer(),
+    scripts_html = fs_scripts(map_js))
+}
+
+tech_path <- build_technology(tech, pums_year, content$technology)
+tech_path
+```
+
+```{r tech-validate}
+#| label: tech-validate
+#| echo: false
+cat("Wrote:", tech_path, "\n")
+cat("File size:", file.info(tech_path)$size, "bytes\n\n")
+
+cat("PUMS vintage: ", tech_prov$vintage_label, "\n", sep = "")
+cat("Universe rule: ", tech_prov$universe_rule, "\n", sep = "")
+cat("Margins: ", tech_prov$moe_method, "\n\n", sep = "")
+
+cat("Tier counts:\n")
+print(tech |> count(tier_computer,   name = "computer"))
+print(tech |> count(tier_internet,   name = "internet"))
+print(tech |> count(tier_smartphone, name = "smartphone"))
+
+cat("\nLegend breaks:\n")
+for (v in names(tech_breaks)) {
+  cat("  ", sprintf("%-11s", v), " ",
+      paste(formatC(tech_breaks[[v]], format = "f", digits = 1), collapse = ", "),
+      "\n", sep = "")
+}
+
+cat("\nThe identity the sheet rests on: one denominator, three indicators.\n")
+cat("  worst relative spread across jurisdictions: ",
+    format(max(tech_universe$spread / tech_universe$den_computer),
+           scientific = TRUE, digits = 2), "\n", sep = "")
+
+cat("\nNational figures quoted as fixed text in docs/factsheet-prose.docx.\n")
+cat("If any of these move, edit the Word document and re-run",
+    "scripts/prose_docx_to_yml.R.\n")
+print(tech_national |> mutate(across(where(is.numeric), \(x) round(x, 2))))
+
+cat("\nSmartphone access less computer access, the substitution the sheet",
+    "describes:\n")
+sub_gap <- tech |>
+  filter(!is.na(fips)) |>
+  transmute(name, gap = smartphone - computer)
+cat("  national ",
+    round(tech_national$pwd[3] - tech_national$pwd[1], 1), " points; ",
+    sum(sub_gap$gap > 0), " of ", nrow(sub_gap),
+    " jurisdictions have more smartphone access than computer access\n", sep = "")
+print(sub_gap |> arrange(desc(gap)) |> head(3))
+print(sub_gap |> arrange(gap) |> head(3))
+
+cat("\nPuerto Rico is in the tables and off the maps:\n")
+print(tech |> filter(ABBR == "PR") |>
+        select(name, fips, computer, internet, smartphone,
+               tier_computer, tier_internet, tier_smartphone))
+```

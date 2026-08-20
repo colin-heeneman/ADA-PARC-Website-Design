@@ -76,6 +76,15 @@
     .skip-link { position: absolute; top: -3rem; left: 1rem; background: var(--navy); color: #fff; padding: .5rem 1rem; border-radius: 0 0 4px 4px; font-weight: 600; text-decoration: none; z-index: 100; transition: top .2s; }
     .skip-link:focus { top: 0; }
     :focus-visible { outline: 3px solid #0d3b8e; outline-offset: 2px; border-radius: 2px; }
+    /* Reserve the scrollbar on BOTH edges. A sheet is normally read inside the
+       iframe on the site's Fact Sheets tab, where the scrollbar is taken out of
+       one side of the content box only, so the centred wrapper lands about half
+       a scrollbar left of the frame's true centre and the whole document reads
+       as slightly off-axis against the centred page heading above it. Reserving
+       the gutter on both edges costs about 15px of measure and puts the wrapper
+       back on the axis. Browsers without support fall back to the old
+       behaviour, which is what they do today. */
+    html { scrollbar-gutter: stable both-edges; }
     .page-wrapper { max-width: 900px; margin: 0 auto; background: var(--bg-card); box-shadow: 0 2px 16px rgba(28,43,58,.10); }
     /* Header
        The gold banner with two typeset word-logos was replaced 2026-08-04 by a
@@ -89,7 +98,14 @@
        The fill is --navy, the same ink as the section headings and the table
        heads, so the page reads as one dark and one accent family rather than
        two competing blues. White on --navy is 14.43:1. */
-    .factsheet-header { background: var(--navy); color: #ffffff; padding: 1.15rem 1.5rem; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.5rem; border-bottom: 3px solid var(--navy-dark); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* The side columns are 1fr each and the title column is auto, so the title
+       block sits on the banner's true centre. The previous `auto 1fr auto`
+       sized each side column to its own mark, and the marks are not the same
+       width: the icon is a single narrow glyph, the wordmark is two lines of
+       type roughly 60px wider. The title was therefore centred in the space
+       LEFT OVER, which put it about 30px left of centre and read as a crooked
+       page once the banner sat under a centred heading on the site. */
+    .factsheet-header { background: var(--navy); color: #ffffff; padding: 1.15rem 1.5rem; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1.5rem; border-bottom: 3px solid var(--navy-dark); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     /* Fixed px, not rem: these are raster marks and a fractional height
        resamples into visibly soft edges at the glyph corners.
        Both marks are sized by HEIGHT so they share an optical baseline; the
@@ -97,8 +113,10 @@
        width rule would set its height by accident. The icon was reduced from
        58px to 44px: it is a single figure beside a two-line wordmark, and at
        equal height it out-weighed the wordmark and crowded the title block. */
-    .brand-icon { height: 44px; width: auto; display: block; }
-    .brand-wordmark { height: 54px; width: auto; display: block; }
+    /* justify-self keeps each mark against its outer edge now that its column
+       is flexible rather than shrink-to-fit. */
+    .brand-icon { height: 44px; width: auto; display: block; justify-self: start; }
+    .brand-wordmark { height: 54px; width: auto; display: block; justify-self: end; }
     .header-title { text-align: center; }
     /* Title is the topic, subtitle is the ADA-PARC outcome category beneath it.
        The pair mirrors the title/category registry in ADA_PARC.Rmd, so a sheet's
@@ -111,6 +129,12 @@
     .factsheet-body { padding: 2rem 2.5rem; }
     .intro-section p { margin-bottom: 1rem; }
     .intro-section p:last-child { margin-bottom: 0; }
+    /* Lead paragraphs that introduce a map. The global reset zeroes p margins,
+       so without this they sit flush against whatever precedes them. On the
+       first section of a sheet there is no heading between the intro block and
+       the lead, so that adjacency carries the top gap itself. */
+    .section-lead { margin-bottom: 1rem; }
+    .intro-section + .section-lead { margin-top: 1.5rem; }
     .section-heading { font-size: 1.25rem; font-weight: 700; color: var(--navy); margin: 2rem 0 .75rem; padding-bottom: .4rem; border-bottom: 2px solid var(--border); }
     /* Direction note (the "How to read the colors" callouts)
        Was pale green with dark-green rules and dark-green <strong>; moved to a
@@ -290,12 +314,12 @@
 
       <p>Nationally, <strong>43 percent</strong> of working-age people with disabilities are employed, compared with <strong>78 percent</strong> of working-age people without disabilities. Put another way, a person without a disability is close to <strong>twice as likely</strong> to be working.</p>
 
-      <p>This fact sheet shows the three employment situations the Census Bureau distinguishes for people aged 18 to 64. A person is <strong>employed</strong>, <strong>unemployed</strong> (not working but actively looking for work), or <strong>not in the labor force</strong> (neither working nor looking). Everyone is counted in exactly one of the three, so for each group the shares add to 100 percent.<sup>2</sup> These figures were checked against the source Census table directly, and reconcile exactly.<sup>3</sup></p>
+      <p>This fact sheet shows the three employment situations the Census Bureau distinguishes for people aged 18 to 64. A person is <strong>employed</strong>, <strong>unemployed</strong> (not working but actively looking for work), or <strong>not in the labor force</strong> (neither working nor looking). Everyone is counted in exactly one of the three, so for each group the shares add to 100 percent.<sup>2</sup></p>
 
       <p>The largest difference is not in unemployment but in labor force participation. Just under half of working-age people with disabilities are in the labor force at all, against more than four in five people without disabilities. Barriers to getting and keeping a job, including inaccessible workplaces, transportation, benefit rules that penalize earnings, and outright discrimination, show up here rather than in the unemployment figure.</p>
     </section>
 
-    <p>The share of working-age people with disabilities who are employed. This is the headline measure of whether a state's economy is open to disabled workers, and it varies widely, from roughly a third to well over half depending on where a person lives.</p>
+    <p class="section-lead">The map below shows the share of working-age people with disabilities who are employed in each state. It is the headline measure on this sheet, and the spread across states is wide, from roughly a third of the age group in the lowest states to more than half in the highest.</p>
     <div class="direction-note" role="note">
       <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the most favorable outcomes (Excellent), here the highest share of working-age people with disabilities in work. <em>Lighter gold</em> marks the least favorable outcomes (Poor).
     </div>
@@ -434,7 +458,7 @@
     </div>
 
     <h2 class="section-heading">Unemployed</h2>
-    <p>The share of <em>all</em> working-age people with disabilities who are unemployed, meaning not working but actively looking for work. Because the denominator is everyone in the age group rather than only those in the labor force, this figure is not the unemployment rate as it is usually reported. Both measures appear in the table further down, and they tell different stories.</p>
+    <p class="section-lead">The share of <em>all</em> working-age people with disabilities who are unemployed, meaning not working but actively looking for work. Because the denominator is everyone in the age group rather than only those in the labor force, this figure is not the unemployment rate as it is usually reported. Both measures appear in the table further down, and they tell different stories.</p>
     <div class="direction-note" role="note">
       <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the lowest share of working-age people with disabilities who are unemployed. <em>Lighter gold</em> marks the highest.
     </div>
@@ -572,8 +596,8 @@
     </div>
 
     <h2 class="section-heading">Not in the Labor Force</h2>
-    <p>The share of working-age people with disabilities who are neither working nor looking for work. This is the largest of the three categories for disabled people and the smallest for everyone else, which is the central finding of this sheet.</p>
-    <p>The category covers a range of situations, including study, caregiving, and retirement before 65, alongside people who have stopped looking after sustained difficulty finding work. It is shaded so that lower shares read as the more favorable outcome, on the reasoning that a person who wants to work should be able to. That framing will not fit every individual it counts.</p>
+    <p class="section-lead">The share of working-age people with disabilities who are neither working nor looking for work. This is the largest of the three categories for disabled people and the smallest for everyone else, which is the central finding of this sheet.</p>
+    <p class="section-lead">The category covers a range of situations, including study, caregiving, and retirement before 65, alongside people who have stopped looking after sustained difficulty finding work. It is shaded so that lower shares read as the more favorable outcome, on the reasoning that a person who wants to work should be able to. That framing will not fit every individual it counts.</p>
     <div class="direction-note" role="note">
       <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the lowest share of working-age people with disabilities outside the labor force. <em>Lighter gold</em> marks the highest. This category covers study, caregiving and early retirement as well as people who have stopped looking for work, so read the tier labels alongside the note above the map.
     </div>
@@ -921,7 +945,6 @@
       <ol>
         <li>Americans With Disabilities Act of 1990. Pub. L. 101-336. &sect; 1 and Title I. 26 July 1990. 104 Stat. 328.</li>
         <li>U.S. Census Bureau. American Community Survey 5-year estimates (2020&ndash;2024). Table ACSDT5Y2024.C18120, Employment Status by Disability Status. Universe: civilian noninstitutionalized population aged 18 to 64. Each share is calculated over the sum of the three C18120 categories for the same disability group, so the categories are mutually exclusive and sum to 100 percent.</li>
-        <li>These values were independently verified in July 2026 against a fresh pull of Table C18120 from the Census Bureau API, reconciling exactly across all national, state and place records. See <em>ADA-PARC Employment Indicator Audit</em> and scripts/audit_employment_acs.R.</li>
       </ol>
     </div>
 
@@ -1005,6 +1028,24 @@ const ADAPARC_TIER_LABEL_MAGNITUDE = {
   na:        "No data available"
 };
 
+// Neutral alternative for a low-is-better indicator drawn on a SHARED scale
+// across two populations, e.g. the poverty fact sheet's all-ages pair, where
+// both panels are cut on breaks pooled from the with-disability and
+// without-disability series. On a shared scale the tiers no longer rank a state
+// among states; they say which band of one common rate scale it falls in, and a
+// panel can legitimately hold none of a band. Calling that band "Poor" would
+// attribute a national disability gap to 24 individual states. The ramp is
+// unchanged and still runs darker = lower rate = better outcome. Bands are
+// named low to high because "excellent" is the darkest key and, under
+// low_good, the lowest rate.
+const ADAPARC_TIER_LABEL_BAND_LOW = {
+  excellent: "Lowest band on the shared scale",
+  above:     "Second lowest band on the shared scale",
+  below:     "Second highest band on the shared scale",
+  poor:      "Highest band on the shared scale",
+  na:        "No data available"
+};
+
 // FIPS -> full state name
 const NAMES = {
   "01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California",
@@ -1063,7 +1104,10 @@ function __ensureTooltip(container, liveId) {
  * @param {object} [opts.tierLabels]  optional tier -> label map. Defaults to the
  *                                    performance labels. Pass
  *                                    ADAPARC_TIER_LABEL_MAGNITUDE for indicators
- *                                    with no better/worse direction.
+ *                                    with no better/worse direction, or
+ *                                    ADAPARC_TIER_LABEL_BAND_LOW for a
+ *                                    low-is-better indicator drawn on a scale
+ *                                    shared with a second population.
  */
 async function adaparcRenderMap(opts) {
   const { containerId, descId, stateData, svgTitle, svgDesc, valueLabel } = opts;
@@ -1231,6 +1275,7 @@ window.adaparcRenderMap = adaparcRenderMap;
 window.ADAPARC_TIER_COLOR = ADAPARC_TIER_COLOR;
 window.ADAPARC_TIER_LABEL = ADAPARC_TIER_LABEL;
 window.ADAPARC_TIER_LABEL_MAGNITUDE = ADAPARC_TIER_LABEL_MAGNITUDE;
+window.ADAPARC_TIER_LABEL_BAND_LOW = ADAPARC_TIER_LABEL_BAND_LOW;
 
 
 const EMP_EMPLOYED_DATA = {

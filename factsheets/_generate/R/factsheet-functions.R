@@ -207,17 +207,26 @@ fs_ranges_open_high <- function(breaks, digits = 0, unit = "%") {
 #               get flag_class on the with-disability cell. The poverty sheet
 #               uses this to mark rates above 25 percent.
 #   flag_class  CSS class applied when flag_fn is TRUE
+#   flag_label  text equivalent for the flag, appended to the cell inside an
+#               .sr-only span. Without it the flag is carried by colour and font
+#               weight alone, which a screen reader cannot convey and a
+#               colour-blind reader may not distinguish. The sentence above the
+#               table explains what the flag means, but a person moving through
+#               the table cell by cell never reaches that sentence.
 fs_compare_table <- function(caption, aria_label, names, dis, nod,
                              col_dis = "With Disability",
                              col_nod = "No Disability",
                              fmt = function(x) fmt_pct(x, 1),
                              flag_fn = NULL,
-                             flag_class = "high-poverty") {
+                             flag_class = "high-poverty",
+                             flag_label = NULL) {
   rows <- vapply(seq_along(names), function(i) {
     flagged <- !is.null(flag_fn) && !is.na(dis[i]) && isTRUE(flag_fn(dis[i]))
     cls <- if (flagged) paste0(' class="', flag_class, '"') else ""
-    paste0("            <tr><td>", fs_esc(names[i]), "</td><td", cls, ">",
-           fmt(dis[i]), "</td><td>", fmt(nod[i]), "</td></tr>")
+    note <- if (flagged && !is.null(flag_label))
+      paste0('<span class="sr-only"> ', fs_esc(flag_label), '</span>') else ""
+    paste0('            <tr><th scope="row">', fs_esc(names[i]), "</th><td", cls, ">",
+           fmt(dis[i]), note, "</td><td>", fmt(nod[i]), "</td></tr>")
   }, character(1))
   paste0(
 '      <div class="state-table-wrapper">
@@ -237,6 +246,58 @@ fs_compare_table <- function(caption, aria_label, names, dis, nod,
       </div>')
 }
 
+# A state table of arbitrary width, for the case fs_compare_table() cannot
+# express: several measures of the SAME population side by side, rather than one
+# measure for two populations. Technology Access needs it because its three
+# indicators are tiered independently, so a state's three figures are scattered
+# across three different tier tables and never appear together anywhere else on
+# the sheet.
+#
+# `cols` is a list of numeric vectors, one per data column, all the same length
+# as `names`. `col_headers` names the state column and every data column, so
+# length(col_headers) must be length(cols) + 1; that is asserted rather than
+# recycled, because a silently short header vector produces a table whose
+# columns are mislabelled and still renders.
+fs_state_table <- function(caption, aria_label, names, cols, col_headers,
+                           fmt = function(x) fmt_pct(x, 1),
+                           emphasis_col = NULL) {
+  stopifnot(
+    is.list(cols), length(cols) >= 1,
+    "col_headers must name the state column and every data column" =
+      length(col_headers) == length(cols) + 1,
+    "every column must be the same length as names" =
+      all(vapply(cols, length, integer(1)) == length(names))
+  )
+
+  th <- vapply(seq_along(col_headers), function(k) {
+    cls <- if (!is.null(emphasis_col) && k == emphasis_col + 1L)
+      ' class="disability-col"' else ""
+    paste0('              <th scope="col"', cls, ">", col_headers[k], "</th>")
+  }, character(1))
+
+  rows <- vapply(seq_along(names), function(i) {
+    cells <- vapply(cols, function(v) paste0("<td>", fmt(v[i]), "</td>"),
+                    character(1))
+    paste0('            <tr><th scope="row">', fs_esc(names[i]), "</th>",
+           paste(cells, collapse = ""), "</tr>")
+  }, character(1))
+
+  paste0(
+'      <div class="state-table-wrapper">
+        <table aria-label="', fs_esc(aria_label), '">
+          <caption>', caption, '</caption>
+          <thead>
+            <tr>
+', paste(th, collapse = "\n"), '
+            </tr>
+          </thead>
+          <tbody>
+', paste(rows, collapse = "\n"), '
+          </tbody>
+        </table>
+      </div>')
+}
+
 # Deprecated alias. Retained so the existing poverty build chunk renders
 # byte-identical output while the sheets migrate to fs_compare_table().
 fs_poverty_table <- function(caption, aria_label, names, dis, nod,
@@ -244,7 +305,8 @@ fs_poverty_table <- function(caption, aria_label, names, dis, nod,
   fs_compare_table(caption = caption, aria_label = aria_label, names = names,
                    dis = dis, nod = nod,
                    flag_fn = function(v) v > high_thresh,
-                   flag_class = "high-poverty")
+                   flag_class = "high-poverty",
+                   flag_label = paste0("(above ", high_thresh, " percent)"))
 }
 
 # ---- Community Living derived measures ---------------------------------------
@@ -789,16 +851,69 @@ fs_fill_years <- function(x, acs_year = NULL, source_year = NULL,
   # Technology Access is built from the ACS Public Use Microdata Sample, a
   # different vintage and methodology from the five-year table estimates behind
   # every other sheet. It needs its own token so {acs_year} never silently
-  # prints the wrong year in a PUMS citation.
+  # prints the wrong year in a PUMS citation. {pums_start} is derived rather
+  # than passed separately, because a five-year sample cannot have one without
+  # the other and two independent arguments could disagree.
   if (!is.null(pums_year)) {
-    x <- gsub("{pums_year}", pums_year, x, fixed = TRUE)
+    x <- gsub("{pums_start}", as.integer(pums_year) - 4, x, fixed = TRUE)
+    x <- gsub("{pums_year}",  pums_year,                 x, fixed = TRUE)
   }
   x
 }
 
+# Substitute computed figures into prose, so a number quoted in the editorial
+# document is filled from the data at render time instead of typed by hand.
+#
+# The problem this solves. Employment and Education quote national percentages
+# in their introductions as literal text, with a comment in the build chunk
+# telling whoever bumps the vintage to check them against a validation tibble.
+# That is a reminder, not a mechanism. A number that is only correct because
+# somebody remembered to look is a number that will eventually be wrong, and it
+# will be wrong in the one part of the sheet a reader is most likely to quote.
+#
+# `values` is a named character vector. Names are token names without braces, so
+# c(pov_dis_all = "20.4") fills every {pov_dis_all} in the prose. Formatting is
+# the caller's job, because the number of decimal places is an editorial
+# decision and belongs beside the sentence, not in here.
+fs_fill_values <- function(x, values = NULL) {
+  if (is.null(values) || length(values) == 0) return(x)
+  stopifnot(
+    "values must be a named vector" = !is.null(names(values)),
+    "every value must be named" = all(nzchar(names(values)))
+  )
+  for (nm in names(values)) {
+    x <- gsub(paste0("{", nm, "}"), values[[nm]], x, fixed = TRUE)
+  }
+  x
+}
+
+# Stop if any {token} survived substitution.
+#
+# Without this a misspelled token renders as a literal "{pov_dis_all}" in the
+# middle of a published sentence. That is the failure mode worth being loud
+# about: the sheet still builds, still validates, still promotes, and the defect
+# is visible only to whoever reads the finished page closely. Every token in
+# every sheet resolves today, so this is a floor rather than a change.
+fs_assert_no_tokens <- function(x, where) {
+  # Digits are in the class deliberately. Token names carry age bands, so
+  # {pov_ratio_1864} is a real token; a letters-only pattern would walk straight
+  # past the ones most likely to be mistyped.
+  left <- unique(unlist(regmatches(x, gregexpr("\\{[a-z0-9_]+\\}", x))))
+  if (length(left) > 0) {
+    stop("Unresolved placeholder(s) in ", where, ": ",
+         paste(left, collapse = ", "),
+         ". Either the token is misspelled in docs/factsheet-prose.docx, or the ",
+         "build chunk did not pass a value for it.")
+  }
+  invisible(x)
+}
+
 # Render the intro <section> from a character vector of paragraph HTML strings.
-fs_intro <- function(paragraphs, acs_year = NULL, source_year = NULL) {
-  ps <- fs_fill_years(unlist(paragraphs), acs_year, source_year)
+fs_intro <- function(paragraphs, acs_year = NULL, source_year = NULL,
+                     pums_year = NULL, values = NULL) {
+  ps <- fs_fill_years(unlist(paragraphs), acs_year, source_year, pums_year)
+  ps <- fs_fill_values(ps, values)
+  fs_assert_no_tokens(ps, "the introduction")
   body <- paste0("      <p>", ps, "</p>", collapse = "\n\n")
   paste0(
 '    <section class="intro-section" aria-label="Introduction">
@@ -806,10 +921,29 @@ fs_intro <- function(paragraphs, acs_year = NULL, source_year = NULL) {
     </section>')
 }
 
+# Render one or more section-lead paragraphs, filling computed figures the same
+# way the introduction does. The section builder renders leads itself, so this
+# exists for the sheets that place a lead by hand.
+fs_lead <- function(paragraphs, acs_year = NULL, source_year = NULL,
+                    pums_year = NULL, values = NULL) {
+  # A missing lead means the prose has not been written yet, which is a real
+  # state during a rebuild. Return nothing rather than an empty paragraph, so a
+  # half-written sheet does not render a stray blank line above its map.
+  if (is.null(paragraphs) || length(unlist(paragraphs)) == 0) return("")
+  ps <- fs_fill_years(unlist(paragraphs), acs_year, source_year, pums_year)
+  ps <- fs_fill_values(ps, values)
+  fs_assert_no_tokens(ps, "a section lead")
+  paste0("    ", paste0('<p class="section-lead">', ps, "</p>",
+                        collapse = "\n    "))
+}
+
 # Render the numbered data-source footnotes from a character vector.
 fs_footnotes <- function(items, acs_year = NULL, source_year = NULL,
-                         aria_label = "Data sources") {
-  lis <- fs_fill_years(unlist(items), acs_year, source_year)
+                         aria_label = "Data sources", pums_year = NULL,
+                         values = NULL) {
+  lis <- fs_fill_years(unlist(items), acs_year, source_year, pums_year)
+  lis <- fs_fill_values(lis, values)
+  fs_assert_no_tokens(lis, "the footnotes")
   body <- paste0("        <li>", lis, "</li>", collapse = "\n")
   paste0(
 '    <div class="footnotes" role="note" aria-label="', fs_esc(aria_label), '">
@@ -819,21 +953,20 @@ fs_footnotes <- function(items, acs_year = NULL, source_year = NULL,
     </div>')
 }
 
-# Render the poverty summary-stat callout grid from a list of
-# list(number=, label=) entries.
-fs_summary_stats <- function(stats) {
-  cards <- vapply(stats, function(s) {
-    paste0(
-'      <div class="summary-stat">
-        <div class="stat-number">', s$number, '</div>
-        <div class="stat-label">', s$label, '</div>
-      </div>')
-  }, character(1))
-  paste0(
-'    <div class="summary-stats" aria-label="Key statistics">
-', paste(cards, collapse = "\n"), '
-    </div>')
-}
+# fs_summary_stats() was removed on 10 August 2026.
+#
+# It rendered the callout card grid that appeared on Poverty and nowhere else,
+# inherited from the hand-built PDF that sheet was reverse-engineered from. Two
+# of its three cards restated a National Council on Disability figure that was
+# garbled in transcription and traced to survey panels from 1996 to 1999; the
+# third restated a number the introduction already gave. Poverty was rebuilt to
+# quote its national figures in the introduction, the way the other nine sheets
+# do, which left this function with no callers.
+#
+# If a card grid is wanted again, it should come back as a shared element on all
+# ten sheets rather than as one sheet's inheritance. The removed implementation
+# is in the git history; docs/poverty-factsheet-plan.qmd section 4 has the
+# reasoning.
 
 # Render an "About These Data" note box from a list(title=, body=). Used to make
 # data attribution explicit on a factsheet. Semantics mirror the direction-note
@@ -1023,14 +1156,39 @@ fs_scripts <- function(tail_js) {
 
 # One tier table block (header chip + table). `cells` is a list of character
 # vectors, one per data column (already formatted). `col_headers` names them.
+#
+# `aria_label` names the table. It is rendered as a real <caption>, styled
+# .sr-only so the visible design is unchanged: the coloured tier chip above the
+# table already carries the same words for a sighted reader, and it stays
+# aria-hidden so the label is not announced twice. <caption> rather than an
+# aria-label on the <table> because caption is the native mechanism, it is what
+# screen readers expose when a user lists or steps between tables, and an
+# aria-label on a table is honoured less consistently. The parameter keeps its
+# old name so every caller reads unchanged.
+#
+# Two defects fixed 2026-08-11, both found by the fact sheet audit:
+#
+#   1. The column-header class was chosen with ifelse() against
+#      `disability_col`, which defaults to NA_integer_. `seq_along(x) == NA`
+#      is NA, ifelse() returns NA, and paste0() renders that as the literal
+#      string "NA", so every quartile table on every sheet emitted
+#      `<th scope="col"NA>`. That is not valid HTML and a parser is free to
+#      drop the scope. Guarded with an explicit is.na() test so the default
+#      case produces a bare `<th scope="col">`.
+#   2. State names sat in <td>. They identify their row, so they are
+#      <th scope="row"> now; without it a screen reader reading a data cell
+#      cannot say which state it belongs to. `tbody th` is styled in
+#      factsheet-base.css to render identically to `tbody td`, so nothing
+#      moves on the page.
 fs_tier_table <- function(tier, col_headers, state_names, cells, aria_label,
                           disability_col = NA_integer_,
                           tier_labels = FS_TIER_LABELS_PERF) {
+  is_dis_col <- !is.na(disability_col) & seq_along(col_headers) == disability_col
   thead <- paste0(
     "            <tr>\n",
     paste0(
       "              <th scope=\"col\"",
-      ifelse(seq_along(col_headers) == disability_col, " class=\"disability-col\"", ""),
+      ifelse(is_dis_col, " class=\"disability-col\"", ""),
       ">", col_headers, "</th>",
       collapse = "\n"
     ),
@@ -1039,7 +1197,7 @@ fs_tier_table <- function(tier, col_headers, state_names, cells, aria_label,
   body_rows <- vapply(seq_along(state_names), function(i) {
     tds <- paste0("<td>", vapply(cells, function(col) col[i], character(1)), "</td>",
                   collapse = "")
-    paste0("              <tr><td>", state_names[i], "</td>", tds, "</tr>")
+    paste0('              <tr><th scope="row">', state_names[i], "</th>", tds, "</tr>")
   }, character(1))
 
   tier_label <- tier_labels[[tier]]
@@ -1047,7 +1205,8 @@ fs_tier_table <- function(tier, col_headers, state_names, cells, aria_label,
   paste0(
 '        <div class="tier-table-group">
           <span class="tier-header ', tier, '" aria-hidden="true">', tier_label, '</span>
-          <table aria-label="', fs_esc(aria_label), '">
+          <table>
+            <caption class="sr-only">', fs_esc(aria_label), '</caption>
             <thead>
 ', thead, '
             </thead>
@@ -1060,19 +1219,25 @@ fs_tier_table <- function(tier, col_headers, state_names, cells, aria_label,
 
 # The JS data object + render call for one map.
 #   data: data.frame with columns fips (chr, 2-digit), tier (chr), display (chr)
-#   tier_labels: "performance" (default) or "magnitude". The magnitude set is
-#     passed through to the renderer so tooltips and per-state aria-labels read
-#     "Highest quarter" rather than "Excellent" on indicators with no direction.
+#   tier_labels: "performance" (default), "magnitude" or "band_low". The
+#     alternative sets are passed through to the renderer so tooltips and
+#     per-state aria-labels read "Highest quarter" rather than "Excellent" on
+#     indicators with no direction, or "Lowest band on the shared scale" on a
+#     low-is-better indicator sharing a scale with a second population.
 fs_map_js <- function(obj_name, container_id, desc_id, data, value_label,
                       svg_title, svg_desc,
-                      tier_labels = c("performance", "magnitude")) {
+                      tier_labels = c("performance", "magnitude", "band_low")) {
   tier_labels <- match.arg(tier_labels)
   entries <- paste0(
     '  "', data$fips, '":["', data$tier, '","', data$display, '"]',
     collapse = ",\n")
-  labels_opt <- if (tier_labels == "magnitude") {
-    ',\n  tierLabels:  ADAPARC_TIER_LABEL_MAGNITUDE'
-  } else ""
+  # "band_low": a low-is-better indicator drawn on a scale shared with a second
+  # population, where the tiers rank bands of a common scale rather than states
+  # among states. See the note on ADAPARC_TIER_LABEL_BAND_LOW in adaparc-map.js.
+  labels_opt <- switch(tier_labels,
+    magnitude = ',\n  tierLabels:  ADAPARC_TIER_LABEL_MAGNITUDE',
+    band_low  = ',\n  tierLabels:  ADAPARC_TIER_LABEL_BAND_LOW',
+    "")
   paste0(
 'const ', obj_name, ' = {
 ', entries, '
@@ -1135,7 +1300,9 @@ fs_indicator_section <- function(spec, data) {
   tiers <- data[[spec$tier_col]]
 
   # ---- map ----
-  keep   <- !is.na(tiers)
+  # A row with no FIPS is a jurisdiction the base map cannot draw. It still
+  # belongs in the tables, so it is dropped here rather than upstream.
+  keep   <- !is.na(tiers) & !is.na(data$fips)
   map_df <- data.frame(
     fips    = data$fips[keep],
     tier    = tiers[keep],
@@ -1181,8 +1348,26 @@ fs_indicator_section <- function(spec, data) {
     paste0('    <h2 class="section-heading">', spec$heading, "</h2>\n")
   } else ""
 
+  # The global reset zeroes every margin, so lead paragraphs need a class of
+  # their own to be spaced at all. It also carries the gap above the first
+  # section on a sheet, where the lead follows the intro block directly with no
+  # heading between them (see .intro-section + .section-lead in the stylesheet).
+  # spec$legend_ranges, when supplied, is the named list fs_ranges_closed()
+  # returns, and it prints the numeric range on all four chips instead of the
+  # legend_best / legend_worst wording on the outer two. Sheets whose maps each
+  # carry their own quartile scale need it: without the numbers, "Excellent" on
+  # one map and "Excellent" on the next look like the same claim when they are
+  # two different rates. Sheets with one scale can leave it NULL and keep the
+  # shorter wording.
+  #
+  # spec$values, when supplied, is a named vector of computed figures filled into
+  # the lead the same way fs_intro fills the introduction, so a number quoted in
+  # a section lead tracks the data instead of being typed.
   lead_html <- if (!is.null(spec$lead) && length(unlist(spec$lead)) > 0) {
-    paste0("    ", paste0("<p>", unlist(spec$lead), "</p>", collapse = "\n    "), "\n")
+    lead_txt <- fs_fill_values(unlist(spec$lead), spec$values)
+    fs_assert_no_tokens(lead_txt, paste0("the section lead for '", spec$id, "'"))
+    paste0("    ", paste0('<p class="section-lead">', lead_txt, "</p>",
+                          collapse = "\n    "), "\n")
   } else ""
 
   note_html <- if (!is.null(spec$direction_note)) {
@@ -1209,11 +1394,15 @@ note_html,
       </div>
       <div class="map-legend" aria-label="', fs_esc(paste0("Map color legend for ", spec$value_label)), '">
         <span class="tier-chip excellent">', labels[["excellent"]],
-        if (!is.null(spec$legend_best))  paste0(" (", spec$legend_best, ")")  else "", '</span>
-        <span class="tier-chip above">',  labels[["above"]], '</span>
-        <span class="tier-chip below">',  labels[["below"]], '</span>
+        if (!is.null(spec$legend_ranges)) paste0(" (", spec$legend_ranges[["excellent"]], ")")
+        else if (!is.null(spec$legend_best))  paste0(" (", spec$legend_best, ")")  else "", '</span>
+        <span class="tier-chip above">',  labels[["above"]],
+        if (!is.null(spec$legend_ranges)) paste0(" (", spec$legend_ranges[["above"]], ")") else "", '</span>
+        <span class="tier-chip below">',  labels[["below"]],
+        if (!is.null(spec$legend_ranges)) paste0(" (", spec$legend_ranges[["below"]], ")") else "", '</span>
         <span class="tier-chip poor">',   labels[["poor"]],
-        if (!is.null(spec$legend_worst)) paste0(" (", spec$legend_worst, ")") else "", '</span>
+        if (!is.null(spec$legend_ranges)) paste0(" (", spec$legend_ranges[["poor"]], ")")
+        else if (!is.null(spec$legend_worst)) paste0(" (", spec$legend_worst, ")") else "", '</span>
       </div>
       <figcaption class="map-caption">', spec$caption, '</figcaption>
     </figure>

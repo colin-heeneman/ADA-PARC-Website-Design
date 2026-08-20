@@ -64,6 +64,24 @@ const ADAPARC_TIER_LABEL_MAGNITUDE = {
   na:        "No data available"
 };
 
+// Neutral alternative for a low-is-better indicator drawn on a SHARED scale
+// across two populations, e.g. the poverty fact sheet's all-ages pair, where
+// both panels are cut on breaks pooled from the with-disability and
+// without-disability series. On a shared scale the tiers no longer rank a state
+// among states; they say which band of one common rate scale it falls in, and a
+// panel can legitimately hold none of a band. Calling that band "Poor" would
+// attribute a national disability gap to 24 individual states. The ramp is
+// unchanged and still runs darker = lower rate = better outcome. Bands are
+// named low to high because "excellent" is the darkest key and, under
+// low_good, the lowest rate.
+const ADAPARC_TIER_LABEL_BAND_LOW = {
+  excellent: "Lowest band on the shared scale",
+  above:     "Second lowest band on the shared scale",
+  below:     "Second highest band on the shared scale",
+  poor:      "Highest band on the shared scale",
+  na:        "No data available"
+};
+
 // FIPS -> full state name
 const NAMES = {
   "01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California",
@@ -122,7 +140,10 @@ function __ensureTooltip(container, liveId) {
  * @param {object} [opts.tierLabels]  optional tier -> label map. Defaults to the
  *                                    performance labels. Pass
  *                                    ADAPARC_TIER_LABEL_MAGNITUDE for indicators
- *                                    with no better/worse direction.
+ *                                    with no better/worse direction, or
+ *                                    ADAPARC_TIER_LABEL_BAND_LOW for a
+ *                                    low-is-better indicator drawn on a scale
+ *                                    shared with a second population.
  */
 async function adaparcRenderMap(opts) {
   const { containerId, descId, stateData, svgTitle, svgDesc, valueLabel } = opts;
@@ -290,3 +311,4 @@ window.adaparcRenderMap = adaparcRenderMap;
 window.ADAPARC_TIER_COLOR = ADAPARC_TIER_COLOR;
 window.ADAPARC_TIER_LABEL = ADAPARC_TIER_LABEL;
 window.ADAPARC_TIER_LABEL_MAGNITUDE = ADAPARC_TIER_LABEL_MAGNITUDE;
+window.ADAPARC_TIER_LABEL_BAND_LOW = ADAPARC_TIER_LABEL_BAND_LOW;
