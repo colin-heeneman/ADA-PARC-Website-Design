@@ -27,14 +27,16 @@ execute:
 # matches what is on screen.
 #
 # Bundle contents (see server downloadHandler in ADA_PARC.Rmd):
-#   title        cleaned topic title (character)
-#   category     category label, e.g. "Demographics" (character)
-#   interp_note  interpretation note or "" (character)
-#   source_note  data source sentence (character)
-#   alt_text     plain-language map summary for accessibility (character)
-#   table_df     formatted data frame, first column "State" (data.frame)
-#   map_svg      the state map as inline SVG markup (character)
-#   generated    date string (character)
+#   title         cleaned topic title (character)
+#   category      category label, e.g. "Demographics" (character)
+#   interp_note   interpretation note or "" (character)
+#   source_note   data source sentence (character)
+#   universe_note population / denominator sentence or "" (character)
+#   column_defs   data.frame(term, definition) for the % columns; 0 rows = omit
+#   alt_text      plain-language map summary for accessibility (character)
+#   table_df      formatted data frame, first column "State" (data.frame)
+#   map_svg       the state map as inline SVG markup (character)
+#   generated     date string (character)
 # ─────────────────────────────────────────────────────────────────────────────
 options(cli.width = 80)
 
@@ -50,6 +52,48 @@ ok <- !is.null(b) &&
 val <- function(name, default = "") {
   if (ok && !is.null(b[[name]]) && length(b[[name]]) == 1 &&
       !is.na(b[[name]]) && nzchar(trimws(b[[name]]))) b[[name]] else default
+}
+
+# Audit finding C4, 2026-08-26: this table was previously knitr::kable(...,
+# format = "html"), whose HTML writer never adds a scope attribute to a
+# <thead> th and never emits a <caption> unless a caption string is
+# supplied and styled for it. city_profile.qmd's tables avoid both gaps by
+# building the markup directly (render_comparison_table() in ADA_PARC.Rmd);
+# this does the same for an arbitrary-width data grid rather than a fixed
+# with/without-disability pair.
+#
+# caption is visually hidden (.sr-only, defined in the {css} block below):
+# each table page already carries a visible <h2 class="section-title"> with
+# the same title text directly above it (see the page-two chunk), and a
+# second visible caption repeating that text would just be noise for a
+# sighted reader. A screen reader user still gets the table's name announced
+# because the <caption> is programmatically tied to the <table>, which a
+# preceding heading never is.
+#
+# No inline alignment: table.national-table's CSS already right-aligns every
+# column but the first (thead th:not(:first-child), tbody td default vs.
+# tbody td:first-child), so there is nothing left for a per-cell style to do.
+render_national_table <- function(df, caption) {
+  esc <- htmltools::htmlEscape
+
+  header_cells <- paste0(
+    '<th scope="col">', vapply(names(df), esc, character(1)), '</th>',
+    collapse = ""
+  )
+
+  row_html <- function(row) {
+    cells <- vapply(row, function(x) esc(as.character(x)), character(1))
+    paste0("<tr>", paste0("<td>", cells, "</td>", collapse = ""), "</tr>")
+  }
+  body_rows <- apply(df, 1, row_html)
+
+  paste0(
+    '<table class="national-table">',
+    '<caption class="sr-only">', esc(caption), '</caption>',
+    "<thead><tr>", header_cells, "</tr></thead>",
+    "<tbody>", paste0(body_rows, collapse = ""), "</tbody>",
+    "</table>"
+  )
 }
 ```
 
@@ -139,12 +183,98 @@ h2.section-title .continued { font-weight: 500; color: #555; }
 }
 .map-summary .label { font-weight: 700; color: var(--adaparc-ink); }
 
-.source-note {
-  font-size: 0.95rem;
-  color: #444;
-  margin: 0.75rem 0 0 0;
+/* ── Understanding This Data (mirrors the on-screen card) ────────────────── */
+/* Its own page in print / "Save as PDF"; just a section break on screen.
+   Slate/navy chrome to match the site: navy left bar on each section panel,
+   very light panel fill so text keeps maximum contrast, navy icon chips. */
+.understanding {
+  margin: 1.25rem 0 0 0;
+  break-before: page;
+  page-break-before: always;
 }
-.source-note .label { font-weight: 700; }
+.understanding .section-title { margin-bottom: 0.15rem; }
+.ud-rule {
+  width: 64px;
+  height: 4px;
+  background: var(--adaparc-gold);
+  border-radius: 2px;
+  margin: 0.55rem 0 0 0;
+}
+.ud-block {
+  margin-top: 1.15rem;
+  background: #f6f8fb;
+  border: 1px solid #d5dee8;
+  border-left: 4px solid var(--adaparc-ink);
+  border-radius: 6px;
+  padding: 1.15rem 1.3rem;
+}
+.ud-subhead {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--adaparc-ink);
+  margin: 0 0 0.55rem 0;
+}
+.ud-chip {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--adaparc-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.ud-glyph {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ud-body {
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: #28394a;
+  margin: 0;
+  max-width: 6.8in;
+}
+/* One definition per row: term, then its meaning beneath, hairline-separated. */
+.ud-defs { margin: 0.1rem 0 0 0; }
+.ud-def {
+  padding: 0.7rem 0;
+  border-top: 1px solid #d5dee8;
+}
+.ud-def:first-child { padding-top: 0.25rem; border-top: 0; }
+.ud-def:last-child { padding-bottom: 0.1rem; }
+.ud-def dt {
+  font-weight: 700;
+  color: var(--adaparc-ink);
+  font-size: 0.95rem;
+}
+.ud-def dd {
+  margin: 0.22rem 0 0 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #28394a;
+  max-width: 6.8in;
+}
+.ud-defs-note {
+  font-size: 0.92rem;
+  color: var(--adaparc-ink);
+  background: #ffffff;
+  border: 1px solid #d5dee8;
+  border-left: 3px solid var(--adaparc-ink);
+  border-radius: 4px;
+  padding: 0.55rem 0.8rem;
+  margin: 0.9rem 0 0 0;
+}
 
 /* ── Data table ───────────────────────────────────────────────────────────── */
 .table-wrap { margin-top: 0.5rem; overflow-x: auto; }
@@ -172,6 +302,13 @@ table.national-table tbody td:first-child {
 }
 table.national-table tbody tr:nth-child(even) { background: #f6f3ee; }
 table.national-table thead th:not(:first-child) { text-align: right; }
+
+/* Screen-reader-only table caption. See render_national_table() in the
+   setup chunk (audit finding C4, 2026-08-26). */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */
 .adaparc-footer {
@@ -262,11 +399,13 @@ table.national-table thead th:not(:first-child) { text-align: right; }
     print-color-adjust: exact;
   }
 
-  /* Page one budget: the banner, title, note, map, summary and source note
-     have to clear 9.8in of content box. The map is exported at 9 x 6.4in, so
-     unconstrained it renders ~5.3in tall and pushes the closing lines onto a
-     stray page of their own. Fixing its printed height (width follows from the
-     viewBox aspect ratio) leaves room for the text below it. */
+  /* Page one budget: banner, title, interpretation note, map and summary have
+     to clear 9.8in of content box. The map is exported at 9 x 6.4in, so
+     unconstrained it renders ~5.3in tall and pushes the closing line onto a
+     stray page of its own. Fixing its printed height (width follows from the
+     viewBox aspect ratio) leaves room for the summary below it. Population,
+     source and definitions no longer sit here - they are on their own page
+     after the table - so the map keeps its fuller height. */
   .adaparc-banner { padding: 0.7rem 1rem; margin-bottom: 0.8rem; }
   .adaparc-banner .banner-icon { height: 30px; }
   h1.topic-title { font-size: 17pt; margin: 0 0 0.45rem 0; }
@@ -278,8 +417,20 @@ table.national-table thead th:not(:first-child) { text-align: right; }
     max-width: 100% !important;
   }
   .map-summary { margin-top: 0.3rem; }
-  .source-note { margin-top: 0.45rem; }
   .see-next { margin-top: 0.6rem; break-inside: avoid; }
+
+  /* Understanding This Data: its own page (break-before set outside the media
+     query). Keep each panel and each term/definition pair from splitting, and
+     ask the engine to keep the navy accents / panel fills. */
+  .understanding .section-title { break-after: avoid; }
+  .ud-block,
+  .ud-defs-note {
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .ud-defs { font-size: 9pt; }
+  .ud-def { break-inside: avoid; }
 
   /* Page two onward: 52 rows of five columns will not fit on a single sheet at
      a readable size, so the table flows across two pages with the column
@@ -402,11 +553,9 @@ if (nzchar(val("alt_text"))) {
   ))
 }
 
-# Source note
-cat(sprintf(
-  '<p class="source-note"><span class="label">This indicator sourced from: </span>%s</p>\n',
-  htmltools::htmlEscape(val("source_note", "2020-2024 American Community Survey 5-Year Estimates"))
-))
+# Population examined, data source and column definitions have moved to the
+# "Understanding This Data" section after the table (see the page-two chunk),
+# mirroring the on-screen card. Page one is just the map and its summary now.
 
 # End-of-page-one pointer to the table, which starts on page 2
 cat('<p class="see-next">Data table begins on the next page.</p>\n')
@@ -431,8 +580,8 @@ ROWS_PER_PAGE <- 27L
 cat('<div class="page-two">\n')
 
 df <- b$table_df
-# First column left-aligned, all others right-aligned
-aligns <- c("l", rep("r", max(0, ncol(df) - 1)))
+# Column alignment is CSS-driven, not passed in here; see the note on
+# render_national_table() in the setup chunk.
 
 n_rows  <- nrow(df)
 n_pages <- max(1L, as.integer(ceiling(n_rows / ROWS_PER_PAGE)))
@@ -449,31 +598,89 @@ for (k in seq_along(groups)) {
   cat(sprintf('<div class="table-page%s">\n',
               if (k == 1) "" else " table-page-next"))
 
+  page_title <- val("title", "State comparison")
   if (k == 1) {
     cat(sprintf('<h2 class="section-title">Data Table: %s</h2>\n', title_esc))
+    table_caption <- sprintf("Data table: %s", page_title)
   } else {
     cat(sprintf(
       '<h2 class="section-title section-title-continued">Data Table: %s <span class="continued">(continued)</span></h2>\n',
       title_esc
     ))
+    table_caption <- sprintf("Data table: %s (continued), page %d of %d",
+                              page_title, k, length(groups))
   }
 
   chunk <- df[groups[[k]], , drop = FALSE]
 
-  tbl_html <- knitr::kable(
-    chunk,
-    format     = "html",
-    align      = aligns,
-    escape     = TRUE,
-    row.names  = FALSE,   # subsetting leaves non-sequential row names behind
-    table.attr = 'class="national-table"'
-  )
+  # render_national_table() (setup chunk) replaces the prior knitr::kable()
+  # call: kable's HTML writer never scopes a <thead> th and never emits a
+  # <caption>. See the audit finding C4 note there.
+  tbl_html <- render_national_table(chunk, table_caption)
 
   cat('<div class="table-wrap">\n')
   cat(tbl_html)
   cat('\n</div>\n')
   cat('</div>\n')
 }
+
+# ── Understanding This Data ────────────────────────────────────────────────
+# Mirrors the on-screen card of the same name: who is counted (universe_note),
+# where the numbers come from (source_note) and what each percentage column
+# means (column_defs). All content is prepared app-side; this file only lays it
+# out. Starts on its own page so the table is never crowded by it.
+esc <- htmltools::htmlEscape
+
+ud_chip <- function(kind) {
+  p <- switch(
+    kind,
+    pop = '<circle cx="9" cy="8" r="3.1"/><path d="M3.7 19c0-2.9 2.4-4.8 5.3-4.8S14.3 16.1 14.3 19"/><circle cx="16.8" cy="9.6" r="2.5"/><path d="M15 14.3c2.3.2 4.3 1.9 4.3 4.7"/>',
+    src = '<path d="M6 3.6h7.5L18 8.1V19.4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.6a1 1 0 0 1 1-1z"/><path d="M13.3 3.6v4.6H18"/><path d="M8.4 12.4h7M8.4 15.8h7"/>',
+    pct = '<path d="M6.5 17.5 17.5 6.5"/><circle cx="8.3" cy="8.3" r="2.1"/><circle cx="15.7" cy="15.7" r="2.1"/>'
+  )
+  sprintf(
+    paste0('<span class="ud-chip" aria-hidden="true">',
+           '<svg class="ud-glyph" viewBox="0 0 24 24" focusable="false">%s</svg></span>'),
+    p
+  )
+}
+
+ud_block <- function(kind, heading, body_html) {
+  sprintf(
+    '<div class="ud-block"><h3 class="ud-subhead">%s<span>%s</span></h3>%s</div>\n',
+    ud_chip(kind), esc(heading), body_html
+  )
+}
+
+cat('<section class="understanding">\n')
+cat('<h2 class="section-title">Understanding This Data</h2>\n')
+cat('<div class="ud-rule" aria-hidden="true"></div>\n')
+
+if (nzchar(val("universe_note"))) {
+  cat(ud_block("pop", "Population Examined",
+              sprintf('<p class="ud-body">%s</p>', esc(val("universe_note")))))
+}
+
+cat(ud_block("src", "Data Source",
+            sprintf('<p class="ud-body">%s</p>',
+                    esc(val("source_note", "2020-2024 American Community Survey 5-Year Estimates")))))
+
+cd <- b$column_defs
+if (is.data.frame(cd) && nrow(cd) > 0) {
+  rows <- paste0(
+    '<div class="ud-def"><dt>', vapply(cd$term, esc, character(1)), '</dt>',
+    '<dd>', vapply(cd$definition, esc, character(1)), '</dd></div>',
+    collapse = ""
+  )
+  defs_html <- paste0(
+    '<dl class="ud-defs">', rows, '</dl>',
+    '<p class="ud-defs-note">Count columns (#) show the number of people each ',
+    'percentage is based on.</p>'
+  )
+  cat(ud_block("pct", "What Each Percentage Column Means", defs_html))
+}
+
+cat('</section>\n')
 ```
 
 ```{r footer, results='asis'}
