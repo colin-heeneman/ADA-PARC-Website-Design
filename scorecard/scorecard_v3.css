@@ -13,7 +13,15 @@
    note on pal_on_white() in scripts/palettes.R.
    ───────────────────────────────────────────────────────────────────────── */
 :root {
-  --doc-muted     : #6b7280;
+  /* Audit finding C1, 2026-08-26: darkened from #6b7280 for AA text
+     contrast. This file's own .spread-stat .label (line ~352) is the
+     worst-case surface for this token: it sits on this page's #f0f2f6
+     body background, where #6b7280 measured only 4.31:1. #636a77
+     measures 4.86:1 there, 5.04:1 on scorecard_state.css's #f7f6f4, and
+     5.44:1 on white. See the fuller note in scorecard_state.css and in
+     doc_muted / ADAPARC_DOC_TOKENS$standard in scripts/palettes.R,
+     which is the source of truth all three must keep matching. */
+  --doc-muted     : #636a77;
   --doc-rule-soft : #dde2ea;
   --doc-navy      : #1c2b3a;
   --doc-accent-alt: #8b1a1a;
@@ -88,7 +96,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 }
 
 .cat-banner .cat-eyebrow {
-  font-size: 0.85rem;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: white;
@@ -98,7 +106,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .cat-banner h1 {
   font-family: 'EB Garamond', Garamond, Georgia, serif;
-  font-size: 3rem;
+  font-size: 48px;
   font-weight: 700;
   color: white;
   margin: 0 0 0.3rem;
@@ -108,7 +116,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .cat-banner .cat-desc {
   color: white;
-  font-size: 1.05rem;
+  font-size: 17px;
   margin: 0.4rem 0 1.6rem;
   max-width: 620px;
 }
@@ -140,14 +148,14 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .stat-pill .pill-val {
   font-family: 'EB Garamond', Garamond, Georgia, serif;
-  font-size: 1.8rem;
+  font-size: 29px;
   font-weight: 700;
   color: white;
   line-height: 1;
 }
 
 .stat-pill .pill-lbl {
-  font-size: 0.85rem;
+  font-size: 14px;
   color: white;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -156,7 +164,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 }
 
 .stat-pill .pill-sub {
-  font-size: 0.85rem;
+  font-size: 14px;
   color: white;
   margin-top: 0.1rem;
 }
@@ -173,7 +181,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 /* ── Section heading ────────────────────────────────────────────────────── */
 .section-heading {
   font-family: 'EB Garamond', Garamond, Georgia, serif;
-  font-size: 1.6rem;
+  font-size: 26px;
   font-weight: 700;
   /* Also unmatched today; the qmd uses heading_style inline. See the note on
      .cat-banner above. Repointed for the same reason, twice. */
@@ -183,14 +191,14 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 }
 
 .section-sub {
-  font-size: 1rem;
+  font-size: 16px;
   color: var(--doc-navy);
   margin: 0 0 1.4rem;
 }
 
 /* ── Map caption ────────────────────────────────────────────────────────── */
 .map-caption {
-  font-size: 0.85rem;
+  font-size: 14px;
   color: var(--doc-navy);
   text-align: center;
   margin-top: 0.6rem;
@@ -204,7 +212,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 .footer-note {
-  font-size: 0.9rem;
+  font-size: 14px;
   color: var(--doc-navy);
   border-top: 1px solid var(--doc-rule-soft);
   padding-top: 1.2rem;
@@ -236,7 +244,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .tb-performers .eyebrow {
   display: block;
-  font-size: 0.72rem;
+  font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -244,7 +252,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
   margin: 0 0 0.5rem;
 }
 
-.tb-performers .section-heading { font-size: 1.7rem; }
+.tb-performers .section-heading { font-size: 27px; }
 
 .top-bottom-container {
   display: grid;
@@ -262,7 +270,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .perf-header {
   padding: 0.95rem 1.1rem 0.9rem;
-  font-size: 0.9rem;
+  font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -271,7 +279,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 }
 
 .perf-header-glyph {
-  font-size: 0.8rem;
+  font-size: 14px;
   margin-right: 0.35rem;
 }
 
@@ -298,7 +306,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .perf-rank {
   font-family: 'EB Garamond', Garamond, Georgia, serif;
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 700;
   min-width: 2.5rem;
   height: 2.5rem;
@@ -315,13 +323,13 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .perf-name {
   flex: 1;
-  font-size: 1rem;
+  font-size: 16px;
   color: var(--doc-navy);
 }
 
 .perf-score {
   font-family: 'EB Garamond', Garamond, Georgia, serif;
-  font-size: 1.3rem;
+  font-size: 21px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--doc-navy);
@@ -331,7 +339,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
      page. See make_perf_row() in category_scorecard.qmd. */
 }
 
-.perf-row-spotlight .perf-score { font-size: 1.5rem; }
+.perf-row-spotlight .perf-score { font-size: 24px; }
 
 .spread-stat {
   grid-column: 1 / -1;
@@ -342,13 +350,13 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 }
 
 .spread-stat .num {
-  font-size: 1.9rem;
+  font-size: 30px;
   font-weight: 700;
   color: var(--doc-navy);
 }
 
 .spread-stat .label {
-  font-size: 0.9rem;
+  font-size: 14px;
   color: var(--doc-muted);
   margin-top: 0.15rem;
 }
@@ -375,7 +383,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .regional-card .eyebrow {
   display: block;
-  font-size: 0.72rem;
+  font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -405,7 +413,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 }
 
 .region-score {
-  font-size: 2.9rem;
+  font-size: 46px;
   font-weight: 700;
   color: var(--doc-ink);
   line-height: 1;
@@ -419,7 +427,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 .region-row.is-top .region-score { color: var(--doc-accent); }
 
 .region-name {
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 600;
   color: var(--doc-navy);
   text-transform: uppercase;
@@ -474,7 +482,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
   align-items: center;
   gap: 0.55rem;
   margin: 1.5rem 0 0.1rem;
-  font-size: 0.88rem;
+  font-size: 14px;
   color: var(--doc-navy);
   opacity: 0.85;
 }
@@ -509,7 +517,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .about-category .eyebrow {
   display: block;
-  font-size: 0.72rem;
+  font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -532,7 +540,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .about-list .al-name {
   display: block;
-  font-size: 1.3rem;
+  font-size: 21px;
   font-weight: 700;
   color: var(--doc-ink);
   margin-bottom: 0.4rem;
@@ -540,7 +548,7 @@ h1.title, .quarto-title, #title-block-header { display: none !important; }
 
 .about-list .al-desc {
   display: block;
-  font-size: 1.08rem;
+  font-size: 17px;
   line-height: 1.8;
   color: var(--doc-navy);
 }
@@ -609,12 +617,12 @@ button:focus-visible,
 
   .region-bar-track { width: 100%; }
 
-  .region-score { font-size: 2.3rem; }
+  .region-score { font-size: 37px; }
 
   /* Reduce banner heading size */
   [role="banner"] h1,
   .cat-banner h1 {
-    font-size: 2rem !important;
+    font-size: 32px !important;
   }
 
   /* Section cards: reduce padding */
