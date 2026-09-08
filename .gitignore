@@ -54,3 +54,11 @@ data/.DS_Store
 # Rendered scorecard outputs — generated at runtime into tempdir, never deploy
 www/state_output.html
 www/cat_output.html
+
+# Python scripts and caches — project stack is R/Quarto, keep .py out of version control
+*.py
+__pycache__/
+*.pyc
+
+# Ad hoc audit / QA scripts — not part of the reproducible pipeline
+scripts/audit_*
