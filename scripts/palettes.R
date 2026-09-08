@@ -420,7 +420,7 @@ ADAPARC_PALETTES <- list(
   # ---------------------------------------------------------------------------
   cividis_r = list(
     id    = "cividis_r",
-    label = "Cividis",
+    label = "Cividis (best for red-green color blindness)",
     note  = "Designed specifically for colour vision deficiency. Readers with and without it see the same ordering and spacing.",
     fill = c(
       poor      = "#fee838",
@@ -458,7 +458,7 @@ ADAPARC_PALETTES <- list(
   # ---------------------------------------------------------------------------
   viridis_r = list(
     id    = "viridis_r",
-    label = "Viridis",
+    label = "Viridis (red-green color blindness friendly)",
     note  = "Perceptually uniform and widely recognised in research publications.",
     fill = c(
       poor      = "#fde725",
@@ -500,7 +500,7 @@ ADAPARC_PALETTES <- list(
   # ---------------------------------------------------------------------------
   mono_high = list(
     id    = "mono_high",
-    label = "High Contrast Mono",
+    label = "Grayscale",
     note  = "Maximum separation, no colour. For low vision, glare, and monochrome printing. No-data areas are shown in blue so they cannot be mistaken for the lightest band.",
     fill = c(
       poor      = "#ffffff",
@@ -1057,7 +1057,18 @@ ADAPARC_DOC_TOKENS <- list(
   standard = c(
     doc_ink        = "#111111",
     doc_ink_soft   = "#3d3630",
-    doc_muted      = "#6b7280",
+    # Audit finding C1, 2026-08-26: #6b7280 cleared the doc_muted-on-doc_paper
+    # pair below (4.83:1) but not the page it is actually rendered on. The
+    # category scorecard's .spread-stat .label (scorecard_v3.css) sets this
+    # colour on that page's #f0f2f6 body background, where it measured only
+    # 4.31:1; the state scorecard's own #f7f6f4 body background measured
+    # 4.48:1, also short of the 4.5:1 AA floor. Neither background is a
+    # doc_* token (both are body-background literals in the two scorecard
+    # CSS files), so ADAPARC_DOC_PAIRS below did not catch it. Darkened to
+    # #636a77: 4.86:1 on #f0f2f6 (the worst case), 5.04:1 on #f7f6f4, 5.44:1
+    # on white. Mirror any future change here into the --doc-muted fallback
+    # in both scorecard_state.css and scorecard_v3.css.
+    doc_muted      = "#636a77",
     doc_paper      = "#ffffff",
     doc_cream      = "#faf7f3",
     doc_tint       = "#f4efe9",   # summary table warm tint

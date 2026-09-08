@@ -17,6 +17,8 @@
 #   Heading 1   <Sheet title>  [key: <yaml_key>]
 #     "Category: ..."  paragraph, skipped
 #     Heading 2   Introduction        -> intro (list of paragraphs)
+#     Heading 2   Takeaway            -> takeaway (one lead sentence; simplified
+#                                        single-indicator template only)
 #     Heading 2   Section leads
 #       Heading 3 <Section name>  [key: <section_key>]
 #                                     -> <section_key>_lead
@@ -56,7 +58,7 @@ if (!file.exists(docx_path)) {
 
 # Headings the parser recognizes. Anything else at Heading 2 is an error rather
 # than a silent skip, because a renamed heading means prose is being dropped.
-KNOWN_H2 <- c("Introduction", "Section leads", "Summary statistics",
+KNOWN_H2 <- c("Introduction", "Takeaway", "Section leads", "Summary statistics",
               "About These Data", "Footnotes")
 
 # ---- inline formatting -------------------------------------------------------
@@ -227,6 +229,9 @@ for (p in paras) {
 
   if (h2 == "Introduction") {
     add(sheet_key, "intro", html)
+
+  } else if (h2 == "Takeaway") {
+    add(sheet_key, "takeaway", html)
 
   } else if (h2 == "Section leads") {
     if (is.null(sec_key)) next

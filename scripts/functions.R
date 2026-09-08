@@ -715,3 +715,53 @@ altText <- function(data, variable) {
   )
 
 }
+
+# =============================================================================
+# fix_decorative_banner_alt(): audit finding C3, 2026-08-26
+#
+# national_topic.qmd, city_profile.qmd, state_scorecard_print.qmd and
+# category_scorecard_print.qmd each write their brand mark as raw HTML with
+# alt="" (decorative; the adjacent "ADA-PARC" text already names the org):
+#
+#   '<img class="banner-icon" src="../www/brand/PARC_white_icon_knockout.png" alt="">'
+#
+# All four render with self-contained: true, so quarto_render()'s resource
+# embedding pass reparses the whole document to inline local file references
+# (this image, the favicon) as data URIs, and re-serializes it. VERIFIED
+# 2026-08-26 with a live render (real font-loader.html and brand PNGs, not a
+# stub): that pass does two things to this element, not one. It collapses the
+# empty-string alt down to a bare attribute with no value at all (`alt`
+# instead of `alt=""`), and it prepends `role="img" aria-label` (also bare,
+# also empty) ahead of class="banner-icon", Quarto's own image-accessibility
+# scaffolding, stamped on every img during that pass regardless of whether
+# one is already decorative. Neither changes the DOM: `<img alt>` parses
+# identically to `<img alt="">` (attribute present, value ""), and an empty
+# aria-label does not override that, so this is a serialization detail, not a
+# functional accessibility gap for a screen reader. It is still worth
+# normalizing, because a person reading the delivered HTML, or a scanner that
+# pattern-matches markup rather than the parsed DOM, can mistake the bare alt
+# for a genuinely missing one, which is a real WCAG 1.1.1 failure. Call this
+# on each rendered file right after quarto::quarto_render(), before it is
+# copied out to the download handler's `file`.
+#
+# Matches class="banner-icon" appearing ANYWHERE inside the tag rather than
+# assuming it follows <img immediately, because of the role/aria-label
+# prepending above; scoped to that class specifically, not every img, so a
+# real future alt value elsewhere in these documents is never touched.
+# =============================================================================
+fix_decorative_banner_alt <- function(path) {
+  if (!file.exists(path)) return(invisible(FALSE))
+  original <- paste(readLines(path, warn = FALSE, encoding = "UTF-8"),
+                     collapse = "\n")
+  fixed <- gsub(
+    '(<img\\b[^>]*?class="banner-icon"[^>]*?) alt(\\s*/?)>',
+    '\\1 alt=""\\2>',
+    original,
+    perl = TRUE
+  )
+  if (!identical(fixed, original)) {
+    writeLines(fixed, path, useBytes = TRUE)
+    return(invisible(TRUE))
+  }
+  invisible(FALSE)
+}

@@ -111,7 +111,6 @@ required <- c(
   "scorecard/scorecard_data/final/index_scores_wide.csv",
   "national/national_topic.qmd",
   # Static assets served to the browser.
-  "www/adaparclogo.png",
   # Provisional brand identity (pending ADA centre approval). The home hero
   # reads PARC_blue_icon.png at render time; the other three are declared so
   # the folder ships whole and the white variants are ready for dark surfaces.
@@ -120,8 +119,6 @@ required <- c(
   "www/brand/PARC_white_icon.png",
   "www/brand/PARC_white_icon_knockout.png",
   "www/brand/PARC_white_text.png",
-  "www/participant_logos.png",
-  "www/Status_for_Disabled_image.png",
   "www/ScorecardReport.pdf",
   "www/factsheets"
 )
