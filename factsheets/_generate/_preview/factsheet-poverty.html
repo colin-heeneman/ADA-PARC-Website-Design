@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>People Living in Poverty | ADA-PARC Factsheet</title>
-  <meta name="description" content="ADA-PARC factsheet on poverty rates among people with and without disabilities, all ages and by age group, with state-by-state data.">
+  <title>Poverty | ADA-PARC Fact Sheet</title>
+  <meta name="description" content="ADA-PARC fact sheet on poverty among people with disabilities, all ages and by age group, with state-by-state data.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -167,10 +167,25 @@
     .map-noscript { font-size: .9rem; color: #4a5a67; padding: 1rem; }
     /* Legend */
     .map-legend { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 .5rem; align-items: center; }
-    .map-caption { font-size: .82rem; color: #4a5a67; line-height: 1.45; margin-top: .5rem; }
+    /* TYPE-SIZE FLOOR (set 2026-08-11, fact sheet audit)
+       rem on this page resolves against the 16px root, NOT against the 18px
+       body above, so a rem figure here is 12.5 percent smaller than it looks
+       written down. .82rem is 13.1px. On a sheet built for a disability
+       audience the source citations and the map interpretation notes were the
+       smallest type on the page, which is backwards: they are prose and they
+       are load-bearing.
+       Two floors, applied to every rule below that fell under them:
+         .95rem  (15.2px)  running prose, matching table body text
+                           -> .map-caption, .footnotes
+         .875rem (14.0px)  absolute minimum for labels and chrome
+                           -> thead th, .tier-chip, .funding-note,
+                              .updated-note, .map-tooltip .mt-tier
+       Headings, the banner and body prose are untouched, so the page-one
+       height budget for print and download (see the print block) is unmoved. */
+    .map-caption { font-size: .95rem; color: #4a5a67; line-height: 1.5; margin-top: .5rem; }
     .map-caption a { color: #0d3b8e; }
     /* Tier chips */
-    .tier-chip { display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 100px; font-size: .8rem; font-weight: 700; letter-spacing: .03em; }
+    .tier-chip { display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 100px; font-size: .875rem; font-weight: 700; letter-spacing: .03em; }
     .tier-chip.best  { background: var(--tier-best-bg);  color: var(--tier-best-text); }
     .tier-chip.good  { background: var(--tier-good-bg);  color: var(--tier-good-text); }
     .tier-chip.fair  { background: var(--tier-fair-bg);  color: var(--tier-fair-text); }
@@ -185,14 +200,27 @@
     .tier-header.worst { background: var(--tier-worst-bg); color: var(--tier-worst-text); }
     table { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--bg-card); }
     thead tr { background: var(--navy); color: #fff; }
-    thead th { padding: .5rem .75rem; text-align: left; font-weight: 600; font-size: .85rem; letter-spacing: .03em; }
+    thead th { padding: .5rem .75rem; text-align: left; font-weight: 600; font-size: .875rem; letter-spacing: .03em; }
     thead th:not(:first-child) { text-align: right; }
     tbody tr:nth-child(even) { background: #fafbfd; }
     tbody td { padding: .4rem .75rem; border-bottom: 1px solid var(--border); }
     tbody td:not(:first-child) { text-align: right; }
     tbody tr:last-child td { border-bottom: none; }
+    /* The state name in each body row is a <th scope="row"> so a screen reader
+       can say which state a figure belongs to. These rules make it render
+       exactly like the <td> it replaced: the browser default for th is bold and
+       centred, and the thead rules above are scoped to thead so they do not
+       reach it. Purely presentational; if this block is ever dropped the tables
+       gain bold first columns. */
+    tbody th { padding: .4rem .75rem; border-bottom: 1px solid var(--border);
+               text-align: left; font-weight: 400; font-size: inherit;
+               letter-spacing: normal; background: transparent; color: inherit; }
+    tbody tr:last-child th { border-bottom: none; }
+    /* Every quartile table carries its name in a <caption> that is hidden
+       visually, because the coloured tier chip above it already shows that name
+       to a sighted reader. .sr-only is defined at the foot of this file. */
     /* Footnotes */
-    .footnotes { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .82rem; color: #4a5a67; line-height: 1.5; }
+    .footnotes { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .95rem; color: #4a5a67; line-height: 1.55; }
     .footnotes ol { padding-left: 1.2rem; }
     .footnotes li { margin-bottom: .35rem; }
     /* Footer */
@@ -201,13 +229,13 @@
     .factsheet-footer p:last-child { margin-bottom: 0; }
     .factsheet-footer a { color: #0d3b8e; }
     .factsheet-footer a:hover { text-decoration: underline; }
-    .funding-note { font-style: italic; font-size: .85rem; color: #4a5a67; margin-bottom: .75rem !important; }
+    .funding-note { font-style: italic; font-size: .875rem; color: #4a5a67; margin-bottom: .75rem !important; }
     /* "Last updated" moved out of the banner and into the footer. It is
        provenance, not title matter, and in the banner it competed with the
        topic for the reader's first glance. Last item in the footer, above the
        rule, at the same weight as the funding note. #4a5a67 on #f0f4f9 is
        7.28:1. */
-    .updated-note { font-size: .85rem; color: #4a5a67; margin-top: .75rem !important; margin-bottom: 0 !important; padding-top: .6rem; border-top: 1px solid var(--border); }
+    .updated-note { font-size: .875rem; color: #4a5a67; margin-top: .75rem !important; margin-bottom: 0 !important; padding-top: .6rem; border-top: 1px solid var(--border); }
     /* SVG state hover */
     .state-path { transition: opacity .15s; cursor: default; }
     .state-path:hover { opacity: .8; }
@@ -270,7 +298,7 @@
     .map-tooltip .mt-name  { font-weight: 700; font-size: .95rem; display: block; }
     .map-tooltip .mt-value { font-weight: 600; display: inline-block; margin-right: .35rem; }
     .map-tooltip .mt-tier  { display: inline-block; padding: .05rem .45rem; border-radius: 3px;
-                              font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
+                              font-size: .875rem; font-weight: 700; letter-spacing: .02em; }
     .map-tooltip .mt-tier.excellent { background: var(--tier-excellent-bg); color: var(--tier-excellent-text); }
     .map-tooltip .mt-tier.above     { background: var(--tier-above-bg);     color: var(--tier-above-text); }
     .map-tooltip .mt-tier.below     { background: var(--tier-below-bg);     color: var(--tier-below-text); }
@@ -288,19 +316,235 @@
     }
 
     /* ---- per-factsheet overrides ---- */
-    .maps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
-    .map-figure { margin: 0; }
-    .table-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
-    .state-table-wrapper { overflow-x: auto; }
-    table caption { font-size: .87rem; font-style: italic; color: #4a5a67; caption-side: top; text-align: left; padding-bottom: .5rem; font-weight: 600; }
-    thead th.disability-col { background: #2e4a64; }
-    /* The 25 percent flag is carried by colour and font weight, which a screen
-       reader cannot convey and a colour-blind reader may not distinguish, so
-       fs_poverty_table() also appends a text label inside an .sr-only span.
-       That class is defined in factsheet-base.css and is not repeated here. */
-    td.high-poverty { color: #b91c1c; font-weight: 600; }
-    @media (max-width: 680px) { .maps-grid, .table-columns { grid-template-columns: 1fr; } }
-    @media print { .maps-grid, .table-columns { grid-template-columns: 1fr 1fr; } }
+/* =============================================================================
+   factsheet-template.css
+
+   Simplified single-indicator fact sheet template, locked through the "Living
+   in Institution" mockup rounds (A-F). Layered ON TOP of factsheet-base.css:
+   base carries the document skeleton, the accessibility primitives (.sr-only,
+   skip link, reduced-motion) and the tier palette; this file restyles the
+   visible surface to the maroon/gold template.
+
+   Palette mirrors ADA_PARC_PALETTE / pal_doc_tokens() in scripts/palettes.R and
+   the tier tokens already defined in factsheet-base.css. No second hardcoded
+   copy of the tier fills lives here; the four --tier-*-bg / --tier-*-text
+   variables are inherited from base.
+   ============================================================================= */
+
+:root {
+  --fs-maroon:      #560000;
+  --fs-maroon-deep: #3d0000;
+  --fs-gold:        #d88036;
+  --fs-gold-pale:   #fdd182;
+  --fs-ink:         #1a1a1a;
+  --fs-mute:        #5b5250;
+  --fs-page:        #f7f5f2;
+  --fs-card:        #ffffff;
+  --fs-rule:        #e4ddd3;
+  --fs-callout:     #f4efe6;
+  --fs-focus:       #0d3b8e;
+}
+
+/* ---- page frame ---------------------------------------------------------- */
+
+body { background: var(--fs-page); color: var(--fs-ink); }
+.page-wrapper { max-width: 980px; background: var(--fs-card); box-shadow: 0 2px 16px rgba(26,26,26,.10); }
+
+/* ---- header: eyebrow + title block centred, wordmark left, icon right --- */
+
+.factsheet-header {
+  background: var(--fs-maroon); color: #ffffff;
+  padding: 22px 40px; gap: 24px;
+  border-bottom: 4px solid var(--fs-gold);
+  grid-template-columns: 1fr auto 1fr;
+}
+.factsheet-header .brand-wordmark { height: 48px; width: auto; justify-self: start; order: 1; }
+.factsheet-header .header-title    { order: 2; text-align: center; }
+.factsheet-header .brand-icon      { height: 48px; width: auto; justify-self: end; order: 3; }
+.header-eyebrow {
+  font-size: 14px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: #f2ddc4; margin-bottom: 6px;
+}
+.header-title h1 { font-size: 34px; font-weight: 700; line-height: 1.15; color: #ffffff; margin: 0; }
+.header-title .header-subtitle {
+  font-size: 17px; font-weight: 500; letter-spacing: normal;
+  text-transform: none; color: #f2ddc4; margin-top: 6px; line-height: 1.3;
+}
+
+.factsheet-body { padding: 36px 40px; }
+
+/* ---- takeaway --------------------------------------------------------------
+   Full body measure, one lead sentence with a bolded key clause. Sits just
+   under the header with nothing between it and the map title. */
+.headline-finding { font-size: 20px; line-height: 1.5; margin-bottom: 30px; }
+.headline-finding strong { color: var(--fs-maroon); }
+
+/* ---- headings ---------------------------------------------------------------
+   Section level (Why This Matters, What Counts as ...) and one subsection
+   level (Key Numbers), both title case (set in the prose / builders). */
+.section-heading {
+  font-size: 23px; font-weight: 700; color: var(--fs-maroon);
+  margin: 40px 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--fs-rule);
+}
+.section-heading.first { margin-top: 0; }
+.section-intro { color: var(--fs-mute); font-size: 16px; margin-bottom: 18px; }
+.subsection-heading { font-size: 18px; font-weight: 700; color: var(--fs-maroon); margin: 26px 0 12px; }
+
+/* Map title: section-heading weight and colour, but no divider and no top
+   margin, since it opens the first section directly under the takeaway. */
+.map-title { font-size: 23px; font-weight: 700; color: var(--fs-maroon); margin: 0 0 16px; line-height: 1.2; }
+
+/* ---- population note ---------------------------------------------------------
+   The reading frame for the whole sheet; deliberately not styled like the
+   per-map "how to read" aside. */
+.population-note {
+  background: var(--fs-callout); border-left: 5px solid var(--fs-gold);
+  border-radius: 0 8px 8px 0; padding: 18px 22px; margin-bottom: 20px; font-size: 16px;
+}
+.population-note .population-note-label {
+  display: block; font-size: 14px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--fs-maroon); margin-bottom: 6px;
+}
+
+/* ---- "how to read the colours" note --------------------------------------- */
+.direction-note {
+  background: var(--fs-callout); color: var(--fs-ink);
+  border-left: 5px solid var(--fs-gold); border-radius: 0 6px 6px 0;
+  padding: 16px 20px; margin: 0 0 32px; font-size: 15px;
+}
+.direction-note strong { color: var(--fs-maroon); }
+.direction-note em { color: var(--fs-ink); font-style: italic; }
+
+/* ---- comparative dual map ---- */
+.maps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0 8px; }
+/* single-series sheets (Housing, HCBS): one centred map, not stretched full width */
+.maps-grid.maps-grid-single { grid-template-columns: minmax(0, 640px); justify-content: center; }
+.map-panel { background: #faf7f3; border-radius: 8px; padding: 14px; position: relative; }
+.map-panel > h3 { font-size: 16px; text-align: center; color: var(--fs-maroon); margin-bottom: 8px; font-weight: 700; }
+.map-panel .map-container { background: transparent; min-height: 200px; }
+.map-panel .map-container svg { width: 100%; height: auto; }
+
+/* ---- legend -------------------------------------------------------------- */
+.map-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 8px; align-items: center; }
+.tier-chip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px;
+  border-radius: 100px; font-size: 14px; font-weight: 700; letter-spacing: .01em;
+}
+.tier-chip .range { font-weight: 400; opacity: .9; }
+.map-caption { font-size: 14px; color: var(--fs-mute); line-height: 1.5; margin-top: 8px; margin-bottom: 32px; }
+.map-caption a { color: var(--fs-focus); }
+
+/* ---- why this matters: a plain section, not a callout box ---------------- */
+.why-matters { margin-bottom: 8px; }
+.why-matters p { margin-bottom: 14px; font-size: 17px; }
+.why-matters p:last-child { margin-bottom: 0; }
+
+/* ---- explainer (plain, no box) ------------------------------------------- */
+.explainer p { font-size: 17px; margin-bottom: 14px; }
+.explainer p:last-child { margin-bottom: 0; }
+.explainer strong { color: var(--fs-maroon); }
+
+/* ---- key numbers: three stat cards, inside Why This Matters ------------- */
+.stat-band { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 8px; }
+.stat-card {
+  background: #fff; border: 1px solid var(--fs-rule); border-top: 5px solid var(--fs-maroon);
+  border-radius: 8px; padding: 20px 18px; text-align: center;
+}
+.stat-card.gap { border-top-color: var(--fs-gold); }
+.stat-number { font-size: 40px; font-weight: 700; color: var(--fs-maroon); line-height: 1.05; }
+.stat-label { font-size: 15px; color: var(--fs-mute); margin-top: 8px; line-height: 1.45; }
+
+/* ---- best / worst spotlight pair, inside Why This Matters --------------- */
+.spotlight-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 28px 0 8px; }
+.spotlight-card { border-radius: 8px; padding: 20px 22px; border: 1px solid var(--fs-rule); }
+.spotlight-card.best  { background: var(--fs-callout); border-left: 5px solid var(--fs-maroon); }
+.spotlight-card.worst { background: #fdf5e9;           border-left: 5px solid var(--fs-gold); }
+.spotlight-label { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.spotlight-card.best  .spotlight-label { color: var(--fs-maroon); }
+.spotlight-card.worst .spotlight-label { color: #9c5b17; }
+.spotlight-state { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.spotlight-value { font-size: 16px; color: var(--fs-mute); }
+.spotlight-note { font-size: 14px; color: var(--fs-mute); margin-top: 10px; line-height: 1.5; }
+
+/* ---- ranked table: full list by default, sortable, searchable ---------- */
+.compare-panel { margin: 32px 0 32px; }
+.compare-controls { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.compare-search {
+  flex: 1 1 220px; padding: 10px 14px; border: 1px solid #b3a89a; border-radius: 6px;
+  font-size: 16px; font-family: inherit; background: #fff; color: var(--fs-ink);
+}
+.compare-search:focus { outline: 3px solid var(--fs-focus); outline-offset: 1px; }
+.compare-toggle {
+  padding: 10px 16px; border: 2px solid var(--fs-maroon); border-radius: 6px; background: #fff;
+  color: var(--fs-maroon); font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer;
+}
+.compare-toggle:hover { background: var(--fs-maroon); color: #fff; }
+.compare-table-wrap { overflow-x: auto; border: 1px solid var(--fs-rule); border-radius: 8px; }
+table.compare-table { width: 100%; border-collapse: collapse; font-size: 16px; background: #fff; }
+table.compare-table caption { text-align: left; font-size: 14px; color: var(--fs-mute); padding: 10px 14px; }
+table.compare-table thead th {
+  background: var(--fs-maroon); color: #fff; font-size: 15px; font-weight: 700;
+  text-align: left; padding: 10px 14px; position: sticky; top: 0; letter-spacing: normal;
+}
+table.compare-table thead th.num { text-align: right; }
+table.compare-table thead th.sortable { cursor: pointer; user-select: none; }
+table.compare-table thead th.sortable:hover { background: var(--fs-maroon-deep); }
+table.compare-table thead th .sort-arrow { font-size: 14px; margin-left: 4px; opacity: .8; }
+table.compare-table tbody td,
+table.compare-table tbody th {
+  padding: 9px 14px; border-top: 1px solid var(--fs-rule); border-bottom: none;
+  text-align: left; font-weight: 400; font-size: inherit; background: transparent; color: inherit;
+}
+table.compare-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.compare-table tbody tr:nth-child(even) { background: #faf7f2; }
+table.compare-table tbody tr:hover { background: var(--fs-callout); }
+table.compare-table td.dis-cell { font-weight: 700; color: var(--fs-maroon); }
+table.compare-table td.state-abbr,
+table.compare-table .state-abbr { color: var(--fs-mute); font-size: 14px; font-weight: 400; }
+table.compare-table .tier-chip { font-size: 14px; padding: 3px 9px; }
+.no-results { padding: 16px; font-size: 16px; color: var(--fs-mute); text-align: center; }
+.compare-note { font-size: 14px; color: var(--fs-mute); margin-top: 10px; line-height: 1.5; }
+
+/* ---- notes and sources ------------------------------------------------- */
+.footnotes { margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--fs-rule); }
+.footnotes h2 {
+  font-size: 16px; color: var(--fs-mute); text-transform: uppercase;
+  letter-spacing: .06em; margin-bottom: 12px; border: 0; padding: 0;
+}
+.footnotes ol { padding-left: 22px; }
+.footnotes li { font-size: 15px; color: var(--fs-mute); margin-bottom: 10px; line-height: 1.55; }
+
+/* ---- footer ---------------------------------------------------------------- */
+.factsheet-footer { background: #efe8dd; border-top: 3px solid var(--fs-maroon); padding: 22px 40px; }
+.factsheet-footer p { font-size: 14px; color: var(--fs-mute); line-height: 1.6; }
+.factsheet-footer a { color: var(--fs-focus); }
+.updated-note { border-top: 1px solid var(--fs-rule); }
+
+/* ---- tooltip (renderer markup: .mt-name / .mt-value / .mt-tier) --------- */
+.map-tooltip {
+  background: var(--fs-ink); color: #fff; font-size: 15px; line-height: 1.4;
+  padding: 8px 12px; border-radius: 6px; box-shadow: 0 4px 14px rgba(26,26,26,.3);
+  max-width: 15rem;
+}
+.map-tooltip .mt-name { font-weight: 700; font-size: 16px; display: block; margin-bottom: 3px; }
+
+/* ---- responsive ------------------------------------------------------------ */
+@media (max-width: 760px) {
+  .maps-grid, .spotlight-panel { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .factsheet-header { grid-template-columns: 1fr; text-align: center; gap: 12px; padding: 20px; }
+  .factsheet-header .brand-wordmark, .factsheet-header .brand-icon { justify-self: center; }
+  .factsheet-header .brand-icon { height: 38px; }
+  .factsheet-header .brand-wordmark { height: 40px; }
+  .factsheet-body, .factsheet-footer { padding-left: 20px; padding-right: 20px; }
+  .header-title h1 { font-size: 26px; }
+  .stat-band { grid-template-columns: 1fr; }
+}
+@media print {
+  .compare-controls { display: none; }
+}
+
   </style>
 </head>
 <body>
@@ -310,660 +554,278 @@
 <div class="page-wrapper">
 
   <header class="factsheet-header" role="banner">
-    <img class="brand-icon" src="data:image/png;base64,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" alt="">
-    <div class="header-title">
-      <h1>Poverty</h1>
-      <p class="header-subtitle">Work &amp; Economic</p>
-    </div>
     <img class="brand-wordmark" src="data:image/png;base64,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" alt="ADA-PARC">
+    <div class="header-title">
+      <div class="header-eyebrow">ADA-PARC &middot; Work &amp; Economic</div>
+      <h1>Poverty</h1>
+      <p class="header-subtitle">People With Disabilities Living Below the Poverty Line</p>
+    </div>
+    <img class="brand-icon" src="data:image/png;base64,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" alt="">
   </header>
 
   <main id="main-content" class="factsheet-body">
 
     <div class="population-note" role="note" aria-label="Population covered">
-      <span class="population-note-label">Population covered:</span> People of all ages for whom poverty status is determined The Census Bureau does not assess poverty status for everyone. People living in group quarters, including nursing homes, correctional facilities and college dormitories, and unrelated individuals under 15, are outside every figure on this sheet. Institutional residence is covered on the <em>Living in Institution</em> sheet.
+      <span class="population-note-label">Population covered:</span> People of all ages for whom poverty status is determined. The Census Bureau does not assess poverty status for everyone. People in group quarters &mdash; including nursing homes, correctional facilities and college dormitories &mdash; and unrelated individuals under 15 are outside every figure on this sheet.
     </div>
+    <p class="headline-finding">The Americans with Disabilities Act rests on the promise of equal opportunity and economic self-sufficiency for people with disabilities.<sup>1</sup> <strong>More than three decades on, a person with a disability is still close to twice as likely to be living below the poverty line, and the gap holds at every age.</strong></p>
+    <h2 class="map-title" id="poverty-map-heading">Poverty Rate, All Ages, People With and Without Disabilities</h2>
+    <div class="maps-grid">
+        <figure class="map-panel">
+          <h3>People with disabilities</h3>
+          <div id="map-poverty-dis" class="map-container" aria-labelledby="poverty-map-heading poverty-dis-map-desc">
+            <p id="poverty-dis-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+            <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+          </div>
+        </figure>
+        <figure class="map-panel">
+          <h3>People without disabilities</h3>
+          <div id="map-poverty-nod" class="map-container" aria-labelledby="poverty-map-heading poverty-nod-map-desc">
+            <p id="poverty-nod-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+            <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+          </div>
+        </figure>
+    </div>
+      <div class="map-legend" aria-label="Map colour legend for Poverty rate, shared by both maps">
+        <span class="tier-chip excellent">Excellent (lowest rate) <span class="range">(5.9%&ndash;10.4%)</span></span>
+        <span class="tier-chip above">Good <span class="range">(10.4%&ndash;16.2%)</span></span>
+        <span class="tier-chip below">Subpar <span class="range">(16.2%&ndash;20.1%)</span></span>
+        <span class="tier-chip poor">Poor (highest rate) <span class="range">(20.1%&ndash;30.6%)</span></span>
+      </div>
+      <p class="map-caption">Both maps use one colour scale, so a shade means the same poverty rate on either map, and the difference between them is the disability gap read straight off the colour. The four bands are cut on the two populations pooled. Hover or tab through either map for a state's exact rate. Darker maroon marks a lower poverty rate. Puerto Rico (with disability 47.2%) is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024), Table C18130.</p>
 
-    <section class="intro-section" aria-label="Introduction">
+    <section class="why-matters" aria-label="Why this matters">
+      <h2 class="section-heading">Why This Matters</h2>
       <p>The Americans with Disabilities Act (ADA) rests on the idea that people with disabilities should be assured equal opportunity and economic self-sufficiency.<sup>1</sup> More than three decades on, a person with a disability is still close to twice as likely to be living below the poverty line.</p>
-
       <p>Nationally, <strong>20.4 percent</strong> of people with disabilities live below the poverty line, against <strong>11.3 percent</strong> of people without disabilities. That is 8.9 million people. The gap holds at every age, and it is widest during working life.<sup>2</sup></p>
-
       <p>Poverty and disability compound each other. Disability raises the cost of an ordinary life, through medical care, personal assistance, accessible housing and transport, while narrowing access to the work that would pay for it. That shows up in who is poor. People with disabilities are <strong>13.4 percent</strong> of the people counted here, but <strong>21.9 percent</strong> of everyone living below the poverty line.</p>
-
-      <p>This sheet reports the share of people living below the poverty line, first for everyone and then for three age groups. Lower percentages are better. All four measures are drawn from the same population, the people the Census Bureau assesses for poverty, so the three age groups add to the all-ages figure exactly.<sup>2</sup></p>
+      <p>This sheet reports the share of people living below the poverty line, first for everyone and then for three age groups. Lower percentages are better. All four measures come from the same population, the people the Census Bureau assesses for poverty, and the three age groups partition it &mdash; every person falls in exactly one band, so the age-group counts add back to the all-ages count.<sup>2</sup></p>
+    <h3 class="subsection-heading">Key Numbers</h3>
+    <section class="stat-band" aria-label="Key Numbers">
+        <div class="stat-card">
+          <div class="stat-number">20.4%</div>
+          <div class="stat-label">of people with disabilities live below the poverty line</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">11.3%</div>
+          <div class="stat-label">of people without disabilities live below the poverty line</div>
+        </div>
+        <div class="stat-card gap">
+          <div class="stat-number">1.8&times;</div>
+          <div class="stat-label">as likely to be in poverty with a disability</div>
+        </div>
+    </section>
+    <section class="spotlight-panel" aria-label="Best and worst performing states">
+        <div class="spotlight-card best">
+          <div class="spotlight-label">Lowest poverty rate</div>
+          <div class="spotlight-state">Utah</div>
+          <div class="spotlight-value">14.7% of people with disabilities live below the poverty line</div>
+          <p class="spotlight-note">Against 7.8% of people without disabilities in the same state.</p>
+        </div>
+        <div class="spotlight-card worst">
+          <div class="spotlight-label">Highest poverty rate</div>
+          <div class="spotlight-state">District of Columbia</div>
+          <div class="spotlight-value">30.6% of people with disabilities live below the poverty line</div>
+          <p class="spotlight-note">Against 13.5% of people without disabilities in the same state.</p>
+        </div>
+    </section>
     </section>
 
-    <h2 class="section-heading">All Ages</h2>
-    <p class="section-lead">The two maps below are the headline measure, the share of people of any age living below the poverty line, shown for people with disabilities and for people without. Each map ranks states against the other states on that map, so a shade says where a state stands among states rather than how the two groups compare. The comparison is in the ranges printed under each map. Every tier on the right sits at a lower rate than the tier of the same name on the left, and that distance is the disparity this sheet is about.</p>
-
-    <div class="direction-note" role="note">
-      <strong>How to read the colors.</strong> <strong>Both maps share one scale and one key.</strong> A shade means the same poverty rate on either map, so the two can be read against each other directly and the difference between them is the disability gap. <em>Darker maroon</em> is a lower poverty rate, the more favorable outcome. <em>Lighter gold</em> is a higher rate. Because the scale is shared, the bands are not evenly filled on either map: the map of people with disabilities sits mostly in the higher bands and the map of people without disabilities mostly in the lower ones. That imbalance is the finding, not a ranking of the states on it. The three maps further down, which cover people with disabilities only, are each ranked against themselves and use performance tiers instead.
+    <h2 class="section-heading">What This Map Measures</h2>
+    <div class="explainer">
+      <p>The two maps are the headline measure: the share of people of any age living below the poverty line, for people with disabilities and for people without, on one shared colour scale. Because the scale is shared, a shade means the same rate on either map, so the distance between the two maps is the disability gap read straight off the colour. The ranked table below sorts states with a disability against one another.</p>
     </div>
 
-      <div class="map-legend" aria-label="Shared scale for both all-ages maps, from the lowest poverty rate band to the highest" style="margin:.5rem 0 .75rem;">
-        <span style="font-size:.85rem;font-weight:600;color:var(--navy);margin-right:.25rem;">Poverty rate, all ages, both maps:</span>
-        <span class="tier-chip excellent">Lowest band (5.9%-10.4%)</span>
-        <span class="tier-chip above">Second lowest (10.4%-16.2%)</span>
-        <span class="tier-chip below">Second highest (16.2%-20.1%)</span>
-        <span class="tier-chip poor">Highest band (20.1%-30.6%)</span>
+    <section class="compare-panel" aria-label="Poverty Rate, All Ages, by State">
+      <h2 class="section-heading">Poverty Rate, All Ages, by State</h2>
+    <p class="section-intro">Every state and DC, ranked by the poverty rate among people with disabilities of any age. The maps above are shaded on one scale pooled with people without disabilities; the Tier column here ranks each state among states with a disability. Search, sort, or narrow to the five lowest and five highest.</p>
+      <div class="compare-controls">
+        <input type="text" id="poverty-search" class="compare-search" placeholder="Search for a state&hellip;" aria-label="Search for a state — Poverty Rate, All Ages, by State">
+        <button type="button" class="compare-toggle" id="poverty-toggle" aria-expanded="true">Show the 5 lowest and 5 highest</button>
       </div>
+      <div class="compare-table-wrap">
+        <table class="compare-table" id="poverty-table">
+          <caption>States ranked by the poverty rate among people with disabilities of all ages; click a column heading to sort.</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="num sortable" data-sort="rank" aria-sort="ascending">Rank<span class="sort-arrow">&#9650;</span></th>
+              <th scope="col" class="sortable" data-sort="tier">Tier<span class="sort-arrow"></span></th>
+              <th scope="col" class="sortable" data-sort="name">State<span class="sort-arrow"></span></th>
+              <th scope="col" class="num sortable" data-sort="c0">With disability<span class="sort-arrow"></span></th>
+              <th scope="col" class="num sortable" data-sort="c1">Without disability<span class="sort-arrow"></span></th>
+            </tr>
+          </thead>
+          <tbody id="poverty-body"></tbody>
+        </table>
+      </div>
+      <p class="no-results" id="poverty-noresults" hidden>No state matches that search.</p>
+      <p class="compare-note">Tier and map colour answer different questions: the Tier column ranks each state only against other states with a disability, while the map shades every state on one scale it shares with people without disabilities. A state in the top tier here can still sit in a pale band on the map &mdash; that distance is the disability gap. Showing all 50 states and DC by default. Puerto Rico is not ranked here; its rates are in the map captions.</p>
+    </section>
 
+    <h2 class="section-heading">Poverty by Age</h2>
+    <p class="section-intro">The headline above covers all ages together. Poverty falls sharply after 65, because Social Security and Medicare reach almost everyone, so each age band below is drawn on its own scale pooled across disability status. Read the ranges on each key before comparing one band with another.</p>
+
+    <p class="section-intro">Children with a disability are poorer than children without one, though this is the narrowest of the three age gaps. Child poverty is mostly a measure of the household a child lives in rather than of the child, so this map reflects family income and the added cost of raising a disabled child at the same time.</p>
+    <h2 class="map-title" id="pov-under18-map-heading">Poverty Rate, Children Under 18: People With and Without Disabilities</h2>
     <div class="maps-grid">
-      <figure class="map-figure">
-        <h3 class="map-title" id="all-dis-map-heading">People <em>with</em> Disabilities</h3>
-        <div id="map-all-dis" class="map-container" aria-labelledby="all-dis-map-heading all-dis-map-desc">
-          <p id="all-dis-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
-          <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
-        </div>
-        <figcaption class="map-caption">Darker maroon = a lower poverty rate for people with disabilities of any age (better), on the shared scale in the key above. Puerto Rico (47.2%) is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024), Table C18130.</figcaption>
-      </figure>
-
-      <figure class="map-figure">
-        <h3 class="map-title" id="all-nod-map-heading">People <em>without</em> Disabilities</h3>
-        <div id="map-all-nod" class="map-container" aria-labelledby="all-nod-map-heading all-nod-map-desc">
-          <p id="all-nod-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
-          <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
-        </div>
-        <figcaption class="map-caption">Darker maroon = a lower poverty rate for people without disabilities (better), on the same shared scale. This map is broadly darker than the one beside it, and that difference is the disability gap read straight off the color. Puerto Rico (38.6%) is not shown.</figcaption>
-      </figure>
+        <figure class="map-panel">
+          <h3>People with disabilities</h3>
+          <div id="map-pov-under18-dis" class="map-container" aria-labelledby="pov-under18-map-heading pov-under18-dis-map-desc">
+            <p id="pov-under18-dis-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+            <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+          </div>
+        </figure>
+        <figure class="map-panel">
+          <h3>People without disabilities</h3>
+          <div id="map-pov-under18-nod" class="map-container" aria-labelledby="pov-under18-map-heading pov-under18-nod-map-desc">
+            <p id="pov-under18-nod-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+            <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+          </div>
+        </figure>
     </div>
+      <div class="map-legend" aria-label="Map colour legend for Poverty rate, shared by both maps">
+        <span class="tier-chip excellent">Excellent (lowest rate) <span class="range">(7.5%&ndash;14.6%)</span></span>
+        <span class="tier-chip above">Good <span class="range">(14.6%&ndash;18.9%)</span></span>
+        <span class="tier-chip below">Subpar <span class="range">(18.9%&ndash;23.5%)</span></span>
+        <span class="tier-chip poor">Poor (highest rate) <span class="range">(23.5%&ndash;34.9%)</span></span>
+      </div>
+      <p class="map-caption">Both maps use one colour scale, so a shade means the same poverty rate on either map, and the difference between them is the disability gap read straight off the colour. The four bands are cut on the two populations pooled. Hover or tab through either map for a state's exact rate. Darker maroon marks a lower poverty rate. Puerto Rico (64.2%) is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024), Table C18130.</p>
 
-    <h2 class="section-heading">Percent of People Below the Poverty Line, All Ages, by State</h2>
-    <p>Disability poverty rates shown in bold red mark states where more than 25% of people with disabilities live below the poverty line.</p>
-
-    <div class="table-columns">
-      <div class="state-table-wrapper">
-        <table aria-label="Poverty rates for all ages, states A through M">
-          <caption>States A-M: Percent below poverty line, all ages</caption>
+    <section class="compare-panel" aria-label="Poverty Rate, Children Under 18, by State">
+      <h2 class="section-heading">Poverty Rate, Children Under 18, by State</h2>
+    <p class="section-intro">Every state and DC, ranked by the poverty rate among people with disabilities in this age group. The two maps above are shaded on one scale pooled with people without disabilities; the Tier column here ranks each state among states with a disability.</p>
+      <div class="compare-controls">
+        <input type="text" id="pov-under18-search" class="compare-search" placeholder="Search for a state&hellip;" aria-label="Search for a state — Poverty Rate, Children Under 18, by State">
+        <button type="button" class="compare-toggle" id="pov-under18-toggle" aria-expanded="true">Show the 5 lowest and 5 highest</button>
+      </div>
+      <div class="compare-table-wrap">
+        <table class="compare-table" id="pov-under18-table">
+          <caption>States ranked by the poverty rate among people with disabilities in this age group; click a column heading to sort.</caption>
           <thead>
             <tr>
-              <th scope="col">State</th>
-              <th scope="col" class="disability-col">With Disability</th>
-              <th scope="col">No Disability</th>
+              <th scope="col" class="num sortable" data-sort="rank" aria-sort="ascending">Rank<span class="sort-arrow">&#9650;</span></th>
+              <th scope="col" class="sortable" data-sort="tier">Tier<span class="sort-arrow"></span></th>
+              <th scope="col" class="sortable" data-sort="name">State<span class="sort-arrow"></span></th>
+              <th scope="col" class="num sortable" data-sort="c0">With disability<span class="sort-arrow"></span></th>
+              <th scope="col" class="num sortable" data-sort="c1">Without disability<span class="sort-arrow"></span></th>
             </tr>
           </thead>
-          <tbody>
-            <tr><td>Alabama</td><td>21.9%</td><td>14.4%</td></tr>
-            <tr><td>Alaska</td><td>17.0%</td><td>9.3%</td></tr>
-            <tr><td>Arizona</td><td>18.2%</td><td>11.6%</td></tr>
-            <tr><td>Arkansas</td><td>23.9%</td><td>14.3%</td></tr>
-            <tr><td>California</td><td>19.3%</td><td>11.1%</td></tr>
-            <tr><td>Colorado</td><td>16.3%</td><td>8.6%</td></tr>
-            <tr><td>Connecticut</td><td>19.6%</td><td>8.7%</td></tr>
-            <tr><td>Delaware</td><td>16.1%</td><td>9.5%</td></tr>
-            <tr><td>District of Columbia</td><td class="high-poverty">30.6%<span class="sr-only"> (above 25 percent)</span></td><td>13.5%</td></tr>
-            <tr><td>Florida</td><td>18.7%</td><td>11.6%</td></tr>
-            <tr><td>Georgia</td><td>19.8%</td><td>12.5%</td></tr>
-            <tr><td>Hawaii</td><td>16.8%</td><td>9.3%</td></tr>
-            <tr><td>Idaho</td><td>16.3%</td><td>9.7%</td></tr>
-            <tr><td>Illinois</td><td>20.2%</td><td>10.7%</td></tr>
-            <tr><td>Indiana</td><td>20.3%</td><td>11.0%</td></tr>
-            <tr><td>Iowa</td><td>19.1%</td><td>9.9%</td></tr>
-            <tr><td>Kansas</td><td>19.5%</td><td>10.0%</td></tr>
-            <tr><td>Kentucky</td><td class="high-poverty">25.6%<span class="sr-only"> (above 25 percent)</span></td><td>14.0%</td></tr>
-            <tr><td>Louisiana</td><td class="high-poverty">25.7%<span class="sr-only"> (above 25 percent)</span></td><td>17.6%</td></tr>
-            <tr><td>Maine</td><td>20.9%</td><td>8.8%</td></tr>
-            <tr><td>Maryland</td><td>17.9%</td><td>8.4%</td></tr>
-            <tr><td>Massachusetts</td><td>21.5%</td><td>8.4%</td></tr>
-            <tr><td>Michigan</td><td>21.5%</td><td>11.8%</td></tr>
-            <tr><td>Minnesota</td><td>19.7%</td><td>7.9%</td></tr>
-            <tr><td>Mississippi</td><td class="high-poverty">25.8%<span class="sr-only"> (above 25 percent)</span></td><td>17.5%</td></tr>
-            <tr><td>Missouri</td><td>21.9%</td><td>11.0%</td></tr>
-          </tbody>
+          <tbody id="pov-under18-body"></tbody>
         </table>
       </div>
+      <p class="no-results" id="pov-under18-noresults" hidden>No state matches that search.</p>
+      <p class="compare-note">Tier and map colour answer different questions: the Tier column ranks each state only against other states with a disability, while the maps shade every state on one scale shared with people without disabilities, so a top-tier state can still sit in a pale band. Each age band ranks its own with-disability jurisdictions, so a tier here is not the same rate as the tier of the same name in another band.</p>
+    </section>
 
-      <div class="state-table-wrapper">
-        <table aria-label="Poverty rates for all ages, states M through W and Puerto Rico">
-          <caption>States M-W &amp; Puerto Rico: Percent below poverty line, all ages</caption>
+    <p class="section-intro">Working age is where the gap is widest. A working-age adult with a disability is 2.4 times as likely to be below the poverty line as one without. This was the only measure on this sheet until August 2026, and it is the one tied most directly to the barriers described on the companion Employment sheet.</p>
+    <h2 class="map-title" id="pov-1864-map-heading">Poverty Rate, Working-Age Adults 18 to 64: People With and Without Disabilities</h2>
+    <div class="maps-grid">
+        <figure class="map-panel">
+          <h3>People with disabilities</h3>
+          <div id="map-pov-1864-dis" class="map-container" aria-labelledby="pov-1864-map-heading pov-1864-dis-map-desc">
+            <p id="pov-1864-dis-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+            <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+          </div>
+        </figure>
+        <figure class="map-panel">
+          <h3>People without disabilities</h3>
+          <div id="map-pov-1864-nod" class="map-container" aria-labelledby="pov-1864-map-heading pov-1864-nod-map-desc">
+            <p id="pov-1864-nod-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+            <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+          </div>
+        </figure>
+    </div>
+      <div class="map-legend" aria-label="Map colour legend for Poverty rate, shared by both maps">
+        <span class="tier-chip excellent">Excellent (lowest rate) <span class="range">(5.3%&ndash;9.9%)</span></span>
+        <span class="tier-chip above">Good <span class="range">(9.9%&ndash;16.5%)</span></span>
+        <span class="tier-chip below">Subpar <span class="range">(16.5%&ndash;24.5%)</span></span>
+        <span class="tier-chip poor">Poor (highest rate) <span class="range">(24.5%&ndash;35.5%)</span></span>
+      </div>
+      <p class="map-caption">Both maps use one colour scale, so a shade means the same poverty rate on either map, and the difference between them is the disability gap read straight off the colour. The four bands are cut on the two populations pooled. Hover or tab through either map for a state's exact rate. Darker maroon marks a lower poverty rate. Puerto Rico (48.9%) is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024), Table C18130.</p>
+
+    <section class="compare-panel" aria-label="Poverty Rate, Working-Age Adults 18 to 64, by State">
+      <h2 class="section-heading">Poverty Rate, Working-Age Adults 18 to 64, by State</h2>
+    <p class="section-intro">Every state and DC, ranked by the poverty rate among people with disabilities in this age group. The two maps above are shaded on one scale pooled with people without disabilities; the Tier column here ranks each state among states with a disability.</p>
+      <div class="compare-controls">
+        <input type="text" id="pov-1864-search" class="compare-search" placeholder="Search for a state&hellip;" aria-label="Search for a state — Poverty Rate, Working-Age Adults 18 to 64, by State">
+        <button type="button" class="compare-toggle" id="pov-1864-toggle" aria-expanded="true">Show the 5 lowest and 5 highest</button>
+      </div>
+      <div class="compare-table-wrap">
+        <table class="compare-table" id="pov-1864-table">
+          <caption>States ranked by the poverty rate among people with disabilities in this age group; click a column heading to sort.</caption>
           <thead>
             <tr>
-              <th scope="col">State</th>
-              <th scope="col" class="disability-col">With Disability</th>
-              <th scope="col">No Disability</th>
+              <th scope="col" class="num sortable" data-sort="rank" aria-sort="ascending">Rank<span class="sort-arrow">&#9650;</span></th>
+              <th scope="col" class="sortable" data-sort="tier">Tier<span class="sort-arrow"></span></th>
+              <th scope="col" class="sortable" data-sort="name">State<span class="sort-arrow"></span></th>
+              <th scope="col" class="num sortable" data-sort="c0">With disability<span class="sort-arrow"></span></th>
+              <th scope="col" class="num sortable" data-sort="c1">Without disability<span class="sort-arrow"></span></th>
             </tr>
           </thead>
-          <tbody>
-            <tr><td>Montana</td><td>18.5%</td><td>10.3%</td></tr>
-            <tr><td>Nebraska</td><td>18.9%</td><td>9.5%</td></tr>
-            <tr><td>Nevada</td><td>17.5%</td><td>11.6%</td></tr>
-            <tr><td>New Hampshire</td><td>15.8%</td><td>5.9%</td></tr>
-            <tr><td>New Jersey</td><td>16.9%</td><td>8.8%</td></tr>
-            <tr><td>New Mexico</td><td>23.9%</td><td>16.7%</td></tr>
-            <tr><td>New York</td><td>24.8%</td><td>12.4%</td></tr>
-            <tr><td>North Carolina</td><td>20.5%</td><td>11.9%</td></tr>
-            <tr><td>North Dakota</td><td>20.2%</td><td>9.6%</td></tr>
-            <tr><td>Ohio</td><td>22.4%</td><td>11.8%</td></tr>
-            <tr><td>Oklahoma</td><td>21.4%</td><td>14.1%</td></tr>
-            <tr><td>Oregon</td><td>20.8%</td><td>10.3%</td></tr>
-            <tr><td>Pennsylvania</td><td>21.1%</td><td>10.1%</td></tr>
-            <tr><td>Rhode Island</td><td>21.0%</td><td>9.6%</td></tr>
-            <tr><td>South Carolina</td><td>20.5%</td><td>13.0%</td></tr>
-            <tr><td>South Dakota</td><td>20.6%</td><td>10.7%</td></tr>
-            <tr><td>Tennessee</td><td>21.6%</td><td>12.4%</td></tr>
-            <tr><td>Texas</td><td>20.0%</td><td>12.9%</td></tr>
-            <tr><td>Utah</td><td>14.7%</td><td>7.8%</td></tr>
-            <tr><td>Vermont</td><td>20.6%</td><td>8.3%</td></tr>
-            <tr><td>Virginia</td><td>17.2%</td><td>9.0%</td></tr>
-            <tr><td>Washington</td><td>18.2%</td><td>8.6%</td></tr>
-            <tr><td>West Virginia</td><td>24.9%</td><td>14.8%</td></tr>
-            <tr><td>Wisconsin</td><td>18.9%</td><td>9.4%</td></tr>
-            <tr><td>Wyoming</td><td>16.3%</td><td>9.6%</td></tr>
-            <tr><td>Puerto Rico</td><td class="high-poverty">47.2%<span class="sr-only"> (above 25 percent)</span></td><td>38.6%</td></tr>
-          </tbody>
+          <tbody id="pov-1864-body"></tbody>
         </table>
       </div>
+      <p class="no-results" id="pov-1864-noresults" hidden>No state matches that search.</p>
+      <p class="compare-note">Tier and map colour answer different questions: the Tier column ranks each state only against other states with a disability, while the maps shade every state on one scale shared with people without disabilities, so a top-tier state can still sit in a pale band. Each age band ranks its own with-disability jurisdictions, so a tier here is not the same rate as the tier of the same name in another band.</p>
+    </section>
+
+    <p class="section-intro">Poverty falls after 65 for both groups, because Social Security and Medicare reach almost everyone. The disability gap narrows but does not close. Read this map beside the other two rather than on its own, since a low rate here reflects federal income support more than anything a state has done.</p>
+    <h2 class="map-title" id="pov-65plus-map-heading">Poverty Rate, Adults 65 and Over: People With and Without Disabilities</h2>
+    <div class="maps-grid">
+        <figure class="map-panel">
+          <h3>People with disabilities</h3>
+          <div id="map-pov-65plus-dis" class="map-container" aria-labelledby="pov-65plus-map-heading pov-65plus-dis-map-desc">
+            <p id="pov-65plus-dis-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+            <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+          </div>
+        </figure>
+        <figure class="map-panel">
+          <h3>People without disabilities</h3>
+          <div id="map-pov-65plus-nod" class="map-container" aria-labelledby="pov-65plus-map-heading pov-65plus-nod-map-desc">
+            <p id="pov-65plus-nod-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+            <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+          </div>
+        </figure>
     </div>
-
-    <h2 class="section-heading">By Age</h2>
-    <p>The three maps below cover people with disabilities only. Each is ranked against itself, in equal-count quarters, so a state&rsquo;s shade says where it stands among states <em>within that age group</em> rather than how the age groups compare with each other. Poverty is markedly lower after 65 than before it, and the legends carry the numbers that show it. Rates for people without disabilities in each age group are in the fact sheet data rather than mapped here.</p>
-
-    <h2 class="section-heading">Children Under 18</h2>
-    <p class="section-lead">Children with a disability are poorer than children without one, though this is the narrowest of the three age gaps. Child poverty is mostly a measure of the household a child lives in rather than of the child, so this map reflects family income and the added cost of raising a disabled child at the same time.</p>
-    <div class="direction-note" role="note">
-      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the lowest share of disabled children below the poverty line. <em>Lighter gold</em> marks the highest. Each of the three age maps is ranked against itself, so the ranges on the legend differ from map to map. Read them before comparing one age group with another.
-    </div>
-    <figure class="map-figure">
-      <h3 class="map-title" id="pov-under18-map-heading">Children with Disabilities Below the Poverty Line, by State</h3>
-      <div id="map-pov-under18" class="map-container" aria-labelledby="pov-under18-map-heading pov-under18-map-desc">
-        <p id="pov-under18-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
-        <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+      <div class="map-legend" aria-label="Map colour legend for Poverty rate, shared by both maps">
+        <span class="tier-chip excellent">Excellent (lowest rate) <span class="range">(6.2%&ndash;7.9%)</span></span>
+        <span class="tier-chip above">Good <span class="range">(7.9%&ndash;10.9%)</span></span>
+        <span class="tier-chip below">Subpar <span class="range">(10.9%&ndash;14.1%)</span></span>
+        <span class="tier-chip poor">Poor (highest rate) <span class="range">(14.1%&ndash;22.5%)</span></span>
       </div>
-      <div class="map-legend" aria-label="Map color legend for Poverty rate, under 18">
-        <span class="tier-chip excellent">Excellent (15.1%-19.6%)</span>
-        <span class="tier-chip above">Above Average (19.6%-23.0%)</span>
-        <span class="tier-chip below">Below Average (23.0%-27.1%)</span>
-        <span class="tier-chip poor">Poor (27.1%-34.9%)</span>
+      <p class="map-caption">Both maps use one colour scale, so a shade means the same poverty rate on either map, and the difference between them is the disability gap read straight off the colour. The four bands are cut on the two populations pooled. Hover or tab through either map for a state's exact rate. Darker maroon marks a lower poverty rate. Puerto Rico (43.4%) is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024), Table C18130.</p>
+
+    <section class="compare-panel" aria-label="Poverty Rate, Adults 65 and Over, by State">
+      <h2 class="section-heading">Poverty Rate, Adults 65 and Over, by State</h2>
+    <p class="section-intro">Every state and DC, ranked by the poverty rate among people with disabilities in this age group. The two maps above are shaded on one scale pooled with people without disabilities; the Tier column here ranks each state among states with a disability.</p>
+      <div class="compare-controls">
+        <input type="text" id="pov-65plus-search" class="compare-search" placeholder="Search for a state&hellip;" aria-label="Search for a state — Poverty Rate, Adults 65 and Over, by State">
+        <button type="button" class="compare-toggle" id="pov-65plus-toggle" aria-expanded="true">Show the 5 lowest and 5 highest</button>
       </div>
-      <figcaption class="map-caption">Darker maroon = a lower share of children with disabilities living below the poverty line (better). Puerto Rico (64.2%) is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024), Table C18130.</figcaption>
-    </figure>
-
-    <h2 class="section-heading">Children with Disabilities Below the Poverty Line, by State</h2>
-    <div class="tables-grid">
-      <div>
-        <div class="tier-table-group">
-          <span class="tier-header excellent" aria-hidden="true">Excellent</span>
-          <table aria-label="Poverty rate, under 18, Excellent group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>Children</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Utah</td><td>15.1%</td><td>6,033</td></tr>
-              <tr><td>Colorado</td><td>15.6%</td><td>7,433</td></tr>
-              <tr><td>New Hampshire</td><td>16.0%</td><td>1,986</td></tr>
-              <tr><td>Maryland</td><td>17.0%</td><td>10,035</td></tr>
-              <tr><td>Hawaii</td><td>17.2%</td><td>1,885</td></tr>
-              <tr><td>Washington</td><td>17.8%</td><td>13,699</td></tr>
-              <tr><td>Minnesota</td><td>17.8%</td><td>10,041</td></tr>
-              <tr><td>Montana</td><td>18.2%</td><td>1,929</td></tr>
-              <tr><td>Wyoming</td><td>18.6%</td><td>1,093</td></tr>
-              <tr><td>New Jersey</td><td>18.8%</td><td>14,238</td></tr>
-              <tr><td>Idaho</td><td>18.9%</td><td>4,170</td></tr>
-              <tr><td>Virginia</td><td>19.1%</td><td>16,951</td></tr>
-              <tr><td>Oregon</td><td>19.5%</td><td>8,964</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="tier-table-group">
-          <span class="tier-header above" aria-hidden="true">Above Average</span>
-          <table aria-label="Poverty rate, under 18, Above Average group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>Children</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>South Dakota</td><td>19.8%</td><td>1,733</td></tr>
-              <tr><td>Alaska</td><td>19.9%</td><td>1,658</td></tr>
-              <tr><td>California</td><td>20.6%</td><td>70,355</td></tr>
-              <tr><td>Vermont</td><td>20.6%</td><td>1,178</td></tr>
-              <tr><td>Arizona</td><td>21.3%</td><td>16,757</td></tr>
-              <tr><td>Nevada</td><td>21.4%</td><td>6,962</td></tr>
-              <tr><td>Rhode Island</td><td>21.7%</td><td>2,489</td></tr>
-              <tr><td>Maine</td><td>21.8%</td><td>3,315</td></tr>
-              <tr><td>Wisconsin</td><td>22.2%</td><td>12,202</td></tr>
-              <tr><td>Florida</td><td>22.2%</td><td>49,020</td></tr>
-              <tr><td>North Dakota</td><td>22.3%</td><td>1,787</td></tr>
-              <tr><td>Kansas</td><td>22.8%</td><td>7,445</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div>
-        <div class="tier-table-group">
-          <span class="tier-header below" aria-hidden="true">Below Average</span>
-          <table aria-label="Poverty rate, under 18, Below Average group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>Children</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Iowa</td><td>23.0%</td><td>7,395</td></tr>
-              <tr><td>Massachusetts</td><td>23.1%</td><td>15,529</td></tr>
-              <tr><td>Nebraska</td><td>23.3%</td><td>4,292</td></tr>
-              <tr><td>Georgia</td><td>23.6%</td><td>29,596</td></tr>
-              <tr><td>Delaware</td><td>23.7%</td><td>2,620</td></tr>
-              <tr><td>Illinois</td><td>23.7%</td><td>26,558</td></tr>
-              <tr><td>Connecticut</td><td>24.8%</td><td>9,032</td></tr>
-              <tr><td>Texas</td><td>25.4%</td><td>94,016</td></tr>
-              <tr><td>South Carolina</td><td>25.4%</td><td>14,552</td></tr>
-              <tr><td>Missouri</td><td>25.7%</td><td>17,918</td></tr>
-              <tr><td>North Carolina</td><td>26.1%</td><td>27,698</td></tr>
-              <tr><td>Indiana</td><td>26.6%</td><td>22,184</td></tr>
-              <tr><td>Tennessee</td><td>26.8%</td><td>20,848</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="tier-table-group">
-          <span class="tier-header poor" aria-hidden="true">Poor</span>
-          <table aria-label="Poverty rate, under 18, Poor group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>Children</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Michigan</td><td>27.5%</td><td>29,321</td></tr>
-              <tr><td>Ohio</td><td>28.1%</td><td>39,063</td></tr>
-              <tr><td>Pennsylvania</td><td>28.2%</td><td>43,135</td></tr>
-              <tr><td>New York</td><td>28.8%</td><td>52,690</td></tr>
-              <tr><td>Oklahoma</td><td>28.9%</td><td>16,624</td></tr>
-              <tr><td>Alabama</td><td>29.5%</td><td>17,212</td></tr>
-              <tr><td>Kentucky</td><td>29.8%</td><td>18,839</td></tr>
-              <tr><td>Arkansas</td><td>31.7%</td><td>14,787</td></tr>
-              <tr><td>District of Columbia</td><td>32.2%</td><td>1,858</td></tr>
-              <tr><td>New Mexico</td><td>32.2%</td><td>7,613</td></tr>
-              <tr><td>West Virginia</td><td>32.4%</td><td>6,527</td></tr>
-              <tr><td>Louisiana</td><td>33.7%</td><td>21,431</td></tr>
-              <tr><td>Mississippi</td><td>34.9%</td><td>14,601</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <h2 class="section-heading">Working-Age Adults, 18 to 64</h2>
-    <p class="section-lead">Working age is where the gap is widest. A working-age adult with a disability is 2.4 times as likely to be below the poverty line as one without. This was the only measure on this sheet until August 2026, and it is the one tied most directly to the barriers described on the companion Employment sheet.</p>
-    <div class="direction-note" role="note">
-      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the lowest share of working-age disabled adults below the poverty line. <em>Lighter gold</em> marks the highest.
-    </div>
-    <figure class="map-figure">
-      <h3 class="map-title" id="pov-1864-map-heading">Working-Age Adults with Disabilities Below the Poverty Line, by State</h3>
-      <div id="map-pov-1864" class="map-container" aria-labelledby="pov-1864-map-heading pov-1864-map-desc">
-        <p id="pov-1864-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
-        <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
-      </div>
-      <div class="map-legend" aria-label="Map color legend for Poverty rate, 18 to 64">
-        <span class="tier-chip excellent">Excellent (17.3%-22.1%)</span>
-        <span class="tier-chip above">Above Average (22.1%-24.6%)</span>
-        <span class="tier-chip below">Below Average (24.6%-26.5%)</span>
-        <span class="tier-chip poor">Poor (26.5%-35.5%)</span>
-      </div>
-      <figcaption class="map-caption">Darker maroon = a lower share of working-age adults with disabilities living below the poverty line (better). Puerto Rico (48.9%) is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024), Table C18130.</figcaption>
-    </figure>
-
-    <h2 class="section-heading">Working-Age Adults with Disabilities Below the Poverty Line, by State</h2>
-    <div class="tables-grid">
-      <div>
-        <div class="tier-table-group">
-          <span class="tier-header excellent" aria-hidden="true">Excellent</span>
-          <table aria-label="Poverty rate, 18 to 64, Excellent group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>People</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Utah</td><td>17.3%</td><td>33,855</td></tr>
-              <tr><td>New Jersey</td><td>19.3%</td><td>87,801</td></tr>
-              <tr><td>Idaho</td><td>19.5%</td><td>26,423</td></tr>
-              <tr><td>Colorado</td><td>19.8%</td><td>67,964</td></tr>
-              <tr><td>Delaware</td><td>19.8%</td><td>13,309</td></tr>
-              <tr><td>New Hampshire</td><td>20.0%</td><td>18,142</td></tr>
-              <tr><td>Nevada</td><td>20.3%</td><td>45,164</td></tr>
-              <tr><td>Virginia</td><td>20.7%</td><td>107,486</td></tr>
-              <tr><td>Alaska</td><td>20.9%</td><td>10,814</td></tr>
-              <tr><td>Wyoming</td><td>21.3%</td><td>7,965</td></tr>
-              <tr><td>Maryland</td><td>21.6%</td><td>75,343</td></tr>
-              <tr><td>Arizona</td><td>21.9%</td><td>104,231</td></tr>
-              <tr><td>Texas</td><td>22.0%</td><td>409,665</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="tier-table-group">
-          <span class="tier-header above" aria-hidden="true">Above Average</span>
-          <table aria-label="Poverty rate, 18 to 64, Above Average group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>People</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Florida</td><td>22.2%</td><td>291,709</td></tr>
-              <tr><td>California</td><td>22.3%</td><td>472,650</td></tr>
-              <tr><td>Hawaii</td><td>22.5%</td><td>16,325</td></tr>
-              <tr><td>Washington</td><td>22.6%</td><td>120,334</td></tr>
-              <tr><td>Georgia</td><td>22.9%</td><td>166,564</td></tr>
-              <tr><td>Nebraska</td><td>23.2%</td><td>27,419</td></tr>
-              <tr><td>Montana</td><td>23.2%</td><td>17,884</td></tr>
-              <tr><td>Wisconsin</td><td>23.2%</td><td>82,367</td></tr>
-              <tr><td>Connecticut</td><td>24.2%</td><td>49,284</td></tr>
-              <tr><td>Iowa</td><td>24.2%</td><td>47,725</td></tr>
-              <tr><td>Kansas</td><td>24.3%</td><td>47,659</td></tr>
-              <tr><td>North Dakota</td><td>24.3%</td><td>11,121</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div>
-        <div class="tier-table-group">
-          <span class="tier-header below" aria-hidden="true">Below Average</span>
-          <table aria-label="Poverty rate, 18 to 64, Below Average group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>People</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Illinois</td><td>24.6%</td><td>180,526</td></tr>
-              <tr><td>North Carolina</td><td>24.6%</td><td>176,555</td></tr>
-              <tr><td>South Carolina</td><td>24.7%</td><td>92,244</td></tr>
-              <tr><td>Indiana</td><td>24.8%</td><td>124,055</td></tr>
-              <tr><td>Minnesota</td><td>25.1%</td><td>81,851</td></tr>
-              <tr><td>Massachusetts</td><td>25.1%</td><td>103,398</td></tr>
-              <tr><td>Rhode Island</td><td>25.3%</td><td>18,676</td></tr>
-              <tr><td>South Dakota</td><td>25.4%</td><td>13,368</td></tr>
-              <tr><td>Oklahoma</td><td>25.7%</td><td>91,979</td></tr>
-              <tr><td>Pennsylvania</td><td>25.7%</td><td>229,988</td></tr>
-              <tr><td>Alabama</td><td>26.1%</td><td>110,574</td></tr>
-              <tr><td>Tennessee</td><td>26.1%</td><td>138,043</td></tr>
-              <tr><td>Maine</td><td>26.5%</td><td>28,251</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="tier-table-group">
-          <span class="tier-header poor" aria-hidden="true">Poor</span>
-          <table aria-label="Poverty rate, 18 to 64, Poor group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>People</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Oregon</td><td>26.6%</td><td>87,326</td></tr>
-              <tr><td>Vermont</td><td>26.8%</td><td>12,070</td></tr>
-              <tr><td>Michigan</td><td>26.8%</td><td>194,223</td></tr>
-              <tr><td>Missouri</td><td>26.9%</td><td>124,936</td></tr>
-              <tr><td>Ohio</td><td>28.1%</td><td>237,738</td></tr>
-              <tr><td>New Mexico</td><td>28.6%</td><td>50,271</td></tr>
-              <tr><td>Arkansas</td><td>29.0%</td><td>81,291</td></tr>
-              <tr><td>New York</td><td>29.2%</td><td>342,537</td></tr>
-              <tr><td>Louisiana</td><td>29.8%</td><td>113,521</td></tr>
-              <tr><td>Mississippi</td><td>30.1%</td><td>80,164</td></tr>
-              <tr><td>Kentucky</td><td>30.7%</td><td>131,907</td></tr>
-              <tr><td>West Virginia</td><td>31.2%</td><td>52,582</td></tr>
-              <tr><td>District of Columbia</td><td>35.5%</td><td>15,071</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <h2 class="section-heading">Adults 65 and Over</h2>
-    <p class="section-lead">Poverty falls after 65 for both groups, because Social Security and Medicare reach almost everyone. The disability gap narrows but does not close. Read this map beside the other two rather than on its own, since a low rate here reflects federal income support more than anything a state has done.</p>
-    <div class="direction-note" role="note">
-      <strong>How to read the colors.</strong> States are shaded by performance tier, not by raw rate. <em>Darker maroon</em> marks the lowest share of disabled adults 65 and over below the poverty line. <em>Lighter gold</em> marks the highest.
-    </div>
-    <figure class="map-figure">
-      <h3 class="map-title" id="pov-65plus-map-heading">Older Adults with Disabilities Below the Poverty Line, by State</h3>
-      <div id="map-pov-65plus" class="map-container" aria-labelledby="pov-65plus-map-heading pov-65plus-map-desc">
-        <p id="pov-65plus-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
-        <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
-      </div>
-      <div class="map-legend" aria-label="Map color legend for Poverty rate, 65 and over">
-        <span class="tier-chip excellent">Excellent (10.4%-13.1%)</span>
-        <span class="tier-chip above">Above Average (13.1%-14.1%)</span>
-        <span class="tier-chip below">Below Average (14.1%-15.4%)</span>
-        <span class="tier-chip poor">Poor (15.4%-22.5%)</span>
-      </div>
-      <figcaption class="map-caption">Darker maroon = a lower share of adults 65 and over with disabilities living below the poverty line (better). Puerto Rico (43.4%) is not shown. Source: U.S. Census Bureau, American Community Survey 5-year estimates (2020&ndash;2024), Table C18130.</figcaption>
-    </figure>
-
-    <h2 class="section-heading">Older Adults with Disabilities Below the Poverty Line, by State</h2>
-    <div class="tables-grid">
-      <div>
-        <div class="tier-table-group">
-          <span class="tier-header excellent" aria-hidden="true">Excellent</span>
-          <table aria-label="Poverty rate, 65 and over, Excellent group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>People</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Utah</td><td>10.4%</td><td>12,562</td></tr>
-              <tr><td>Delaware</td><td>10.7%</td><td>6,696</td></tr>
-              <tr><td>Alaska</td><td>10.8%</td><td>3,826</td></tr>
-              <tr><td>New Hampshire</td><td>10.9%</td><td>8,408</td></tr>
-              <tr><td>Wyoming</td><td>10.9%</td><td>4,026</td></tr>
-              <tr><td>Idaho</td><td>11.8%</td><td>12,930</td></tr>
-              <tr><td>Colorado</td><td>12.0%</td><td>31,809</td></tr>
-              <tr><td>Iowa</td><td>12.2%</td><td>20,376</td></tr>
-              <tr><td>Hawaii</td><td>12.4%</td><td>11,663</td></tr>
-              <tr><td>Indiana</td><td>12.7%</td><td>46,608</td></tr>
-              <tr><td>Virginia</td><td>12.8%</td><td>56,421</td></tr>
-              <tr><td>Washington</td><td>12.9%</td><td>55,216</td></tr>
-              <tr><td>Kansas</td><td>12.9%</td><td>20,280</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="tier-table-group">
-          <span class="tier-header above" aria-hidden="true">Above Average</span>
-          <table aria-label="Poverty rate, 65 and over, Above Average group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>People</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Wisconsin</td><td>13.2%</td><td>40,085</td></tr>
-              <tr><td>Nebraska</td><td>13.2%</td><td>13,406</td></tr>
-              <tr><td>Nevada</td><td>13.4%</td><td>24,573</td></tr>
-              <tr><td>Vermont</td><td>13.6%</td><td>5,288</td></tr>
-              <tr><td>Montana</td><td>13.6%</td><td>9,642</td></tr>
-              <tr><td>Maryland</td><td>13.7%</td><td>40,914</td></tr>
-              <tr><td>Minnesota</td><td>13.7%</td><td>37,405</td></tr>
-              <tr><td>Connecticut</td><td>13.7%</td><td>26,019</td></tr>
-              <tr><td>Arizona</td><td>13.8%</td><td>60,767</td></tr>
-              <tr><td>Oklahoma</td><td>13.8%</td><td>35,893</td></tr>
-              <tr><td>Michigan</td><td>13.9%</td><td>81,336</td></tr>
-              <tr><td>Oregon</td><td>13.9%</td><td>37,864</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div>
-        <div class="tier-table-group">
-          <span class="tier-header below" aria-hidden="true">Below Average</span>
-          <table aria-label="Poverty rate, 65 and over, Below Average group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>People</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Ohio</td><td>14.1%</td><td>96,114</td></tr>
-              <tr><td>New Jersey</td><td>14.3%</td><td>66,485</td></tr>
-              <tr><td>Maine</td><td>14.4%</td><td>13,331</td></tr>
-              <tr><td>Pennsylvania</td><td>14.4%</td><td>111,975</td></tr>
-              <tr><td>North Carolina</td><td>14.5%</td><td>86,532</td></tr>
-              <tr><td>Illinois</td><td>14.6%</td><td>96,192</td></tr>
-              <tr><td>Georgia</td><td>14.6%</td><td>80,301</td></tr>
-              <tr><td>North Dakota</td><td>14.7%</td><td>5,568</td></tr>
-              <tr><td>Missouri</td><td>14.8%</td><td>54,463</td></tr>
-              <tr><td>South Carolina</td><td>14.8%</td><td>48,325</td></tr>
-              <tr><td>Tennessee</td><td>15.0%</td><td>64,262</td></tr>
-              <tr><td>Florida</td><td>15.1%</td><td>222,133</td></tr>
-              <tr><td>Arkansas</td><td>15.3%</td><td>31,941</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="tier-table-group">
-          <span class="tier-header poor" aria-hidden="true">Poor</span>
-          <table aria-label="Poverty rate, 65 and over, Poor group">
-            <thead>
-            <tr>
-              <th scope="col"NA>State</th>
-              <th scope="col"NA>Percent</th>
-              <th scope="col"NA>People</th>
-            </tr>
-            </thead>
-            <tbody>
-              <tr><td>Alabama</td><td>15.5%</td><td>52,093</td></tr>
-              <tr><td>South Dakota</td><td>15.5%</td><td>7,554</td></tr>
-              <tr><td>Rhode Island</td><td>15.8%</td><td>9,820</td></tr>
-              <tr><td>California</td><td>15.9%</td><td>320,879</td></tr>
-              <tr><td>Texas</td><td>16.0%</td><td>225,268</td></tr>
-              <tr><td>West Virginia</td><td>16.4%</td><td>23,392</td></tr>
-              <tr><td>Massachusetts</td><td>17.1%</td><td>63,172</td></tr>
-              <tr><td>New Mexico</td><td>17.3%</td><td>26,439</td></tr>
-              <tr><td>Kentucky</td><td>17.4%</td><td>52,020</td></tr>
-              <tr><td>Mississippi</td><td>18.3%</td><td>36,908</td></tr>
-              <tr><td>Louisiana</td><td>18.6%</td><td>53,651</td></tr>
-              <tr><td>New York</td><td>19.4%</td><td>214,826</td></tr>
-              <tr><td>District of Columbia</td><td>22.5%</td><td>6,118</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-
-    <h2 class="section-heading">Poverty by Age, People with Disabilities, by State</h2>
-    <p>The tables above group states into performance tiers, one age band at a time. This table puts a state&rsquo;s three figures side by side, so a single state can be read across the life course.</p>
-
-    <div class="table-columns">
-      <div class="state-table-wrapper">
-        <table aria-label="Poverty rates by age for people with disabilities, states A through M">
-          <caption>States A-M: Percent below poverty line by age, people with disabilities</caption>
+      <div class="compare-table-wrap">
+        <table class="compare-table" id="pov-65plus-table">
+          <caption>States ranked by the poverty rate among people with disabilities in this age group; click a column heading to sort.</caption>
           <thead>
             <tr>
-              <th scope="col">State</th>
-              <th scope="col">Under 18</th>
-              <th scope="col">18 to 64</th>
-              <th scope="col">65 and over</th>
+              <th scope="col" class="num sortable" data-sort="rank" aria-sort="ascending">Rank<span class="sort-arrow">&#9650;</span></th>
+              <th scope="col" class="sortable" data-sort="tier">Tier<span class="sort-arrow"></span></th>
+              <th scope="col" class="sortable" data-sort="name">State<span class="sort-arrow"></span></th>
+              <th scope="col" class="num sortable" data-sort="c0">With disability<span class="sort-arrow"></span></th>
+              <th scope="col" class="num sortable" data-sort="c1">Without disability<span class="sort-arrow"></span></th>
             </tr>
           </thead>
-          <tbody>
-            <tr><td>Alabama</td><td>29.5%</td><td>26.1%</td><td>15.5%</td></tr>
-            <tr><td>Alaska</td><td>19.9%</td><td>20.9%</td><td>10.8%</td></tr>
-            <tr><td>Arizona</td><td>21.3%</td><td>21.9%</td><td>13.8%</td></tr>
-            <tr><td>Arkansas</td><td>31.7%</td><td>29.0%</td><td>15.3%</td></tr>
-            <tr><td>California</td><td>20.6%</td><td>22.3%</td><td>15.9%</td></tr>
-            <tr><td>Colorado</td><td>15.6%</td><td>19.8%</td><td>12.0%</td></tr>
-            <tr><td>Connecticut</td><td>24.8%</td><td>24.2%</td><td>13.7%</td></tr>
-            <tr><td>Delaware</td><td>23.7%</td><td>19.8%</td><td>10.7%</td></tr>
-            <tr><td>District of Columbia</td><td>32.2%</td><td>35.5%</td><td>22.5%</td></tr>
-            <tr><td>Florida</td><td>22.2%</td><td>22.2%</td><td>15.1%</td></tr>
-            <tr><td>Georgia</td><td>23.6%</td><td>22.9%</td><td>14.6%</td></tr>
-            <tr><td>Hawaii</td><td>17.2%</td><td>22.5%</td><td>12.4%</td></tr>
-            <tr><td>Idaho</td><td>18.9%</td><td>19.5%</td><td>11.8%</td></tr>
-            <tr><td>Illinois</td><td>23.7%</td><td>24.6%</td><td>14.6%</td></tr>
-            <tr><td>Indiana</td><td>26.6%</td><td>24.8%</td><td>12.7%</td></tr>
-            <tr><td>Iowa</td><td>23.0%</td><td>24.2%</td><td>12.2%</td></tr>
-            <tr><td>Kansas</td><td>22.8%</td><td>24.3%</td><td>12.9%</td></tr>
-            <tr><td>Kentucky</td><td>29.8%</td><td>30.7%</td><td>17.4%</td></tr>
-            <tr><td>Louisiana</td><td>33.7%</td><td>29.8%</td><td>18.6%</td></tr>
-            <tr><td>Maine</td><td>21.8%</td><td>26.5%</td><td>14.4%</td></tr>
-            <tr><td>Maryland</td><td>17.0%</td><td>21.6%</td><td>13.7%</td></tr>
-            <tr><td>Massachusetts</td><td>23.1%</td><td>25.1%</td><td>17.1%</td></tr>
-            <tr><td>Michigan</td><td>27.5%</td><td>26.8%</td><td>13.9%</td></tr>
-            <tr><td>Minnesota</td><td>17.8%</td><td>25.1%</td><td>13.7%</td></tr>
-            <tr><td>Mississippi</td><td>34.9%</td><td>30.1%</td><td>18.3%</td></tr>
-            <tr><td>Missouri</td><td>25.7%</td><td>26.9%</td><td>14.8%</td></tr>
-          </tbody>
+          <tbody id="pov-65plus-body"></tbody>
         </table>
       </div>
+      <p class="no-results" id="pov-65plus-noresults" hidden>No state matches that search.</p>
+      <p class="compare-note">Tier and map colour answer different questions: the Tier column ranks each state only against other states with a disability, while the maps shade every state on one scale shared with people without disabilities, so a top-tier state can still sit in a pale band. Each age band ranks its own with-disability jurisdictions, so a tier here is not the same rate as the tier of the same name in another band.</p>
+    </section>
 
-      <div class="state-table-wrapper">
-        <table aria-label="Poverty rates by age for people with disabilities, states M through W and Puerto Rico">
-          <caption>States M-W &amp; Puerto Rico: Percent below poverty line by age, people with disabilities</caption>
-          <thead>
-            <tr>
-              <th scope="col">State</th>
-              <th scope="col">Under 18</th>
-              <th scope="col">18 to 64</th>
-              <th scope="col">65 and over</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>Montana</td><td>18.2%</td><td>23.2%</td><td>13.6%</td></tr>
-            <tr><td>Nebraska</td><td>23.3%</td><td>23.2%</td><td>13.2%</td></tr>
-            <tr><td>Nevada</td><td>21.4%</td><td>20.3%</td><td>13.4%</td></tr>
-            <tr><td>New Hampshire</td><td>16.0%</td><td>20.0%</td><td>10.9%</td></tr>
-            <tr><td>New Jersey</td><td>18.8%</td><td>19.3%</td><td>14.3%</td></tr>
-            <tr><td>New Mexico</td><td>32.2%</td><td>28.6%</td><td>17.3%</td></tr>
-            <tr><td>New York</td><td>28.8%</td><td>29.2%</td><td>19.4%</td></tr>
-            <tr><td>North Carolina</td><td>26.1%</td><td>24.6%</td><td>14.5%</td></tr>
-            <tr><td>North Dakota</td><td>22.3%</td><td>24.3%</td><td>14.7%</td></tr>
-            <tr><td>Ohio</td><td>28.1%</td><td>28.1%</td><td>14.1%</td></tr>
-            <tr><td>Oklahoma</td><td>28.9%</td><td>25.7%</td><td>13.8%</td></tr>
-            <tr><td>Oregon</td><td>19.5%</td><td>26.6%</td><td>13.9%</td></tr>
-            <tr><td>Pennsylvania</td><td>28.2%</td><td>25.7%</td><td>14.4%</td></tr>
-            <tr><td>Rhode Island</td><td>21.7%</td><td>25.3%</td><td>15.8%</td></tr>
-            <tr><td>South Carolina</td><td>25.4%</td><td>24.7%</td><td>14.8%</td></tr>
-            <tr><td>South Dakota</td><td>19.8%</td><td>25.4%</td><td>15.5%</td></tr>
-            <tr><td>Tennessee</td><td>26.8%</td><td>26.1%</td><td>15.0%</td></tr>
-            <tr><td>Texas</td><td>25.4%</td><td>22.0%</td><td>16.0%</td></tr>
-            <tr><td>Utah</td><td>15.1%</td><td>17.3%</td><td>10.4%</td></tr>
-            <tr><td>Vermont</td><td>20.6%</td><td>26.8%</td><td>13.6%</td></tr>
-            <tr><td>Virginia</td><td>19.1%</td><td>20.7%</td><td>12.8%</td></tr>
-            <tr><td>Washington</td><td>17.8%</td><td>22.6%</td><td>12.9%</td></tr>
-            <tr><td>West Virginia</td><td>32.4%</td><td>31.2%</td><td>16.4%</td></tr>
-            <tr><td>Wisconsin</td><td>22.2%</td><td>23.2%</td><td>13.2%</td></tr>
-            <tr><td>Wyoming</td><td>18.6%</td><td>21.3%</td><td>10.9%</td></tr>
-            <tr><td>Puerto Rico</td><td>64.2%</td><td>48.9%</td><td>43.4%</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+
+
 
     <div class="footnotes" role="note" aria-label="Data sources">
+      <h2 class="footnotes-heading">Notes and Sources</h2>
       <ol>
         <li>Americans With Disabilities Act of 1990. Pub. L. 101-336. &sect; 1. 26 July 1990. 104 Stat. 328.</li>
         <li>U.S. Census Bureau. American Community Survey 5-year estimates (2020&ndash;2024). Table ACSDT5Y2024.C18130, Age by Disability Status by Poverty Status. Universe: the population for whom poverty status is determined, which excludes people living in group quarters, including institutions and college dormitories, and unrelated individuals under 15. Each rate is the count below the poverty line divided by that same universe for the same age group and disability status, so numerator and denominator are drawn from one table. The all-ages figure is the sum of the three age-group counts over the sum of the three age-group universes, which is exact because the three groups partition the table.</li>
@@ -975,7 +837,7 @@
   <footer class="factsheet-footer" role="contentinfo">
     <p class="funding-note">The ADA-PARC is funded by the National Institute for Disability, Independent Living, and Rehabilitation Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.</p>
     <p>The Americans with Disabilities Act Participation Action Research Consortium (ADA-PARC) is a collaborative national project to document participation disparities experienced by people with disabilities at the national, state, and city levels. For more information on your state, visit <a href="https://adaparc.org" target="_blank" rel="noopener noreferrer">ADAPARC.ORG</a>. For more information about your rights, go to the ADA National Network at <a href="https://adata.org" target="_blank" rel="noopener noreferrer">ADATA.ORG</a>. Please contact <a href="mailto:hammel@uic.edu">hammel@uic.edu</a> with any questions.</p>
-    <p class="updated-note">Last updated: August 2026</p>
+    <p class="updated-note">Last updated: September 2026</p>
   </footer>
 
 </div>
@@ -1028,10 +890,13 @@ const ADAPARC_TIER_BORDER = {
 // against the white page and the national silhouette breaks up.
 const ADAPARC_MAP_PERIMETER = "#1c2b3a";  // = ADA_PARC_PALETTE$stroke
 
+// "Good" / "Subpar" replaced "Above Average" / "Below Average" on 2026-09-01 to
+// match FS_TIER_LABELS_PERF in R/factsheet-functions.R and the scorecards. This
+// copy exists only because the browser cannot call R; keep the two in step.
 const ADAPARC_TIER_LABEL = {
   excellent: "Excellent",
-  above:     "Above Average",
-  below:     "Below Average",
+  above:     "Good",
+  below:     "Subpar",
   poor:      "Poor",
   na:        "No data available"
 };
@@ -1299,8 +1164,137 @@ window.ADAPARC_TIER_LABEL = ADAPARC_TIER_LABEL;
 window.ADAPARC_TIER_LABEL_MAGNITUDE = ADAPARC_TIER_LABEL_MAGNITUDE;
 window.ADAPARC_TIER_LABEL_BAND_LOW = ADAPARC_TIER_LABEL_BAND_LOW;
 
+// ── ADA-PARC shared ranked-table renderer ─────────────────────────────────────
+// Client-side search / sort / top5-bottom5 for the simplified fact sheet
+// template's "States, Ranked" section. One call per table; a sheet with several
+// indicators (e.g. Poverty) calls it once per indicator.
+//
+// The tier shown in the Tier column is COMPUTED SERVER-SIDE by
+// fs_assign_tiers() and passed in on each row. This script never derives a tier
+// from a breakpoint; that logic lives in factsheet-functions.R so the table,
+// the map and the legend can never disagree.
+//
+// opts = {
+//   tableId, bodyId, searchId, toggleId, noResultsId,
+//   cols:   [{ label, cls }]              // numeric columns, in display order
+//   rows:   [{ name, abbr, rank, tier, tierRank, sort:[Number,...], disp:[String,...] }],
+//   tierLabels: { excellent, above, below, poor },
+//   toggleLabel: "Show the 5 lowest and 5 highest",
+//   restoreLabel: "Show all 51"
+// }
+function adaparcRankedTable(opts) {
+  var table   = document.getElementById(opts.tableId);
+  var tbody   = document.getElementById(opts.bodyId);
+  var search  = document.getElementById(opts.searchId);
+  var toggle  = document.getElementById(opts.toggleId);
+  var noRes   = document.getElementById(opts.noResultsId);
+  if (!table || !tbody) return;
 
-const POV_ALL_DIS = {
+  var LABELS = opts.tierLabels || {
+    excellent: "Excellent", above: "Good", below: "Subpar", poor: "Poor"
+  };
+  var rows = opts.rows.slice();
+  var restricted = false;
+  var sortKey = "rank";
+  var sortDir = 1;
+
+  function tierChip(r) {
+    return '<span class="tier-chip ' + r.tier + '">' + LABELS[r.tier] + '</span>';
+  }
+
+  function rowHtml(r) {
+    var cells = "";
+    for (var i = 0; i < r.disp.length; i++) {
+      var cls = (opts.cols[i] && opts.cols[i].cls) || "num";
+      cells += '<td class="' + cls + '">' + r.disp[i] + '</td>';
+    }
+    return '<tr>' +
+      '<td class="num">' + r.rank + '</td>' +
+      '<td>' + tierChip(r) + '</td>' +
+      '<th scope="row">' + r.name +
+        (r.abbr ? ' <span class="state-abbr">(' + r.abbr + ')</span>' : '') + '</th>' +
+      cells +
+      '</tr>';
+  }
+
+  function valueFor(r, key) {
+    if (key === "rank") return r.rank;
+    if (key === "tier") return r.tierRank;
+    if (key === "name") return r.name.toLowerCase();
+    if (key.charAt(0) === "c") return r.sort[parseInt(key.slice(1), 10)];
+    return r.rank;
+  }
+
+  function sorted() {
+    var out = rows.slice();
+    out.sort(function (a, b) {
+      var av = valueFor(a, sortKey), bv = valueFor(b, sortKey);
+      if (av < bv) return -1 * sortDir;
+      if (av > bv) return 1 * sortDir;
+      return a.rank - b.rank;
+    });
+    return out;
+  }
+
+  function render() {
+    var q = search ? search.value.trim().toLowerCase() : "";
+    var view = sorted();
+    if (q) {
+      view = view.filter(function (r) {
+        return r.name.toLowerCase().indexOf(q) !== -1 ||
+               (r.abbr && r.abbr.toLowerCase().indexOf(q) !== -1);
+      });
+    } else if (restricted) {
+      view = view.slice(0, 5).concat(view.slice(-5));
+    }
+    if (view.length === 0) {
+      tbody.innerHTML = "";
+      if (noRes) noRes.hidden = false;
+    } else {
+      if (noRes) noRes.hidden = true;
+      tbody.innerHTML = view.map(rowHtml).join("");
+    }
+  }
+
+  if (search) search.addEventListener("input", render);
+
+  if (toggle) {
+    toggle.addEventListener("click", function () {
+      restricted = !restricted;
+      toggle.textContent = restricted
+        ? (opts.restoreLabel || "Show all states")
+        : (opts.toggleLabel || "Show the 5 lowest and 5 highest");
+      toggle.setAttribute("aria-expanded", restricted ? "false" : "true");
+      if (search) search.value = "";
+      render();
+    });
+  }
+
+  table.querySelectorAll("th.sortable").forEach(function (th) {
+    th.addEventListener("click", function () {
+      var key = th.getAttribute("data-sort");
+      if (sortKey === key) {
+        sortDir = -sortDir;
+      } else {
+        sortKey = key;
+        sortDir = 1;
+      }
+      table.querySelectorAll("th.sortable .sort-arrow").forEach(function (a) {
+        a.textContent = "";
+      });
+      var arrow = th.querySelector(".sort-arrow");
+      if (arrow) arrow.textContent = sortDir === 1 ? "▲" : "▼";
+      th.setAttribute("aria-sort", sortDir === 1 ? "ascending" : "descending");
+      render();
+    });
+  });
+
+  render();
+}
+window.adaparcRankedTable = adaparcRankedTable;
+
+
+const POVERTY_DIS_DATA = {
   "01":["poor","21.9%"],
   "02":["below","17.0%"],
   "04":["below","18.2%"],
@@ -1355,16 +1349,15 @@ const POV_ALL_DIS = {
 };
 
 adaparcRenderMap({
-  containerId: "map-all-dis",
-  descId:      "all-dis-map-desc",
-  stateData:   POV_ALL_DIS,
-  valueLabel:  "Poverty rate, all ages (with disability)",
+  containerId: "map-poverty-dis",
+  descId:      "poverty-dis-map-desc",
+  stateData:   POVERTY_DIS_DATA,
+  valueLabel:  "Poverty rate",
   svgTitle:    "Poverty rate among people with disabilities of all ages, by U.S. state",
-  svgDesc:     "Choropleth of the 50 states and DC shaded by the share of people with disabilities of any age living below the poverty line. Darker shading is a lower rate. The scale is shared with the map of people without disabilities beside it, so the two can be compared shade for shade. Full data is in the table below.",
-  tierLabels:  ADAPARC_TIER_LABEL_BAND_LOW
+  svgDesc:     "Choropleth of the 50 states and DC shaded by the share of people with disabilities of any age living below the poverty line, on a scale shared with the map for people without disabilities. Darker is a lower rate. Full data is in the table below."
 });
 
-const POV_ALL_NOD = {
+const POVERTY_NOD_DATA = {
   "01":["above","14.4%"],
   "02":["excellent","9.3%"],
   "04":["above","11.6%"],
@@ -1419,202 +1412,638 @@ const POV_ALL_NOD = {
 };
 
 adaparcRenderMap({
-  containerId: "map-all-nod",
-  descId:      "all-nod-map-desc",
-  stateData:   POV_ALL_NOD,
-  valueLabel:  "Poverty rate, all ages (no disability)",
+  containerId: "map-poverty-nod",
+  descId:      "poverty-nod-map-desc",
+  stateData:   POVERTY_NOD_DATA,
+  valueLabel:  "Poverty rate",
   svgTitle:    "Poverty rate among people without disabilities of all ages, by U.S. state",
-  svgDesc:     "Choropleth of the 50 states and DC shaded by the share of people without disabilities of any age living below the poverty line. Darker shading is a lower rate, on the same scale as the map of people with disabilities beside it, so this map is broadly darker. Full data is in the table below.",
-  tierLabels:  ADAPARC_TIER_LABEL_BAND_LOW
+  svgDesc:     "Choropleth of the 50 states and DC on the same shared scale for people without disabilities, so this map is broadly darker. Full data is in the table below."
 });
 
-const POV_UNDER18_DATA = {
+adaparcRankedTable({
+  tableId: "poverty-table", bodyId: "poverty-body",
+  searchId: "poverty-search", toggleId: "poverty-toggle",
+  noResultsId: "poverty-noresults",
+  cols: [{label:"With disability",cls:"num dis-cell"},{label:"Without disability",cls:"num"}],
+  tierLabels: {excellent:"Excellent",above:"Good",below:"Subpar",poor:"Poor"},
+  toggleLabel: "Show the 5 lowest and 5 highest", restoreLabel: "Show all 51",
+  rows: [
+  {name:"Alabama",abbr:"AL",rank:42,tier:"poor",tierRank:3,sort:[21.9449,14.4131],disp:["21.9%","14.4%"]},
+  {name:"Alaska",abbr:"AK",rank:9,tier:"excellent",tierRank:0,sort:[17.0435,9.3022],disp:["17.0%","9.3%"]},
+  {name:"Arizona",abbr:"AZ",rank:13,tier:"excellent",tierRank:0,sort:[18.2355,11.596],disp:["18.2%","11.6%"]},
+  {name:"Arkansas",abbr:"AR",rank:44,tier:"poor",tierRank:3,sort:[23.8676,14.282],disp:["23.9%","14.3%"]},
+  {name:"California",abbr:"CA",rank:20,tier:"above",tierRank:1,sort:[19.3206,11.0769],disp:["19.3%","11.1%"]},
+  {name:"Colorado",abbr:"CO",rank:6,tier:"excellent",tierRank:0,sort:[16.34,8.5796],disp:["16.3%","8.6%"]},
+  {name:"Connecticut",abbr:"CT",rank:22,tier:"above",tierRank:1,sort:[19.6326,8.6973],disp:["19.6%","8.7%"]},
+  {name:"Delaware",abbr:"DE",rank:3,tier:"excellent",tierRank:0,sort:[16.0826,9.5153],disp:["16.1%","9.5%"]},
+  {name:"District of Columbia",abbr:"DC",rank:51,tier:"poor",tierRank:3,sort:[30.5542,13.5473],disp:["30.6%","13.5%"]},
+  {name:"Florida",abbr:"FL",rank:16,tier:"above",tierRank:1,sort:[18.7295,11.6295],disp:["18.7%","11.6%"]},
+  {name:"Georgia",abbr:"GA",rank:24,tier:"above",tierRank:1,sort:[19.7543,12.4756],disp:["19.8%","12.5%"]},
+  {name:"Hawaii",abbr:"HI",rank:7,tier:"excellent",tierRank:0,sort:[16.8231,9.2593],disp:["16.8%","9.3%"]},
+  {name:"Idaho",abbr:"ID",rank:4,tier:"excellent",tierRank:0,sort:[16.3127,9.6693],disp:["16.3%","9.7%"]},
+  {name:"Illinois",abbr:"IL",rank:26,tier:"below",tierRank:2,sort:[20.1501,10.6649],disp:["20.2%","10.7%"]},
+  {name:"Indiana",abbr:"IN",rank:28,tier:"below",tierRank:2,sort:[20.2803,11.0187],disp:["20.3%","11.0%"]},
+  {name:"Iowa",abbr:"IA",rank:19,tier:"above",tierRank:1,sort:[19.0504,9.9213],disp:["19.1%","9.9%"]},
+  {name:"Kansas",abbr:"KS",rank:21,tier:"above",tierRank:1,sort:[19.5449,10.0292],disp:["19.5%","10.0%"]},
+  {name:"Kentucky",abbr:"KY",rank:48,tier:"poor",tierRank:3,sort:[25.5983,13.9997],disp:["25.6%","14.0%"]},
+  {name:"Louisiana",abbr:"LA",rank:49,tier:"poor",tierRank:3,sort:[25.7165,17.6498],disp:["25.7%","17.6%"]},
+  {name:"Maine",abbr:"ME",rank:34,tier:"below",tierRank:2,sort:[20.9359,8.824],disp:["20.9%","8.8%"]},
+  {name:"Maryland",abbr:"MD",rank:12,tier:"excellent",tierRank:0,sort:[17.8972,8.3764],disp:["17.9%","8.4%"]},
+  {name:"Massachusetts",abbr:"MA",rank:38,tier:"below",tierRank:2,sort:[21.4694,8.4213],disp:["21.5%","8.4%"]},
+  {name:"Michigan",abbr:"MI",rank:39,tier:"poor",tierRank:3,sort:[21.5029,11.8222],disp:["21.5%","11.8%"]},
+  {name:"Minnesota",abbr:"MN",rank:23,tier:"above",tierRank:1,sort:[19.7137,7.9291],disp:["19.7%","7.9%"]},
+  {name:"Mississippi",abbr:"MS",rank:50,tier:"poor",tierRank:3,sort:[25.8324,17.4559],disp:["25.8%","17.5%"]},
+  {name:"Missouri",abbr:"MO",rank:41,tier:"poor",tierRank:3,sort:[21.8669,10.9603],disp:["21.9%","11.0%"]},
+  {name:"Montana",abbr:"MT",rank:15,tier:"above",tierRank:1,sort:[18.5412,10.3398],disp:["18.5%","10.3%"]},
+  {name:"Nebraska",abbr:"NE",rank:18,tier:"above",tierRank:1,sort:[18.9287,9.4521],disp:["18.9%","9.5%"]},
+  {name:"Nevada",abbr:"NV",rank:11,tier:"excellent",tierRank:0,sort:[17.5074,11.639],disp:["17.5%","11.6%"]},
+  {name:"New Hampshire",abbr:"NH",rank:2,tier:"excellent",tierRank:0,sort:[15.81,5.9323],disp:["15.8%","5.9%"]},
+  {name:"New Jersey",abbr:"NJ",rank:8,tier:"excellent",tierRank:0,sort:[16.9186,8.8477],disp:["16.9%","8.8%"]},
+  {name:"New Mexico",abbr:"NM",rank:45,tier:"poor",tierRank:3,sort:[23.9233,16.6795],disp:["23.9%","16.7%"]},
+  {name:"New York",abbr:"NY",rank:46,tier:"poor",tierRank:3,sort:[24.7809,12.4458],disp:["24.8%","12.4%"]},
+  {name:"North Carolina",abbr:"NC",rank:29,tier:"below",tierRank:2,sort:[20.4744,11.936],disp:["20.5%","11.9%"]},
+  {name:"North Dakota",abbr:"ND",rank:27,tier:"below",tierRank:2,sort:[20.1837,9.6081],disp:["20.2%","9.6%"]},
+  {name:"Ohio",abbr:"OH",rank:43,tier:"poor",tierRank:3,sort:[22.3942,11.7619],disp:["22.4%","11.8%"]},
+  {name:"Oklahoma",abbr:"OK",rank:37,tier:"below",tierRank:2,sort:[21.3956,14.1194],disp:["21.4%","14.1%"]},
+  {name:"Oregon",abbr:"OR",rank:33,tier:"below",tierRank:2,sort:[20.7581,10.3359],disp:["20.8%","10.3%"]},
+  {name:"Pennsylvania",abbr:"PA",rank:36,tier:"below",tierRank:2,sort:[21.1231,10.1238],disp:["21.1%","10.1%"]},
+  {name:"Rhode Island",abbr:"RI",rank:35,tier:"below",tierRank:2,sort:[21.0212,9.5997],disp:["21.0%","9.6%"]},
+  {name:"South Carolina",abbr:"SC",rank:30,tier:"below",tierRank:2,sort:[20.5149,13.0195],disp:["20.5%","13.0%"]},
+  {name:"South Dakota",abbr:"SD",rank:31,tier:"below",tierRank:2,sort:[20.6116,10.728],disp:["20.6%","10.7%"]},
+  {name:"Tennessee",abbr:"TN",rank:40,tier:"poor",tierRank:3,sort:[21.5921,12.4111],disp:["21.6%","12.4%"]},
+  {name:"Texas",abbr:"TX",rank:25,tier:"above",tierRank:1,sort:[20.0424,12.9439],disp:["20.0%","12.9%"]},
+  {name:"Utah",abbr:"UT",rank:1,tier:"excellent",tierRank:0,sort:[14.7355,7.7667],disp:["14.7%","7.8%"]},
+  {name:"Vermont",abbr:"VT",rank:32,tier:"below",tierRank:2,sort:[20.6371,8.287],disp:["20.6%","8.3%"]},
+  {name:"Virginia",abbr:"VA",rank:10,tier:"excellent",tierRank:0,sort:[17.2253,8.9527],disp:["17.2%","9.0%"]},
+  {name:"Washington",abbr:"WA",rank:14,tier:"above",tierRank:1,sort:[18.2416,8.6473],disp:["18.2%","8.6%"]},
+  {name:"West Virginia",abbr:"WV",rank:47,tier:"poor",tierRank:3,sort:[24.9265,14.7801],disp:["24.9%","14.8%"]},
+  {name:"Wisconsin",abbr:"WI",rank:17,tier:"above",tierRank:1,sort:[18.8696,9.386],disp:["18.9%","9.4%"]},
+  {name:"Wyoming",abbr:"WY",rank:5,tier:"excellent",tierRank:0,sort:[16.3389,9.6108],disp:["16.3%","9.6%"]}
+  ]
+});
+
+const POV_UNDER18_DIS_DATA = {
   "01":["poor","29.5%"],
-  "02":["above","19.9%"],
-  "04":["above","21.3%"],
+  "02":["below","19.9%"],
+  "04":["below","21.3%"],
   "05":["poor","31.7%"],
-  "06":["above","20.6%"],
-  "08":["excellent","15.6%"],
-  "09":["below","24.8%"],
-  "10":["below","23.7%"],
+  "06":["below","20.6%"],
+  "08":["above","15.6%"],
+  "09":["poor","24.8%"],
+  "10":["poor","23.7%"],
   "11":["poor","32.2%"],
-  "12":["above","22.2%"],
-  "13":["below","23.6%"],
-  "15":["excellent","17.2%"],
-  "16":["excellent","18.9%"],
-  "17":["below","23.7%"],
-  "18":["below","26.6%"],
+  "12":["below","22.2%"],
+  "13":["poor","23.6%"],
+  "15":["above","17.2%"],
+  "16":["below","18.9%"],
+  "17":["poor","23.7%"],
+  "18":["poor","26.6%"],
   "19":["below","23.0%"],
-  "20":["above","22.8%"],
+  "20":["below","22.8%"],
   "21":["poor","29.8%"],
   "22":["poor","33.7%"],
-  "23":["above","21.8%"],
-  "24":["excellent","17.0%"],
+  "23":["below","21.8%"],
+  "24":["above","17.0%"],
   "25":["below","23.1%"],
   "26":["poor","27.5%"],
-  "27":["excellent","17.8%"],
+  "27":["above","17.8%"],
   "28":["poor","34.9%"],
-  "29":["below","25.7%"],
-  "30":["excellent","18.2%"],
+  "29":["poor","25.7%"],
+  "30":["above","18.2%"],
   "31":["below","23.3%"],
-  "32":["above","21.4%"],
-  "33":["excellent","16.0%"],
-  "34":["excellent","18.8%"],
+  "32":["below","21.4%"],
+  "33":["above","16.0%"],
+  "34":["above","18.8%"],
   "35":["poor","32.2%"],
   "36":["poor","28.8%"],
-  "37":["below","26.1%"],
-  "38":["above","22.3%"],
+  "37":["poor","26.1%"],
+  "38":["below","22.3%"],
   "39":["poor","28.1%"],
   "40":["poor","28.9%"],
-  "41":["excellent","19.5%"],
+  "41":["below","19.5%"],
   "42":["poor","28.2%"],
-  "44":["above","21.7%"],
-  "45":["below","25.4%"],
-  "46":["above","19.8%"],
-  "47":["below","26.8%"],
-  "48":["below","25.4%"],
-  "49":["excellent","15.1%"],
-  "50":["above","20.6%"],
-  "51":["excellent","19.1%"],
-  "53":["excellent","17.8%"],
+  "44":["below","21.7%"],
+  "45":["poor","25.4%"],
+  "46":["below","19.8%"],
+  "47":["poor","26.8%"],
+  "48":["poor","25.4%"],
+  "49":["above","15.1%"],
+  "50":["below","20.6%"],
+  "51":["below","19.1%"],
+  "53":["above","17.8%"],
   "54":["poor","32.4%"],
-  "55":["above","22.2%"],
-  "56":["excellent","18.6%"]
+  "55":["below","22.2%"],
+  "56":["above","18.6%"]
 };
 
 adaparcRenderMap({
-  containerId: "map-pov-under18",
-  descId:      "pov-under18-map-desc",
-  stateData:   POV_UNDER18_DATA,
-  valueLabel:  "Poverty rate, under 18",
-  svgTitle:    "Poverty rate among children with disabilities, by U.S. state",
-  svgDesc:     "Choropleth of the 50 states and DC shaded by performance tier. Darker maroon (Excellent) marks the lowest share of children with disabilities living below the poverty line; lighter gold (Poor) marks the highest."
+  containerId: "map-pov-under18-dis",
+  descId:      "pov-under18-dis-map-desc",
+  stateData:   POV_UNDER18_DIS_DATA,
+  valueLabel:  "Poverty rate",
+  svgTitle:    "Poverty Rate, Children Under 18: people with disabilities, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC shaded by the share of people with disabilities in this age group living below the poverty line, on a scale shared with the map for people without disabilities. Darker is a lower rate. Full data is in the table below."
 });
 
-const POV_1864_DATA = {
-  "01":["below","26.1%"],
-  "02":["excellent","20.9%"],
-  "04":["excellent","21.9%"],
+const POV_UNDER18_NOD_DATA = {
+  "01":["below","20.8%"],
+  "02":["excellent","11.8%"],
+  "04":["above","15.9%"],
+  "05":["below","20.3%"],
+  "06":["above","14.8%"],
+  "08":["excellent","10.9%"],
+  "09":["excellent","12.4%"],
+  "10":["excellent","14.5%"],
+  "11":["below","22.3%"],
+  "12":["above","16.2%"],
+  "13":["above","18.0%"],
+  "15":["excellent","11.8%"],
+  "16":["excellent","12.1%"],
+  "17":["above","14.8%"],
+  "18":["above","15.4%"],
+  "19":["excellent","12.4%"],
+  "20":["excellent","12.6%"],
+  "21":["below","19.6%"],
+  "22":["poor","24.9%"],
+  "23":["excellent","12.5%"],
+  "24":["excellent","11.3%"],
+  "25":["excellent","11.1%"],
+  "26":["above","17.1%"],
+  "27":["excellent","10.0%"],
+  "28":["poor","25.4%"],
+  "29":["above","15.3%"],
+  "30":["excellent","12.4%"],
+  "31":["excellent","11.5%"],
+  "32":["above","16.0%"],
+  "33":["excellent","7.5%"],
+  "34":["excellent","12.8%"],
+  "35":["poor","23.6%"],
+  "36":["above","17.8%"],
+  "37":["above","17.3%"],
+  "38":["excellent","10.6%"],
+  "39":["above","17.2%"],
+  "40":["below","19.5%"],
+  "41":["excellent","12.9%"],
+  "42":["above","14.8%"],
+  "44":["excellent","13.2%"],
+  "45":["below","19.1%"],
+  "46":["excellent","14.1%"],
+  "47":["above","18.4%"],
+  "48":["above","18.3%"],
+  "49":["excellent","8.5%"],
+  "50":["excellent","10.3%"],
+  "51":["excellent","12.0%"],
+  "53":["excellent","11.3%"],
+  "54":["below","20.8%"],
+  "55":["excellent","12.4%"],
+  "56":["excellent","11.4%"]
+};
+
+adaparcRenderMap({
+  containerId: "map-pov-under18-nod",
+  descId:      "pov-under18-nod-map-desc",
+  stateData:   POV_UNDER18_NOD_DATA,
+  valueLabel:  "Poverty rate",
+  svgTitle:    "Poverty Rate, Children Under 18: people without disabilities, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC on the same shared scale for people without disabilities in this age group. Full data is in the table below."
+});
+
+adaparcRankedTable({
+  tableId: "pov-under18-table", bodyId: "pov-under18-body",
+  searchId: "pov-under18-search", toggleId: "pov-under18-toggle",
+  noResultsId: "pov-under18-noresults",
+  cols: [{label:"With disability",cls:"num dis-cell"},{label:"Without disability",cls:"num"}],
+  tierLabels: {excellent:"Excellent",above:"Good",below:"Subpar",poor:"Poor"},
+  toggleLabel: "Show the 5 lowest and 5 highest", restoreLabel: "Show all 51",
+  rows: [
+  {name:"Alabama",abbr:"AL",rank:44,tier:"poor",tierRank:3,sort:[29.464,20.7997],disp:["29.5%","20.8%"]},
+  {name:"Alaska",abbr:"AK",rank:15,tier:"above",tierRank:1,sort:[19.8682,11.7845],disp:["19.9%","11.8%"]},
+  {name:"Arizona",abbr:"AZ",rank:18,tier:"above",tierRank:1,sort:[21.3324,15.9432],disp:["21.3%","15.9%"]},
+  {name:"Arkansas",abbr:"AR",rank:46,tier:"poor",tierRank:3,sort:[31.6719,20.3244],disp:["31.7%","20.3%"]},
+  {name:"California",abbr:"CA",rank:16,tier:"above",tierRank:1,sort:[20.5621,14.8053],disp:["20.6%","14.8%"]},
+  {name:"Colorado",abbr:"CO",rank:2,tier:"excellent",tierRank:0,sort:[15.6041,10.9179],disp:["15.6%","10.9%"]},
+  {name:"Connecticut",abbr:"CT",rank:32,tier:"below",tierRank:2,sort:[24.771,12.3755],disp:["24.8%","12.4%"]},
+  {name:"Delaware",abbr:"DE",rank:30,tier:"below",tierRank:2,sort:[23.6825,14.5489],disp:["23.7%","14.5%"]},
+  {name:"District of Columbia",abbr:"DC",rank:47,tier:"poor",tierRank:3,sort:[32.2234,22.3153],disp:["32.2%","22.3%"]},
+  {name:"Florida",abbr:"FL",rank:23,tier:"above",tierRank:1,sort:[22.189,16.2121],disp:["22.2%","16.2%"]},
+  {name:"Georgia",abbr:"GA",rank:29,tier:"below",tierRank:2,sort:[23.6043,17.9788],disp:["23.6%","18.0%"]},
+  {name:"Hawaii",abbr:"HI",rank:5,tier:"excellent",tierRank:0,sort:[17.2115,11.849],disp:["17.2%","11.8%"]},
+  {name:"Idaho",abbr:"ID",rank:11,tier:"excellent",tierRank:0,sort:[18.9416,12.0574],disp:["18.9%","12.1%"]},
+  {name:"Illinois",abbr:"IL",rank:31,tier:"below",tierRank:2,sort:[23.6859,14.7638],disp:["23.7%","14.8%"]},
+  {name:"Indiana",abbr:"IN",rank:37,tier:"below",tierRank:2,sort:[26.5865,15.4032],disp:["26.6%","15.4%"]},
+  {name:"Iowa",abbr:"IA",rank:26,tier:"below",tierRank:2,sort:[23.0116,12.3821],disp:["23.0%","12.4%"]},
+  {name:"Kansas",abbr:"KS",rank:25,tier:"above",tierRank:1,sort:[22.7655,12.6123],disp:["22.8%","12.6%"]},
+  {name:"Kentucky",abbr:"KY",rank:45,tier:"poor",tierRank:3,sort:[29.7972,19.6411],disp:["29.8%","19.6%"]},
+  {name:"Louisiana",abbr:"LA",rank:50,tier:"poor",tierRank:3,sort:[33.7093,24.8564],disp:["33.7%","24.9%"]},
+  {name:"Maine",abbr:"ME",rank:21,tier:"above",tierRank:1,sort:[21.7534,12.5391],disp:["21.8%","12.5%"]},
+  {name:"Maryland",abbr:"MD",rank:4,tier:"excellent",tierRank:0,sort:[16.9679,11.272],disp:["17.0%","11.3%"]},
+  {name:"Massachusetts",abbr:"MA",rank:27,tier:"below",tierRank:2,sort:[23.111,11.1012],disp:["23.1%","11.1%"]},
+  {name:"Michigan",abbr:"MI",rank:39,tier:"poor",tierRank:3,sort:[27.4528,17.113],disp:["27.5%","17.1%"]},
+  {name:"Minnesota",abbr:"MN",rank:7,tier:"excellent",tierRank:0,sort:[17.7742,9.9842],disp:["17.8%","10.0%"]},
+  {name:"Mississippi",abbr:"MS",rank:51,tier:"poor",tierRank:3,sort:[34.8881,25.3833],disp:["34.9%","25.4%"]},
+  {name:"Missouri",abbr:"MO",rank:35,tier:"below",tierRank:2,sort:[25.6584,15.2584],disp:["25.7%","15.3%"]},
+  {name:"Montana",abbr:"MT",rank:8,tier:"excellent",tierRank:0,sort:[18.157,12.4286],disp:["18.2%","12.4%"]},
+  {name:"Nebraska",abbr:"NE",rank:28,tier:"below",tierRank:2,sort:[23.2881,11.5314],disp:["23.3%","11.5%"]},
+  {name:"Nevada",abbr:"NV",rank:19,tier:"above",tierRank:1,sort:[21.3676,16.024],disp:["21.4%","16.0%"]},
+  {name:"New Hampshire",abbr:"NH",rank:3,tier:"excellent",tierRank:0,sort:[16.0498,7.4551],disp:["16.0%","7.5%"]},
+  {name:"New Jersey",abbr:"NJ",rank:10,tier:"excellent",tierRank:0,sort:[18.7946,12.7553],disp:["18.8%","12.8%"]},
+  {name:"New Mexico",abbr:"NM",rank:48,tier:"poor",tierRank:3,sort:[32.2353,23.5928],disp:["32.2%","23.6%"]},
+  {name:"New York",abbr:"NY",rank:42,tier:"poor",tierRank:3,sort:[28.7733,17.8184],disp:["28.8%","17.8%"]},
+  {name:"North Carolina",abbr:"NC",rank:36,tier:"below",tierRank:2,sort:[26.092,17.2935],disp:["26.1%","17.3%"]},
+  {name:"North Dakota",abbr:"ND",rank:24,tier:"above",tierRank:1,sort:[22.3096,10.6195],disp:["22.3%","10.6%"]},
+  {name:"Ohio",abbr:"OH",rank:40,tier:"poor",tierRank:3,sort:[28.0647,17.1902],disp:["28.1%","17.2%"]},
+  {name:"Oklahoma",abbr:"OK",rank:43,tier:"poor",tierRank:3,sort:[28.9028,19.487],disp:["28.9%","19.5%"]},
+  {name:"Oregon",abbr:"OR",rank:13,tier:"excellent",tierRank:0,sort:[19.4599,12.8505],disp:["19.5%","12.9%"]},
+  {name:"Pennsylvania",abbr:"PA",rank:41,tier:"poor",tierRank:3,sort:[28.1948,14.8153],disp:["28.2%","14.8%"]},
+  {name:"Rhode Island",abbr:"RI",rank:20,tier:"above",tierRank:1,sort:[21.7209,13.2101],disp:["21.7%","13.2%"]},
+  {name:"South Carolina",abbr:"SC",rank:34,tier:"below",tierRank:2,sort:[25.3581,19.1031],disp:["25.4%","19.1%"]},
+  {name:"South Dakota",abbr:"SD",rank:14,tier:"above",tierRank:1,sort:[19.8261,14.1183],disp:["19.8%","14.1%"]},
+  {name:"Tennessee",abbr:"TN",rank:38,tier:"below",tierRank:2,sort:[26.8052,18.3816],disp:["26.8%","18.4%"]},
+  {name:"Texas",abbr:"TX",rank:33,tier:"below",tierRank:2,sort:[25.3548,18.3078],disp:["25.4%","18.3%"]},
+  {name:"Utah",abbr:"UT",rank:1,tier:"excellent",tierRank:0,sort:[15.1184,8.4742],disp:["15.1%","8.5%"]},
+  {name:"Vermont",abbr:"VT",rank:17,tier:"above",tierRank:1,sort:[20.58,10.2902],disp:["20.6%","10.3%"]},
+  {name:"Virginia",abbr:"VA",rank:12,tier:"excellent",tierRank:0,sort:[19.1034,11.9874],disp:["19.1%","12.0%"]},
+  {name:"Washington",abbr:"WA",rank:6,tier:"excellent",tierRank:0,sort:[17.7602,11.3415],disp:["17.8%","11.3%"]},
+  {name:"West Virginia",abbr:"WV",rank:49,tier:"poor",tierRank:3,sort:[32.3776,20.8201],disp:["32.4%","20.8%"]},
+  {name:"Wisconsin",abbr:"WI",rank:22,tier:"above",tierRank:1,sort:[22.1709,12.3632],disp:["22.2%","12.4%"]},
+  {name:"Wyoming",abbr:"WY",rank:9,tier:"excellent",tierRank:0,sort:[18.5948,11.4159],disp:["18.6%","11.4%"]}
+  ]
+});
+
+const POV_1864_DIS_DATA = {
+  "01":["poor","26.1%"],
+  "02":["below","20.9%"],
+  "04":["below","21.9%"],
   "05":["poor","29.0%"],
-  "06":["above","22.3%"],
-  "08":["excellent","19.8%"],
-  "09":["above","24.2%"],
-  "10":["excellent","19.8%"],
+  "06":["below","22.3%"],
+  "08":["below","19.8%"],
+  "09":["below","24.2%"],
+  "10":["below","19.8%"],
   "11":["poor","35.5%"],
-  "12":["above","22.2%"],
-  "13":["above","22.9%"],
-  "15":["above","22.5%"],
-  "16":["excellent","19.5%"],
-  "17":["below","24.6%"],
-  "18":["below","24.8%"],
-  "19":["above","24.2%"],
-  "20":["above","24.3%"],
+  "12":["below","22.2%"],
+  "13":["below","22.9%"],
+  "15":["below","22.5%"],
+  "16":["below","19.5%"],
+  "17":["poor","24.6%"],
+  "18":["poor","24.8%"],
+  "19":["below","24.2%"],
+  "20":["below","24.3%"],
   "21":["poor","30.7%"],
   "22":["poor","29.8%"],
-  "23":["below","26.5%"],
-  "24":["excellent","21.6%"],
-  "25":["below","25.1%"],
+  "23":["poor","26.5%"],
+  "24":["below","21.6%"],
+  "25":["poor","25.1%"],
   "26":["poor","26.8%"],
-  "27":["below","25.1%"],
+  "27":["poor","25.1%"],
   "28":["poor","30.1%"],
   "29":["poor","26.9%"],
-  "30":["above","23.2%"],
-  "31":["above","23.2%"],
-  "32":["excellent","20.3%"],
-  "33":["excellent","20.0%"],
-  "34":["excellent","19.3%"],
+  "30":["below","23.2%"],
+  "31":["below","23.2%"],
+  "32":["below","20.3%"],
+  "33":["below","20.0%"],
+  "34":["below","19.3%"],
   "35":["poor","28.6%"],
   "36":["poor","29.2%"],
-  "37":["below","24.6%"],
-  "38":["above","24.3%"],
+  "37":["poor","24.6%"],
+  "38":["below","24.3%"],
   "39":["poor","28.1%"],
-  "40":["below","25.7%"],
+  "40":["poor","25.7%"],
   "41":["poor","26.6%"],
-  "42":["below","25.7%"],
-  "44":["below","25.3%"],
-  "45":["below","24.7%"],
-  "46":["below","25.4%"],
-  "47":["below","26.1%"],
-  "48":["excellent","22.0%"],
-  "49":["excellent","17.3%"],
+  "42":["poor","25.7%"],
+  "44":["poor","25.3%"],
+  "45":["poor","24.7%"],
+  "46":["poor","25.4%"],
+  "47":["poor","26.1%"],
+  "48":["below","22.0%"],
+  "49":["below","17.3%"],
   "50":["poor","26.8%"],
-  "51":["excellent","20.7%"],
-  "53":["above","22.6%"],
+  "51":["below","20.7%"],
+  "53":["below","22.6%"],
   "54":["poor","31.2%"],
-  "55":["above","23.2%"],
-  "56":["excellent","21.3%"]
+  "55":["below","23.2%"],
+  "56":["below","21.3%"]
 };
 
 adaparcRenderMap({
-  containerId: "map-pov-1864",
-  descId:      "pov-1864-map-desc",
-  stateData:   POV_1864_DATA,
-  valueLabel:  "Poverty rate, 18 to 64",
-  svgTitle:    "Poverty rate among working-age adults with disabilities, by U.S. state",
-  svgDesc:     "Choropleth of the 50 states and DC shaded by performance tier. Darker maroon (Excellent) marks the lowest share of working-age adults with disabilities living below the poverty line; lighter gold (Poor) marks the highest."
+  containerId: "map-pov-1864-dis",
+  descId:      "pov-1864-dis-map-desc",
+  stateData:   POV_1864_DIS_DATA,
+  valueLabel:  "Poverty rate",
+  svgTitle:    "Poverty Rate, Working-Age Adults 18 to 64: people with disabilities, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC shaded by the share of people with disabilities in this age group living below the poverty line, on a scale shared with the map for people without disabilities. Darker is a lower rate. Full data is in the table below."
 });
 
-const POV_65PLUS_DATA = {
-  "01":["poor","15.5%"],
-  "02":["excellent","10.8%"],
-  "04":["above","13.8%"],
-  "05":["below","15.3%"],
-  "06":["poor","15.9%"],
-  "08":["excellent","12.0%"],
-  "09":["above","13.7%"],
-  "10":["excellent","10.7%"],
-  "11":["poor","22.5%"],
-  "12":["below","15.1%"],
-  "13":["below","14.6%"],
-  "15":["excellent","12.4%"],
-  "16":["excellent","11.8%"],
-  "17":["below","14.6%"],
-  "18":["excellent","12.7%"],
-  "19":["excellent","12.2%"],
-  "20":["excellent","12.9%"],
-  "21":["poor","17.4%"],
-  "22":["poor","18.6%"],
-  "23":["below","14.4%"],
-  "24":["above","13.7%"],
-  "25":["poor","17.1%"],
-  "26":["above","13.9%"],
-  "27":["above","13.7%"],
-  "28":["poor","18.3%"],
-  "29":["below","14.8%"],
-  "30":["above","13.6%"],
-  "31":["above","13.2%"],
-  "32":["above","13.4%"],
-  "33":["excellent","10.9%"],
-  "34":["below","14.3%"],
-  "35":["poor","17.3%"],
-  "36":["poor","19.4%"],
-  "37":["below","14.5%"],
-  "38":["below","14.7%"],
-  "39":["below","14.1%"],
-  "40":["above","13.8%"],
-  "41":["above","13.9%"],
-  "42":["below","14.4%"],
-  "44":["poor","15.8%"],
-  "45":["below","14.8%"],
-  "46":["poor","15.5%"],
-  "47":["below","15.0%"],
-  "48":["poor","16.0%"],
-  "49":["excellent","10.4%"],
-  "50":["above","13.6%"],
-  "51":["excellent","12.8%"],
-  "53":["excellent","12.9%"],
-  "54":["poor","16.4%"],
-  "55":["above","13.2%"],
-  "56":["excellent","10.9%"]
+const POV_1864_NOD_DATA = {
+  "01":["above","12.7%"],
+  "02":["excellent","8.6%"],
+  "04":["above","10.6%"],
+  "05":["above","12.6%"],
+  "06":["above","10.0%"],
+  "08":["excellent","8.1%"],
+  "09":["excellent","7.9%"],
+  "10":["excellent","8.5%"],
+  "11":["above","11.2%"],
+  "12":["above","10.4%"],
+  "13":["above","10.8%"],
+  "15":["excellent","8.7%"],
+  "16":["excellent","9.1%"],
+  "17":["excellent","9.6%"],
+  "18":["above","9.9%"],
+  "19":["excellent","9.6%"],
+  "20":["excellent","9.6%"],
+  "21":["above","12.5%"],
+  "22":["above","15.6%"],
+  "23":["excellent","8.1%"],
+  "24":["excellent","7.4%"],
+  "25":["excellent","7.6%"],
+  "26":["above","10.7%"],
+  "27":["excellent","7.3%"],
+  "28":["above","15.0%"],
+  "29":["excellent","9.8%"],
+  "30":["above","10.1%"],
+  "31":["excellent","9.0%"],
+  "32":["above","10.4%"],
+  "33":["excellent","5.3%"],
+  "34":["excellent","7.6%"],
+  "35":["above","15.2%"],
+  "36":["above","11.0%"],
+  "37":["above","10.5%"],
+  "38":["excellent","9.6%"],
+  "39":["above","10.4%"],
+  "40":["above","12.7%"],
+  "41":["above","10.0%"],
+  "42":["excellent","9.0%"],
+  "44":["excellent","8.6%"],
+  "45":["above","11.6%"],
+  "46":["above","9.9%"],
+  "47":["above","10.8%"],
+  "48":["above","11.1%"],
+  "49":["excellent","7.7%"],
+  "50":["excellent","8.1%"],
+  "51":["excellent","8.2%"],
+  "53":["excellent","8.0%"],
+  "54":["above","13.9%"],
+  "55":["excellent","8.7%"],
+  "56":["excellent","9.5%"]
 };
 
 adaparcRenderMap({
-  containerId: "map-pov-65plus",
-  descId:      "pov-65plus-map-desc",
-  stateData:   POV_65PLUS_DATA,
-  valueLabel:  "Poverty rate, 65 and over",
-  svgTitle:    "Poverty rate among adults 65 and over with disabilities, by U.S. state",
-  svgDesc:     "Choropleth of the 50 states and DC shaded by performance tier. Darker maroon (Excellent) marks the lowest share of adults 65 and over with disabilities living below the poverty line; lighter gold (Poor) marks the highest."
+  containerId: "map-pov-1864-nod",
+  descId:      "pov-1864-nod-map-desc",
+  stateData:   POV_1864_NOD_DATA,
+  valueLabel:  "Poverty rate",
+  svgTitle:    "Poverty Rate, Working-Age Adults 18 to 64: people without disabilities, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC on the same shared scale for people without disabilities in this age group. Full data is in the table below."
+});
+
+adaparcRankedTable({
+  tableId: "pov-1864-table", bodyId: "pov-1864-body",
+  searchId: "pov-1864-search", toggleId: "pov-1864-toggle",
+  noResultsId: "pov-1864-noresults",
+  cols: [{label:"With disability",cls:"num dis-cell"},{label:"Without disability",cls:"num"}],
+  tierLabels: {excellent:"Excellent",above:"Good",below:"Subpar",poor:"Poor"},
+  toggleLabel: "Show the 5 lowest and 5 highest", restoreLabel: "Show all 51",
+  rows: [
+  {name:"Alabama",abbr:"AL",rank:36,tier:"below",tierRank:2,sort:[26.0593,12.7264],disp:["26.1%","12.7%"]},
+  {name:"Alaska",abbr:"AK",rank:9,tier:"excellent",tierRank:0,sort:[20.8805,8.5973],disp:["20.9%","8.6%"]},
+  {name:"Arizona",abbr:"AZ",rank:12,tier:"excellent",tierRank:0,sort:[21.8574,10.6065],disp:["21.9%","10.6%"]},
+  {name:"Arkansas",abbr:"AR",rank:45,tier:"poor",tierRank:3,sort:[28.9967,12.6465],disp:["29.0%","12.6%"]},
+  {name:"California",abbr:"CA",rank:15,tier:"above",tierRank:1,sort:[22.3389,9.976],disp:["22.3%","10.0%"]},
+  {name:"Colorado",abbr:"CO",rank:4,tier:"excellent",tierRank:0,sort:[19.8017,8.0732],disp:["19.8%","8.1%"]},
+  {name:"Connecticut",abbr:"CT",rank:22,tier:"above",tierRank:1,sort:[24.2038,7.8675],disp:["24.2%","7.9%"]},
+  {name:"Delaware",abbr:"DE",rank:5,tier:"excellent",tierRank:0,sort:[19.8461,8.5001],disp:["19.8%","8.5%"]},
+  {name:"District of Columbia",abbr:"DC",rank:51,tier:"poor",tierRank:3,sort:[35.5038,11.1542],disp:["35.5%","11.2%"]},
+  {name:"Florida",abbr:"FL",rank:14,tier:"above",tierRank:1,sort:[22.1598,10.4066],disp:["22.2%","10.4%"]},
+  {name:"Georgia",abbr:"GA",rank:18,tier:"above",tierRank:1,sort:[22.9467,10.7598],disp:["22.9%","10.8%"]},
+  {name:"Hawaii",abbr:"HI",rank:16,tier:"above",tierRank:1,sort:[22.525,8.6729],disp:["22.5%","8.7%"]},
+  {name:"Idaho",abbr:"ID",rank:3,tier:"excellent",tierRank:0,sort:[19.5084,9.0968],disp:["19.5%","9.1%"]},
+  {name:"Illinois",abbr:"IL",rank:26,tier:"below",tierRank:2,sort:[24.61,9.5584],disp:["24.6%","9.6%"]},
+  {name:"Indiana",abbr:"IN",rank:29,tier:"below",tierRank:2,sort:[24.7965,9.9471],disp:["24.8%","9.9%"]},
+  {name:"Iowa",abbr:"IA",rank:23,tier:"above",tierRank:1,sort:[24.2135,9.6244],disp:["24.2%","9.6%"]},
+  {name:"Kansas",abbr:"KS",rank:24,tier:"above",tierRank:1,sort:[24.272,9.5777],disp:["24.3%","9.6%"]},
+  {name:"Kentucky",abbr:"KY",rank:49,tier:"poor",tierRank:3,sort:[30.6813,12.4736],disp:["30.7%","12.5%"]},
+  {name:"Louisiana",abbr:"LA",rank:47,tier:"poor",tierRank:3,sort:[29.8182,15.5772],disp:["29.8%","15.6%"]},
+  {name:"Maine",abbr:"ME",rank:38,tier:"below",tierRank:2,sort:[26.4636,8.0948],disp:["26.5%","8.1%"]},
+  {name:"Maryland",abbr:"MD",rank:11,tier:"excellent",tierRank:0,sort:[21.6387,7.3963],disp:["21.6%","7.4%"]},
+  {name:"Massachusetts",abbr:"MA",rank:31,tier:"below",tierRank:2,sort:[25.0714,7.6486],disp:["25.1%","7.6%"]},
+  {name:"Michigan",abbr:"MI",rank:41,tier:"poor",tierRank:3,sort:[26.8099,10.6989],disp:["26.8%","10.7%"]},
+  {name:"Minnesota",abbr:"MN",rank:30,tier:"below",tierRank:2,sort:[25.0547,7.3394],disp:["25.1%","7.3%"]},
+  {name:"Mississippi",abbr:"MS",rank:48,tier:"poor",tierRank:3,sort:[30.0824,15.0214],disp:["30.1%","15.0%"]},
+  {name:"Missouri",abbr:"MO",rank:42,tier:"poor",tierRank:3,sort:[26.8977,9.8325],disp:["26.9%","9.8%"]},
+  {name:"Montana",abbr:"MT",rank:20,tier:"above",tierRank:1,sort:[23.176,10.0873],disp:["23.2%","10.1%"]},
+  {name:"Nebraska",abbr:"NE",rank:19,tier:"above",tierRank:1,sort:[23.1685,8.9572],disp:["23.2%","9.0%"]},
+  {name:"Nevada",abbr:"NV",rank:7,tier:"excellent",tierRank:0,sort:[20.333,10.416],disp:["20.3%","10.4%"]},
+  {name:"New Hampshire",abbr:"NH",rank:6,tier:"excellent",tierRank:0,sort:[20.0141,5.3052],disp:["20.0%","5.3%"]},
+  {name:"New Jersey",abbr:"NJ",rank:2,tier:"excellent",tierRank:0,sort:[19.2687,7.5994],disp:["19.3%","7.6%"]},
+  {name:"New Mexico",abbr:"NM",rank:44,tier:"poor",tierRank:3,sort:[28.5709,15.1731],disp:["28.6%","15.2%"]},
+  {name:"New York",abbr:"NY",rank:46,tier:"poor",tierRank:3,sort:[29.2208,10.9972],disp:["29.2%","11.0%"]},
+  {name:"North Carolina",abbr:"NC",rank:27,tier:"below",tierRank:2,sort:[24.6201,10.5364],disp:["24.6%","10.5%"]},
+  {name:"North Dakota",abbr:"ND",rank:25,tier:"above",tierRank:1,sort:[24.3146,9.5765],disp:["24.3%","9.6%"]},
+  {name:"Ohio",abbr:"OH",rank:43,tier:"poor",tierRank:3,sort:[28.1484,10.4443],disp:["28.1%","10.4%"]},
+  {name:"Oklahoma",abbr:"OK",rank:34,tier:"below",tierRank:2,sort:[25.6631,12.7426],disp:["25.7%","12.7%"]},
+  {name:"Oregon",abbr:"OR",rank:39,tier:"poor",tierRank:3,sort:[26.6137,10.0332],disp:["26.6%","10.0%"]},
+  {name:"Pennsylvania",abbr:"PA",rank:35,tier:"below",tierRank:2,sort:[25.7359,8.9746],disp:["25.7%","9.0%"]},
+  {name:"Rhode Island",abbr:"RI",rank:32,tier:"below",tierRank:2,sort:[25.2542,8.5749],disp:["25.3%","8.6%"]},
+  {name:"South Carolina",abbr:"SC",rank:28,tier:"below",tierRank:2,sort:[24.7088,11.5714],disp:["24.7%","11.6%"]},
+  {name:"South Dakota",abbr:"SD",rank:33,tier:"below",tierRank:2,sort:[25.4294,9.9299],disp:["25.4%","9.9%"]},
+  {name:"Tennessee",abbr:"TN",rank:37,tier:"below",tierRank:2,sort:[26.1164,10.7693],disp:["26.1%","10.8%"]},
+  {name:"Texas",abbr:"TX",rank:13,tier:"excellent",tierRank:0,sort:[21.9967,11.0723],disp:["22.0%","11.1%"]},
+  {name:"Utah",abbr:"UT",rank:1,tier:"excellent",tierRank:0,sort:[17.3461,7.6576],disp:["17.3%","7.7%"]},
+  {name:"Vermont",abbr:"VT",rank:40,tier:"poor",tierRank:3,sort:[26.7794,8.0971],disp:["26.8%","8.1%"]},
+  {name:"Virginia",abbr:"VA",rank:8,tier:"excellent",tierRank:0,sort:[20.6822,8.1887],disp:["20.7%","8.2%"]},
+  {name:"Washington",abbr:"WA",rank:17,tier:"above",tierRank:1,sort:[22.5767,7.9925],disp:["22.6%","8.0%"]},
+  {name:"West Virginia",abbr:"WV",rank:50,tier:"poor",tierRank:3,sort:[31.1904,13.9221],disp:["31.2%","13.9%"]},
+  {name:"Wisconsin",abbr:"WI",rank:21,tier:"above",tierRank:1,sort:[23.2447,8.719],disp:["23.2%","8.7%"]},
+  {name:"Wyoming",abbr:"WY",rank:10,tier:"excellent",tierRank:0,sort:[21.3453,9.5372],disp:["21.3%","9.5%"]}
+  ]
+});
+
+const POV_65PLUS_DIS_DATA = {
+  "01":["poor","15.5%"],
+  "02":["above","10.8%"],
+  "04":["below","13.8%"],
+  "05":["poor","15.3%"],
+  "06":["poor","15.9%"],
+  "08":["below","12.0%"],
+  "09":["below","13.7%"],
+  "10":["above","10.7%"],
+  "11":["poor","22.5%"],
+  "12":["poor","15.1%"],
+  "13":["poor","14.6%"],
+  "15":["below","12.4%"],
+  "16":["below","11.8%"],
+  "17":["poor","14.6%"],
+  "18":["below","12.7%"],
+  "19":["below","12.2%"],
+  "20":["below","12.9%"],
+  "21":["poor","17.4%"],
+  "22":["poor","18.6%"],
+  "23":["poor","14.4%"],
+  "24":["below","13.7%"],
+  "25":["poor","17.1%"],
+  "26":["below","13.9%"],
+  "27":["below","13.7%"],
+  "28":["poor","18.3%"],
+  "29":["poor","14.8%"],
+  "30":["below","13.6%"],
+  "31":["below","13.2%"],
+  "32":["below","13.4%"],
+  "33":["above","10.9%"],
+  "34":["poor","14.3%"],
+  "35":["poor","17.3%"],
+  "36":["poor","19.4%"],
+  "37":["poor","14.5%"],
+  "38":["poor","14.7%"],
+  "39":["poor","14.1%"],
+  "40":["below","13.8%"],
+  "41":["below","13.9%"],
+  "42":["poor","14.4%"],
+  "44":["poor","15.8%"],
+  "45":["poor","14.8%"],
+  "46":["poor","15.5%"],
+  "47":["poor","15.0%"],
+  "48":["poor","16.0%"],
+  "49":["above","10.4%"],
+  "50":["below","13.6%"],
+  "51":["below","12.8%"],
+  "53":["below","12.9%"],
+  "54":["poor","16.4%"],
+  "55":["below","13.2%"],
+  "56":["below","10.9%"]
+};
+
+adaparcRenderMap({
+  containerId: "map-pov-65plus-dis",
+  descId:      "pov-65plus-dis-map-desc",
+  stateData:   POV_65PLUS_DIS_DATA,
+  valueLabel:  "Poverty rate",
+  svgTitle:    "Poverty Rate, Adults 65 and Over: people with disabilities, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC shaded by the share of people with disabilities in this age group living below the poverty line, on a scale shared with the map for people without disabilities. Darker is a lower rate. Full data is in the table below."
+});
+
+const POV_65PLUS_NOD_DATA = {
+  "01":["above","9.8%"],
+  "02":["excellent","7.0%"],
+  "04":["above","8.7%"],
+  "05":["above","9.4%"],
+  "06":["above","9.5%"],
+  "08":["excellent","6.9%"],
+  "09":["excellent","6.7%"],
+  "10":["excellent","6.2%"],
+  "11":["below","11.9%"],
+  "12":["above","10.2%"],
+  "13":["above","9.5%"],
+  "15":["excellent","7.7%"],
+  "16":["excellent","7.3%"],
+  "17":["above","8.4%"],
+  "18":["excellent","7.3%"],
+  "19":["excellent","6.8%"],
+  "20":["excellent","6.9%"],
+  "21":["above","9.8%"],
+  "22":["below","12.2%"],
+  "23":["excellent","7.1%"],
+  "24":["excellent","7.7%"],
+  "25":["excellent","7.9%"],
+  "26":["above","8.0%"],
+  "27":["excellent","6.8%"],
+  "28":["below","11.9%"],
+  "29":["above","8.1%"],
+  "30":["above","8.2%"],
+  "31":["excellent","7.4%"],
+  "32":["above","9.4%"],
+  "33":["excellent","6.5%"],
+  "34":["excellent","7.8%"],
+  "35":["below","11.0%"],
+  "36":["above","10.4%"],
+  "37":["above","8.6%"],
+  "38":["excellent","7.7%"],
+  "39":["above","8.0%"],
+  "40":["above","8.6%"],
+  "41":["excellent","7.9%"],
+  "42":["excellent","7.8%"],
+  "44":["above","8.9%"],
+  "45":["above","9.0%"],
+  "46":["excellent","7.5%"],
+  "47":["above","8.8%"],
+  "48":["above","9.9%"],
+  "49":["excellent","6.2%"],
+  "50":["excellent","6.7%"],
+  "51":["excellent","7.0%"],
+  "53":["excellent","6.9%"],
+  "54":["above","9.1%"],
+  "55":["excellent","7.5%"],
+  "56":["excellent","6.7%"]
+};
+
+adaparcRenderMap({
+  containerId: "map-pov-65plus-nod",
+  descId:      "pov-65plus-nod-map-desc",
+  stateData:   POV_65PLUS_NOD_DATA,
+  valueLabel:  "Poverty rate",
+  svgTitle:    "Poverty Rate, Adults 65 and Over: people without disabilities, by U.S. state",
+  svgDesc:     "Choropleth of the 50 states and DC on the same shared scale for people without disabilities in this age group. Full data is in the table below."
+});
+
+adaparcRankedTable({
+  tableId: "pov-65plus-table", bodyId: "pov-65plus-body",
+  searchId: "pov-65plus-search", toggleId: "pov-65plus-toggle",
+  noResultsId: "pov-65plus-noresults",
+  cols: [{label:"With disability",cls:"num dis-cell"},{label:"Without disability",cls:"num"}],
+  tierLabels: {excellent:"Excellent",above:"Good",below:"Subpar",poor:"Poor"},
+  toggleLabel: "Show the 5 lowest and 5 highest", restoreLabel: "Show all 51",
+  rows: [
+  {name:"Alabama",abbr:"AL",rank:39,tier:"poor",tierRank:3,sort:[15.4601,9.8043],disp:["15.5%","9.8%"]},
+  {name:"Alaska",abbr:"AK",rank:3,tier:"excellent",tierRank:0,sort:[10.7802,7.0111],disp:["10.8%","7.0%"]},
+  {name:"Arizona",abbr:"AZ",rank:22,tier:"above",tierRank:1,sort:[13.7703,8.6792],disp:["13.8%","8.7%"]},
+  {name:"Arkansas",abbr:"AR",rank:38,tier:"below",tierRank:2,sort:[15.2582,9.4143],disp:["15.3%","9.4%"]},
+  {name:"California",abbr:"CA",rank:42,tier:"poor",tierRank:3,sort:[15.9377,9.488],disp:["15.9%","9.5%"]},
+  {name:"Colorado",abbr:"CO",rank:7,tier:"excellent",tierRank:0,sort:[11.9927,6.8604],disp:["12.0%","6.9%"]},
+  {name:"Connecticut",abbr:"CT",rank:21,tier:"above",tierRank:1,sort:[13.7315,6.7338],disp:["13.7%","6.7%"]},
+  {name:"Delaware",abbr:"DE",rank:2,tier:"excellent",tierRank:0,sort:[10.704,6.2083],disp:["10.7%","6.2%"]},
+  {name:"District of Columbia",abbr:"DC",rank:51,tier:"poor",tierRank:3,sort:[22.4802,11.874],disp:["22.5%","11.9%"]},
+  {name:"Florida",abbr:"FL",rank:37,tier:"below",tierRank:2,sort:[15.1326,10.2059],disp:["15.1%","10.2%"]},
+  {name:"Georgia",abbr:"GA",rank:32,tier:"below",tierRank:2,sort:[14.647,9.4846],disp:["14.6%","9.5%"]},
+  {name:"Hawaii",abbr:"HI",rank:9,tier:"excellent",tierRank:0,sort:[12.3885,7.7117],disp:["12.4%","7.7%"]},
+  {name:"Idaho",abbr:"ID",rank:6,tier:"excellent",tierRank:0,sort:[11.825,7.3279],disp:["11.8%","7.3%"]},
+  {name:"Illinois",abbr:"IL",rank:31,tier:"below",tierRank:2,sort:[14.5875,8.4486],disp:["14.6%","8.4%"]},
+  {name:"Indiana",abbr:"IN",rank:10,tier:"excellent",tierRank:0,sort:[12.6936,7.2857],disp:["12.7%","7.3%"]},
+  {name:"Iowa",abbr:"IA",rank:8,tier:"excellent",tierRank:0,sort:[12.1968,6.7884],disp:["12.2%","6.8%"]},
+  {name:"Kansas",abbr:"KS",rank:13,tier:"excellent",tierRank:0,sort:[12.947,6.8559],disp:["12.9%","6.9%"]},
+  {name:"Kentucky",abbr:"KY",rank:47,tier:"poor",tierRank:3,sort:[17.4005,9.7892],disp:["17.4%","9.8%"]},
+  {name:"Louisiana",abbr:"LA",rank:49,tier:"poor",tierRank:3,sort:[18.5575,12.1611],disp:["18.6%","12.2%"]},
+  {name:"Maine",abbr:"ME",rank:28,tier:"below",tierRank:2,sort:[14.4186,7.1477],disp:["14.4%","7.1%"]},
+  {name:"Maryland",abbr:"MD",rank:19,tier:"above",tierRank:1,sort:[13.7145,7.6892],disp:["13.7%","7.7%"]},
+  {name:"Massachusetts",abbr:"MA",rank:45,tier:"poor",tierRank:3,sort:[17.1396,7.8827],disp:["17.1%","7.9%"]},
+  {name:"Michigan",abbr:"MI",rank:24,tier:"above",tierRank:1,sort:[13.8655,8.0172],disp:["13.9%","8.0%"]},
+  {name:"Minnesota",abbr:"MN",rank:20,tier:"above",tierRank:1,sort:[13.7168,6.8385],disp:["13.7%","6.8%"]},
+  {name:"Mississippi",abbr:"MS",rank:48,tier:"poor",tierRank:3,sort:[18.3268,11.9383],disp:["18.3%","11.9%"]},
+  {name:"Missouri",abbr:"MO",rank:34,tier:"below",tierRank:2,sort:[14.7982,8.1119],disp:["14.8%","8.1%"]},
+  {name:"Montana",abbr:"MT",rank:18,tier:"above",tierRank:1,sort:[13.5665,8.1975],disp:["13.6%","8.2%"]},
+  {name:"Nebraska",abbr:"NE",rank:15,tier:"above",tierRank:1,sort:[13.198,7.3761],disp:["13.2%","7.4%"]},
+  {name:"Nevada",abbr:"NV",rank:16,tier:"above",tierRank:1,sort:[13.3993,9.4281],disp:["13.4%","9.4%"]},
+  {name:"New Hampshire",abbr:"NH",rank:4,tier:"excellent",tierRank:0,sort:[10.8528,6.4621],disp:["10.9%","6.5%"]},
+  {name:"New Jersey",abbr:"NJ",rank:27,tier:"below",tierRank:2,sort:[14.3081,7.7908],disp:["14.3%","7.8%"]},
+  {name:"New Mexico",abbr:"NM",rank:46,tier:"poor",tierRank:3,sort:[17.2914,11.0155],disp:["17.3%","11.0%"]},
+  {name:"New York",abbr:"NY",rank:50,tier:"poor",tierRank:3,sort:[19.4161,10.3637],disp:["19.4%","10.4%"]},
+  {name:"North Carolina",abbr:"NC",rank:30,tier:"below",tierRank:2,sort:[14.4952,8.6491],disp:["14.5%","8.6%"]},
+  {name:"North Dakota",abbr:"ND",rank:33,tier:"below",tierRank:2,sort:[14.7337,7.6988],disp:["14.7%","7.7%"]},
+  {name:"Ohio",abbr:"OH",rank:26,tier:"below",tierRank:2,sort:[14.1043,8.0498],disp:["14.1%","8.0%"]},
+  {name:"Oklahoma",abbr:"OK",rank:23,tier:"above",tierRank:1,sort:[13.8355,8.5741],disp:["13.8%","8.6%"]},
+  {name:"Oregon",abbr:"OR",rank:25,tier:"above",tierRank:1,sort:[13.9163,7.8546],disp:["13.9%","7.9%"]},
+  {name:"Pennsylvania",abbr:"PA",rank:29,tier:"below",tierRank:2,sort:[14.421,7.7618],disp:["14.4%","7.8%"]},
+  {name:"Rhode Island",abbr:"RI",rank:41,tier:"poor",tierRank:3,sort:[15.8418,8.8571],disp:["15.8%","8.9%"]},
+  {name:"South Carolina",abbr:"SC",rank:35,tier:"below",tierRank:2,sort:[14.8498,9.028],disp:["14.8%","9.0%"]},
+  {name:"South Dakota",abbr:"SD",rank:40,tier:"poor",tierRank:3,sort:[15.5419,7.5378],disp:["15.5%","7.5%"]},
+  {name:"Tennessee",abbr:"TN",rank:36,tier:"below",tierRank:2,sort:[15.0445,8.7727],disp:["15.0%","8.8%"]},
+  {name:"Texas",abbr:"TX",rank:43,tier:"poor",tierRank:3,sort:[16.0465,9.9264],disp:["16.0%","9.9%"]},
+  {name:"Utah",abbr:"UT",rank:1,tier:"excellent",tierRank:0,sort:[10.3936,6.1993],disp:["10.4%","6.2%"]},
+  {name:"Vermont",abbr:"VT",rank:17,tier:"above",tierRank:1,sort:[13.551,6.682],disp:["13.6%","6.7%"]},
+  {name:"Virginia",abbr:"VA",rank:11,tier:"excellent",tierRank:0,sort:[12.7788,7.0056],disp:["12.8%","7.0%"]},
+  {name:"Washington",abbr:"WA",rank:12,tier:"excellent",tierRank:0,sort:[12.9214,6.9097],disp:["12.9%","6.9%"]},
+  {name:"West Virginia",abbr:"WV",rank:44,tier:"poor",tierRank:3,sort:[16.4461,9.111],disp:["16.4%","9.1%"]},
+  {name:"Wisconsin",abbr:"WI",rank:14,tier:"above",tierRank:1,sort:[13.1763,7.4683],disp:["13.2%","7.5%"]},
+  {name:"Wyoming",abbr:"WY",rank:5,tier:"excellent",tierRank:0,sort:[10.9147,6.6638],disp:["10.9%","6.7%"]}
+  ]
 });
 </script>
 </body>

@@ -42,10 +42,13 @@ const ADAPARC_TIER_BORDER = {
 // against the white page and the national silhouette breaks up.
 const ADAPARC_MAP_PERIMETER = "#1c2b3a";  // = ADA_PARC_PALETTE$stroke
 
+// "Good" / "Subpar" replaced "Above Average" / "Below Average" on 2026-09-01 to
+// match FS_TIER_LABELS_PERF in R/factsheet-functions.R and the scorecards. This
+// copy exists only because the browser cannot call R; keep the two in step.
 const ADAPARC_TIER_LABEL = {
   excellent: "Excellent",
-  above:     "Above Average",
-  below:     "Below Average",
+  above:     "Good",
+  below:     "Subpar",
   poor:      "Poor",
   na:        "No data available"
 };

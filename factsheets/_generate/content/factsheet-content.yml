@@ -5,7 +5,7 @@
 #
 # Source: docs/factsheet-prose.docx
 # Regenerate: Rscript scripts/prose_docx_to_yml.R
-# Generated: 2026-08-10 18:32:07
+# Generated: 2026-09-07 12:01:02
 #
 # Edits made here will be lost the next time the Word document is converted.
 # Edit the Word document instead; it is the editorial source of truth.
@@ -16,42 +16,86 @@ living_community:
   - The Americans with Disabilities Act (ADA) rests on the principle that people with
     disabilities have the right to live in the community, with the supports they need,
     rather than in an institution. The U.S. Supreme Court affirmed that right in the
-    landmark <em>Olmstead</em> decision in 1999, holding that unnecessary institutionalization
-    is a form of discrimination.<sup>1</sup>
-  - This fact sheet shows how many people with disabilities are living in the community
-    in each state. Community living covers two situations. Most people live <strong>at
-    home</strong>, alone or with family. A smaller number live in <strong>non-institutional
-    group quarters</strong>, a Census Bureau category for group settings that are
-    not institutions, such as group homes, shelters and college dormitories.<sup>2</sup>
-  - Nationally, <strong>95.5 percent</strong> of people with disabilities live in
-    the community, compared with <strong>99.5 percent</strong> of people without disabilities.
-    The maps and tables below show how much that figure varies from state to state.
-  - Higher percentages mean more people with disabilities are living in the community.
-    The residence categories on this sheet and on its companion, <em>Living in Institution</em>,
-    are measured against the same population and add to 100 percent. Every percentage
-    point not living in the community is a percentage point living in an institution.
-  community_combined_lead: The map below combines both community settings, people
-    living at home and people living in non-institutional group quarters, into a single
-    measure. States shaded darker have a larger share of their disabled residents
-    living in the community.
-  home_lead: Living at home means living in a house or apartment, alone, with family
-    or with roommates, rather than in any kind of group setting. This is by far the
-    most common living arrangement for people with disabilities, and it is the measure
-    most directly tied to the independent living the ADA envisions.
-  nonintgq_lead:
-  - Non-institutional group quarters is a Census Bureau category covering group living
+    1999 <em>Olmstead</em> decision.<sup>1</sup>
+  - 'This sheet maps the combined community-living rate: the share of people with
+    disabilities living <strong>at home</strong> or in <strong>non-institutional group
+    quarters</strong> such as group homes and supported living, rather than in an
+    institution. Companion sheets break out living at home and group quarters on their
+    own, and <em>Living in Institution</em> covers the other side of the same measure.'
+  - Nationally, <strong>95.4 percent</strong> of people with disabilities live in
+    the community, against <strong>99.5 percent</strong> of people without disabilities.<sup>2</sup>
+    Higher is better; the residence categories are measured against the same population
+    and add to 100 percent, so every point not in the community is a point in an institution.
+  takeaway: The ADA and the <em>Olmstead</em> decision guarantee people with disabilities
+    the right to live in the community with supports.<sup>1</sup> <strong>Nationally
+    95.4% of people with disabilities live in the community, against 99.5% of people
+    without disabilities, and the gap holds in every state.</strong>
+  community_lead: The maps combine both community settings, living at home and living
+    in non-institutional group quarters, into one measure, shown for people with and
+    without disabilities on one shared scale. Higher is the more favourable outcome,
+    and in every state the disability rate sits below the rate for people without
+    disabilities.
+  footnotes:
+  - 'Olmstead v. L.C., 527 U.S. 581 (1999). See also Office for Civil Rights. (2018,
+    June 28). Serving people with disabilities in the most integrated setting: Community
+    living and Olmstead. U.S. Department of Health and Human Services.'
+  - U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Tables ACSST5Y{acs_year}.S2601A and ACSDT5Y{acs_year}.B26108. All percentages
+    on this sheet are calculated against the total population with a disability, including
+    people living in institutions.
+living_at_home:
+  intro:
+  - Living at home, in a house or apartment, alone or with family or roommates, rather
+    than in any group setting, is the living arrangement most directly tied to the
+    independent community life the ADA envisions.<sup>1</sup>
+  - This sheet maps the share of people with disabilities who live at home, alongside
+    the same measure for people without disabilities. It is the largest component
+    of the combined community-living rate on the <em>Living in Community</em> sheet;
+    non-institutional group quarters is the smaller component and has its own sheet.
+  - Nationally, most people with disabilities live at home, but the share is several
+    points below that for people without disabilities, and it varies from state to
+    state.<sup>2</sup> Higher is the more favourable outcome.
+  takeaway: Living at home, rather than in any group or institutional setting, is
+    the arrangement most closely tied to the independent life the ADA envisions.<sup>1</sup>
+    <strong>A person with a disability is meaningfully less likely to be living at
+    home than a person without one, in every state.</strong>
+  home_lead: Living at home means a house or apartment, alone, with family or with
+    roommates, rather than any kind of group quarters. The maps show this share for
+    people with and without disabilities on one shared scale; higher is better.
+  footnotes:
+  - 'Olmstead v. L.C., 527 U.S. 581 (1999). See also Office for Civil Rights. (2018,
+    June 28). Serving people with disabilities in the most integrated setting: Community
+    living and Olmstead. U.S. Department of Health and Human Services.'
+  - U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Tables ACSST5Y{acs_year}.S2601A and ACSDT5Y{acs_year}.B26108. All percentages
+    on this sheet are calculated against the total population with a disability, including
+    people living in institutions.
+group_quarters:
+  intro:
+  - Non-institutional group quarters is a Census Bureau category for group living
     arrangements that are not institutions. It includes group homes and supported
     living for people with disabilities, but also emergency shelters, transitional
-    housing and college dormitories.
+    housing and college dormitories.<sup>1</sup>
   - Because the category mixes supported community living with housing instability,
-    a higher percentage is not straightforwardly better or worse. This map is therefore
-    shaded by how large the share is rather than by performance, and its groups are
-    labeled by size rather than as Excellent or Poor. Read it alongside the other
-    two measures rather than on its own.
+    <strong>a higher share is not straightforwardly better or worse</strong>. This
+    sheet's maps and ranked table are therefore shaded by <em>how large</em> the share
+    is, from the highest quarter of states to the lowest, with no Excellent-to-Poor
+    claim. Read it alongside <em>Living at Home</em> and <em>Living in Institution</em>,
+    which do carry a direction.
+  - Nationally a small share of people with disabilities live in non-institutional
+    group quarters, a little above the share for people without disabilities.<sup>2</sup>
+  takeaway: Non-institutional group quarters covers group homes and supported living,
+    but also shelters, transitional housing and dorms, so neither a high nor a low
+    share is clearly better.<sup>1</sup> <strong>This sheet ranks states only by how
+    large the share is, not by performance.</strong>
+  gq_lead: The maps show the share of people with and without disabilities living
+    in non-institutional group quarters, on one shared scale. Because the category
+    has no defensible better or worse direction, the four bands are labelled by size,
+    highest quarter to lowest quarter, rather than Excellent to Poor.
   footnotes:
-  - '<em>Olmstead v. L.C.</em>, 527 U.S. 581 (1999). See also Office for Civil Rights.
-    (2018, June 28). <em>Serving people with disabilities in the most integrated setting:
-    Community living and Olmstead.</em> U.S. Department of Health and Human Services.'
+  - 'Olmstead v. L.C., 527 U.S. 581 (1999). See also Office for Civil Rights. (2018,
+    June 28). Serving people with disabilities in the most integrated setting: Community
+    living and Olmstead. U.S. Department of Health and Human Services.'
   - U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
     Tables ACSST5Y{acs_year}.S2601A and ACSDT5Y{acs_year}.B26108. All percentages
     on this sheet are calculated against the total population with a disability, including
@@ -59,134 +103,276 @@ living_community:
 living_institution:
   intro:
   - The Americans with Disabilities Act (ADA) mandates the right to live in the community
-    with supports instead of living in a nursing home or other institution. The U.S.
-    Supreme Court upheld this right in the landmark <em>Olmstead</em> decision in
-    1999.<sup>1</sup>
+    with supports instead of in a nursing home or other institution. The U.S. Supreme
+    Court upheld this right in the 1999 <em>Olmstead</em> decision.<sup>1</sup>
   - Despite that right, people with disabilities remain far more likely than other
     people to live in an institution. Nationally, <strong>4.6 percent</strong> of
-    people with disabilities live in an institutional setting, compared with <strong>0.5
-    percent</strong> of people without disabilities. People with disabilities are
-    <strong>more than eight times</strong> as likely to be institutionalized.
-  - The Census Bureau counts three kinds of institutional settings in these data.
-    <strong>Nursing homes and other medical facilities</strong> account for the largest
-    share, followed by <strong>adult correctional facilities</strong>. A small remainder
-    covers settings such as psychiatric hospitals and juvenile facilities.<sup>2</sup>
+    people with disabilities live in an institutional setting, against <strong>0.5
+    percent</strong> of people without disabilities, more than <strong>eight times</strong>
+    the rate.
+  - 'This sheet maps the combined institutional rate. The Census Bureau counts three
+    kinds of institutional setting: <strong>nursing homes and other medical facilities</strong>
+    (the largest), <strong>adult correctional facilities</strong>, and a small remainder
+    such as psychiatric hospitals and juvenile facilities.<sup>2</sup> Nursing homes
+    and corrections have their own sheets.'
   - Lower percentages mean fewer people with disabilities are institutionalized and
-    more are living in the community. Some states do considerably better than others.
-    Where a person lives continues to shape whether they are supported at home or
-    placed in an institution.
-  inst_combined_lead: This map combines every institutional setting into one measure,
+    more are living in the community. This measure is the exact complement of the
+    combined rate on <em>Living in Community</em>.
+  takeaway: The ADA and the 1999 <em>Olmstead</em> decision hold that unnecessary
+    institutionalization is a form of discrimination.<sup>1</sup> <strong>People with
+    disabilities are still more than eight times as likely to live in an institution
+    as people without disabilities, a gap that holds in every state.</strong>
+  institution_lead: 'The maps combine every institutional setting, nursing homes and
+    medical facilities, correctional facilities, and a small remainder, into one measure:
     the share of people with disabilities living in an institution rather than in
-    the community. It is the exact complement of the combined measure on the companion
-    sheet, <em>Living in Community</em>.
-  nursing_lead: Nursing homes and other long-term medical facilities are the most
-    common institutional setting for people with disabilities. This measure covers
-    residents of all ages. Rates broken out by age group appear in the supplementary
-    table further down.
-  corrections_lead: Adult correctional facilities are the second largest institutional
-    setting for people with disabilities, encompassing prisons, jails and other correctional
-    group quarters as classified in the Census Bureau&rsquo;s group quarters data.
-    People with disabilities are over-represented in these settings relative to their
-    share of the general population, a pattern that reflects gaps in community mental
-    health services, housing and support as much as anything about the criminal legal
-    system itself.
-  nursing_by_age_lead: The table below breaks nursing home residence into two age
-    groups. <strong>These figures use different denominators from the maps above.</strong>
-    The working-age rate is calculated against the population with a disability aged
-    18 to 64, and the rate for older adults against the population with a disability
-    aged 65 and over. They describe the risk within each age group. They cannot be
-    added together, and they cannot be compared against the all-ages figures on the
-    maps.
+    the community, shown against the same measure for people without disabilities
+    on one shared scale. Lower is the more favourable outcome.'
   footnotes:
-  - 'Office for Civil Rights. (2018, June 28). <em>Serving people with disabilities
-    in the most integrated setting: Community living and Olmstead.</em> U.S. Department
-    of Health and Human Services.'
+  - 'Office for Civil Rights. (2018, June 28). Serving people with disabilities in
+    the most integrated setting: Community living and Olmstead. U.S. Department of
+    Health and Human Services.'
   - U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
     Tables ACSST5Y{acs_year}.S2601A, ACSST5Y{acs_year}.S2602 and ACSDT5Y{acs_year}.B26108.
     The institutional total is derived as the total population with a disability less
     those living at home and those living in non-institutional group quarters.
-housing:
+nursing_homes:
   intro:
-  - The Americans with Disabilities Act (ADA) mandates the right to live in the community
-    with supports for people with disabilities instead of living in a nursing home.
-    Similarly, the Fair Housing Act (FHA) expands on this right by prohibiting discrimination
-    against people with disabilities by landlords and other housing providers. Despite
-    this right to live in the community, people with disabilities face many difficulties
-    in finding affordable and accessible housing.
-  - Finding and securing housing is a challenge for people with disabilities, as they
-    are far more likely to live in poverty than their non-disabled peers. Additionally,
-    despite protections from the ADA and FHA, people with disabilities still face
-    a great amount of discrimination from landlords. Supports such as the Section
-    8 Housing Choice Voucher program (HCV) and public housing are meant to alleviate
-    these difficulties.<sup>1</sup>
-  - Some states are doing better than others to ensure access to HCVs and public housing
-    for people with disabilities. To honor the ADA and its mandates of inclusion,
-    states must work to increase the representation of people with disabilities in
-    their housing support, especially the Housing Choice Voucher program, which provides
-    the greatest access to integrated community living.
-  footnotes: U.S. Department of Housing and Urban Development (HUD), PD&amp;R, <em>A
-    Picture of Subsidized Households (PSH)</em>, state totals (Summary Level 3), Public
-    Housing (program=2) and Housing Choice Vouchers (program=3).
-hcbs:
+  - Nursing homes and other long-term medical facilities are the most common institutional
+    setting for people with disabilities, and moving people out of them into home-
+    and community-based care is the central aim of the ADA's integration mandate and
+    the <em>Olmstead</em> decision.<sup>1</sup>
+  - This sheet maps the share of people with disabilities living in a nursing home
+    or medical facility, at any age, alongside the same measure for people without
+    disabilities.<sup>2</sup> It is the largest component of the combined institutional
+    rate on the <em>Living in Institution</em> sheet.
+  - Lower is the more favourable outcome. Rates broken out by age group use different
+    denominators and are not shown here; they are on the <em>Living in Institution</em>
+    supplementary material.
+  takeaway: Nursing homes are the setting the ADA's integration mandate is most often
+    invoked to move people out of.<sup>1</sup> <strong>People with disabilities are
+    many times more likely to live in a nursing home or medical facility than people
+    without disabilities, at every age.</strong>
+  nursing_lead: Nursing homes and other long-term medical facilities are the most
+    common institutional setting for people with disabilities. The maps show residents
+    of all ages as a share of the population with, and without, a disability, on one
+    shared scale; lower is better.
+  footnotes:
+  - 'Office for Civil Rights. (2018, June 28). Serving people with disabilities in
+    the most integrated setting: Community living and Olmstead. U.S. Department of
+    Health and Human Services.'
+  - U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Tables ACSST5Y{acs_year}.S2601A, ACSST5Y{acs_year}.S2602 and ACSDT5Y{acs_year}.B26108.
+    The institutional total is derived as the total population with a disability less
+    those living at home and those living in non-institutional group quarters.
+corrections:
   intro:
-  - The Americans with Disabilities Act (ADA) mandates the right to live in the community
-    with supports instead of living in a nursing home or long-term care institution.
-    This right was upheld by the U.S. Supreme Court in the landmark <em>Olmstead</em>
-    decision in 1999.<sup>1</sup>
-  - Despite this right to live in the community, some states invest more than others
-    in each person they serve. The map and tables below display <strong>state Medicaid
-    spending per recipient on home- and community-based services (HCBS)</strong>,
-    inclusive of all waiver types (Community First Choice, Section 1915(i), Section
-    1915(c), Section 1515), for people with disabilities (all ages) living in the
-    community. This is the total HCBS expenditure divided by the number of people
-    receiving HCBS.<sup>2</sup>
-  - Lower spending per recipient means fewer financial resources reaching each person
-    with a disability who relies on community services. Higher spending per recipient
-    means stronger financial support for each person's community living. This measure
-    reflects how generously a state supports each recipient, not how many people it
-    reaches. Rebalancing money toward community living remains an ADA-related disparity
-    issue for many people with disabilities, putting them at higher risk for institutionalization.
-    Currently, this community living support is highly dependent on the zip code and
-    state in which you live.
-  ratio_lead: Spending per recipient shows how much reaches each person, but not how
-    a state divides its long-term care budget between community and institutional
-    settings. This second measure shows <strong>the share of each state&rsquo;s Medicaid
-    long-term services and supports (LTSS) spending that goes to home- and community-based
-    services (HCBS) rather than to institutions</strong> such as nursing facilities
-    and intermediate care facilities. A higher share means a state directs more of
-    its long-term care dollars toward community living. A lower share means more of
-    its dollars go to institutional care.<sup>3</sup>
+  - Adult correctional facilities, including prisons, jails and other correctional
+    group quarters, are the second largest institutional setting for people with disabilities.<sup>1</sup>
+  - This sheet maps the share of people with disabilities held in a correctional facility,
+    alongside the same measure for people without disabilities.<sup>2</sup> People
+    with disabilities are over-represented in these settings relative to their share
+    of the general population, a pattern that reflects gaps in community mental health
+    services, housing and support as much as anything about the criminal legal system
+    itself.
+  - Lower is the more favourable outcome.
+  takeaway: People with disabilities are over-represented in jails and prisons, a
+    pattern driven as much by gaps in community services as by the criminal legal
+    system.<sup>1</sup> <strong>The disability gap in correctional confinement is
+    wide, and it varies sharply from state to state.</strong>
+  corrections_lead: Adult correctional facilities, prisons, jails and other correctional
+    group quarters, are the second largest institutional setting for people with disabilities.
+    The maps show this share for people with and without disabilities on one shared
+    scale; lower is better.
+  footnotes:
+  - 'Office for Civil Rights. (2018, June 28). Serving people with disabilities in
+    the most integrated setting: Community living and Olmstead. U.S. Department of
+    Health and Human Services.'
+  - U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Tables ACSST5Y{acs_year}.S2601A, ACSST5Y{acs_year}.S2602 and ACSDT5Y{acs_year}.B26108.
+    The institutional total is derived as the total population with a disability less
+    those living at home and those living in non-institutional group quarters.
+public_housing:
+  intro:
+  - The Fair Housing Act and the ADA protect people with disabilities from housing
+    discrimination and establish the right to live in the community; public housing
+    is one of the main federal programs meant to make affordable, integrated housing
+    reachable.<sup>1</sup>
+  - 'This sheet maps a single measure for people with disabilities: the <strong>share
+    of public housing households that are headed by someone with a disability</strong>,
+    by state.<sup>2</sup> There is no comparison population, so the map ranks states
+    against one another. A higher share means the program is reaching disabled renters;
+    a very low share can signal barriers to access.'
+  - People with disabilities are far more likely than others to live in poverty and
+    to need this kind of support, so representation well below their share of low-income
+    renters is worth attention.
+  takeaway: Public housing is one of the main federal tools for making integrated,
+    affordable housing reachable for people with disabilities.<sup>1</sup> <strong>The
+    share of public housing households headed by someone with a disability ranges
+    widely across the states.</strong>
+  pubhousing_lead: The map shows the percentage of public housing households whose
+    head of household has a disability, by state, ranked from the highest quarter
+    of states to the lowest. A higher share indicates the program is reaching disabled
+    renters. Puerto Rico, where a figure is published, is noted in the ranked table
+    caption rather than mapped.
+  footnotes:
+  - The Fair Housing Act (42 U.S.C. &sect; 3601 et seq.) prohibits housing discrimination
+    on the basis of disability; the Americans with Disabilities Act of 1990 (Pub.
+    L. 101-336) and the 1999 Olmstead decision establish the right to community living.
+  - U.S. Department of Housing and Urban Development (HUD), PD&amp;R, A Picture of
+    Subsidized Households (PSH), state totals (Summary Level 3), Public Housing (program=2)
+    and Housing Choice Vouchers (program=3). Where a Puerto Rico figure is published
+    it appears in the ranked table caption; it is not on the map or in the tiering.
+housing_vouchers:
+  intro:
+  - Housing Choice Vouchers (Section 8) let a household rent in the private market,
+    so of the federal housing programs they offer the most direct route to integrated
+    community living for people with disabilities.<sup>1</sup>
+  - 'This sheet maps a single measure for people with disabilities: the <strong>share
+    of voucher households headed by someone with a disability</strong>, by state.<sup>2</sup>
+    As with public housing there is no comparison population, so states are ranked
+    against one another.'
+  - Because vouchers move with the tenant and can be used in ordinary neighbourhoods,
+    ADA-PARC treats a higher disability share here as the more favourable outcome.
+  takeaway: Of the federal housing programs, vouchers offer people with disabilities
+    the most direct route into ordinary, integrated neighbourhoods.<sup>1</sup> <strong>The
+    share of voucher households headed by someone with a disability varies widely
+    from state to state.</strong>
+  hcv_lead: The map shows the percentage of Housing Choice Voucher households whose
+    head of household has a disability, by state, ranked from the highest quarter
+    of states to the lowest. Higher is treated as the more favourable outcome. Puerto
+    Rico, where a figure is published, is noted in the ranked table caption rather
+    than mapped.
+  footnotes:
+  - The Fair Housing Act (42 U.S.C. &sect; 3601 et seq.) prohibits housing discrimination
+    on the basis of disability; the Americans with Disabilities Act of 1990 (Pub.
+    L. 101-336) and the 1999 Olmstead decision establish the right to community living.
+  - U.S. Department of Housing and Urban Development (HUD), PD&amp;R, A Picture of
+    Subsidized Households (PSH), state totals (Summary Level 3), Public Housing (program=2)
+    and Housing Choice Vouchers (program=3). Where a Puerto Rico figure is published
+    it appears in the ranked table caption; it is not on the map or in the tiering.
+hcbs_spending:
+  intro:
+  - The ADA mandates the right to live in the community with supports instead of in
+    a nursing home or long-term care institution, a right upheld by the 1999 <em>Olmstead</em>
+    decision.<sup>1</sup>
+  - 'This sheet maps a single measure: <strong>state Medicaid spending on home- and
+    community-based services (HCBS) per recipient</strong>, for people with disabilities
+    of all ages living in the community, across all waiver types.<sup>2</sup> It is
+    total HCBS expenditure divided by the number of people receiving HCBS. There is
+    no comparison population, so states are ranked against one another.'
+  - Higher spending per recipient means stronger financial support for each person's
+    community living; lower spending means fewer resources reaching each person who
+    relies on community services. This measures how generously a state supports each
+    recipient, not how many people it reaches.
+  takeaway: Medicaid home- and community-based services are what let many people with
+    disabilities live outside an institution at all.<sup>1</sup> <strong>How much
+    reaches each recipient depends heavily on which state they live in, ranging severalfold
+    from the lowest states to the highest.</strong>
+  spending_lead: The map shows total Medicaid HCBS expenditure divided by the number
+    of HCBS recipients, by state, ranked from the highest-spending quarter of states
+    to the lowest. Higher is treated as the more favourable outcome. All waiver types
+    are included; the figure describes generosity per person, not reach.
   about:
     title: About These Data
-    body: The information shown on this website comes from research conducted by <strong>Mathematica</strong>.
-      We did not collect or create the original data. We organized and presented the
-      information to make it easier for community members, including people with disabilities,
-      to understand and compare. All credit for the original research, data collection,
-      and analysis belongs to Mathematica and the report&rsquo;s authors. Any changes
-      we made were limited to how the information is displayed and did not alter the
-      original data.
+    body: The information shown here comes from research conducted by Mathematica
+      for the Centers for Medicare &amp; Medicaid Services. We did not collect or
+      create the original data; we organized and presented it to make it easier to
+      compare across states. Spending per recipient is total HCBS expenditure (A2_LTSSExpDlvrySystm_{source_year}.xlsx,
+      tab A.2.3 All-HCBS, column HCBS (total)) divided by HCBS recipients (A1_LTSSUsrDlvrySystm_{source_year}.xlsx,
+      tab A.1.3 All-HCBS), both inclusive of fee-for-service and managed care. The
+      community share of long-term care spending is HCBS expenditure divided by the
+      sum of HCBS and institutional expenditure (tab A.2.2 All-Inst, column Institutional
+      (total)). All credit for the original research and analysis belongs to Mathematica
+      and the report's authors.
   footnotes:
-  - 'Office for Civil Rights. (2018, June 28). <em>Serving people with disabilities
-    in the most integrated setting: Community living and Olmstead.</em> U.S. Department
-    of Health and Human Services.'
-  - Mathematica, prepared for the Centers for Medicare &amp; Medicaid Services (CMS).
-    <em>Medicaid LTSS Users &amp; Expenditures, {source_year} Data Tables</em> (T-MSIS
-    Analytic Files). Spending per recipient = total HCBS expenditure (A2_LTSSExpDlvrySystm_{source_year}.xlsx,
-    tab &ldquo;A.2.3 All-HCBS&rdquo;, column &ldquo;HCBS (total)&rdquo;) divided by
-    HCBS recipients (A1_LTSSUsrDlvrySystm_{source_year}.xlsx, tab &ldquo;A.1.3 All-HCBS&rdquo;,
-    column &ldquo;HCBS (total)&rdquo;); both inclusive of fee-for-service and managed
-    care. Subpopulation context from C1_LTSSUsrChar_{source_year}.xlsx, tab &ldquo;C.1.21
-    HCBSBySubpop.&rdquo; See CMS LTSS Reports &amp; Evaluations.
-  - Carpenter, A., Stepanczuk, C., Murray, C., &amp; Wysocki, A. (2025, October 17).
-    <em>Trends in users and expenditures for home and community-based services as
-    a share of total Medicaid long-term services and supports users and expenditures,
-    2023.</em> Mathematica. <a href="https://www.medicaid.gov/medicaid/long-term-services-supports/downloads/ltss-rebalancing-brief-2023.pdf"
-    target="_blank" rel="noopener noreferrer">Report PDF</a>. Community share of LTSS
-    spending = HCBS expenditure (tab &ldquo;A.2.3 All-HCBS,&rdquo; column &ldquo;HCBS
-    (total)&rdquo;) divided by the sum of HCBS and institutional expenditure (tab
-    &ldquo;A.2.2 All-Inst,&rdquo; column &ldquo;Institutional (total)&rdquo;) from
-    A2_LTSSExpDlvrySystm_{source_year}.xlsx. Because LTSS equals HCBS plus institutional
-    spending, this equals HCBS as a share of total Medicaid LTSS expenditure.
+  - 'Office for Civil Rights. (2018, June 28). Serving people with disabilities in
+    the most integrated setting: Community living and Olmstead. U.S. Department of
+    Health and Human Services.'
+  - Mathematica, prepared for the Centers for Medicare &amp; Medicaid Services. Medicaid
+    LTSS Users &amp; Expenditures, {source_year} Data Tables (T-MSIS Analytic Files);
+    and Carpenter, A., Stepanczuk, C., Murray, C., &amp; Wysocki, A. (2025, October
+    17). Trends in users and expenditures for home and community-based services as
+    a share of total Medicaid long-term services and supports, 2023. Mathematica.
+    See the About These Data box for the exact tables and columns.
+hcbs_community_share:
+  intro:
+  - Rebalancing Medicaid long-term care away from institutions and toward home- and
+    community-based services is a central goal of the ADA's integration mandate.<sup>1</sup>
+  - 'This sheet maps a single measure: the <strong>share of each state''s Medicaid
+    long-term services and supports (LTSS) spending that goes to home- and community-based
+    services</strong> rather than to institutions such as nursing facilities and intermediate
+    care facilities.<sup>2</sup> There is no comparison population, so states are
+    ranked against one another.'
+  - A higher share means a state directs more of its long-term care dollars toward
+    community living; a lower share means more goes to institutional care. Because
+    LTSS equals HCBS plus institutional spending, this is also HCBS as a share of
+    total Medicaid LTSS expenditure.
+  takeaway: Shifting Medicaid long-term care dollars from institutions toward community
+    services is the core of the ADA's rebalancing goal.<sup>1</sup> <strong>States
+    still differ enormously in how much of their long-term care budget goes to the
+    community rather than to institutions.</strong>
+  share_lead: The map shows HCBS expenditure as a share of the sum of HCBS and institutional
+    expenditure, by state, ranked from the highest quarter of states to the lowest.
+    A higher share means a more community-oriented long-term care system.
+  about:
+    title: About These Data
+    body: The information shown here comes from research conducted by Mathematica
+      for the Centers for Medicare &amp; Medicaid Services. We did not collect or
+      create the original data; we organized and presented it to make it easier to
+      compare across states. Spending per recipient is total HCBS expenditure (A2_LTSSExpDlvrySystm_{source_year}.xlsx,
+      tab A.2.3 All-HCBS, column HCBS (total)) divided by HCBS recipients (A1_LTSSUsrDlvrySystm_{source_year}.xlsx,
+      tab A.1.3 All-HCBS), both inclusive of fee-for-service and managed care. The
+      community share of long-term care spending is HCBS expenditure divided by the
+      sum of HCBS and institutional expenditure (tab A.2.2 All-Inst, column Institutional
+      (total)). All credit for the original research and analysis belongs to Mathematica
+      and the report's authors.
+  footnotes:
+  - 'Office for Civil Rights. (2018, June 28). Serving people with disabilities in
+    the most integrated setting: Community living and Olmstead. U.S. Department of
+    Health and Human Services.'
+  - Mathematica, prepared for the Centers for Medicare &amp; Medicaid Services. Medicaid
+    LTSS Users &amp; Expenditures, {source_year} Data Tables (T-MSIS Analytic Files);
+    and Carpenter, A., Stepanczuk, C., Murray, C., &amp; Wysocki, A. (2025, October
+    17). Trends in users and expenditures for home and community-based services as
+    a share of total Medicaid long-term services and supports, 2023. Mathematica.
+    See the About These Data box for the exact tables and columns.
+median_earnings:
+  intro:
+  - 'The Americans with Disabilities Act (ADA) was written to secure equal opportunity
+    and economic self-sufficiency for people with disabilities.<sup>1</sup> Earnings
+    are the plainest test of that promise: what a person is actually paid for their
+    work.'
+  - Among workers who have earnings, a worker with a disability typically earns <strong>{me_dis_us}</strong>
+    a year, against <strong>{me_nod_us}</strong> for a worker without a disability
+    &ndash; a gap of <strong>{me_gap_us}</strong>, or about {me_ratio_us} times as
+    much.<sup>2</sup> The gap runs the same way in every state.
+  - This sheet reports median earnings &ndash; the midpoint, where half of workers
+    earn more and half earn less &ndash; for people with and without disabilities
+    in each state. It counts only people aged 16 and older who had earnings in the
+    past 12 months, so it says nothing about the larger share of people with disabilities
+    who are out of work altogether; the companion Employment and Poverty sheets cover
+    that. Higher earnings are better. Figures are in inflation-adjusted {acs_year}
+    dollars.<sup>2</sup>
+  takeaway: The Americans with Disabilities Act was written to secure equal opportunity
+    and economic self-sufficiency for people with disabilities.<sup>1</sup> <strong>Among
+    workers who have earnings, a worker with a disability typically earns {me_dis_us},
+    against {me_nod_us} for a worker without one &ndash; a gap of {me_gap_us} that
+    holds in every state.</strong>
+  earnings_lead: The maps show median annual earnings for workers with disabilities
+    in each state, beside the same figure for workers without disabilities on one
+    shared scale. Because the scale is shared, a shade means the same dollar figure
+    on either map, so the distance between the two maps is the earnings gap read straight
+    off the colour. The ranked table below sorts states with a disability against
+    one another and gives the dollar gap for each. Puerto Rico is not on the maps
+    or in the table; its figures are in the map caption.
+  footnotes:
+  - Americans With Disabilities Act of 1990. Pub. L. 101-336. &sect; 1. 26 July 1990.
+    104 Stat. 328.
+  - 'U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Table ACSDT5Y{acs_year}.B18140, Median Earnings in the Past 12 Months by Disability
+    Status. Universe: civilian noninstitutionalized population aged 16 and older with
+    earnings in the past 12 months. Earnings are shown in inflation-adjusted {acs_year}
+    dollars.'
 poverty:
   intro:
   - The Americans with Disabilities Act (ADA) rests on the idea that people with disabilities
@@ -205,15 +391,19 @@ poverty:
     everyone living below the poverty line.
   - This sheet reports the share of people living below the poverty line, first for
     everyone and then for three age groups. Lower percentages are better. All four
-    measures are drawn from the same population, the people the Census Bureau assesses
-    for poverty, so the three age groups add to the all-ages figure exactly.<sup>2</sup>
-  allages_lead: The two maps below are the headline measure, the share of people of
-    any age living below the poverty line, shown for people with disabilities and
-    for people without. Each map ranks states against the other states on that map,
-    so a shade says where a state stands among states rather than how the two groups
-    compare. The comparison is in the ranges printed under each map. Every tier on
-    the right sits at a lower rate than the tier of the same name on the left, and
-    that distance is the disparity this sheet is about.
+    measures come from the same population, the people the Census Bureau assesses
+    for poverty, and the three age groups partition it &mdash; every person falls in
+    exactly one band, so the age-group counts add back to the all-ages count.<sup>2</sup>
+  takeaway: The Americans with Disabilities Act rests on the promise of equal opportunity
+    and economic self-sufficiency for people with disabilities.<sup>1</sup> <strong>More
+    than three decades on, a person with a disability is still close to twice as likely
+    to be living below the poverty line, and the gap holds at every age.</strong>
+  allages_lead: 'The two maps are the headline measure: the share of people of any
+    age living below the poverty line, for people with disabilities and for people
+    without, on one shared colour scale. Because the scale is shared, a shade means
+    the same rate on either map, so the distance between the two maps is the disability
+    gap read straight off the colour. The ranked table below sorts states with a disability
+    against one another.'
   under18_lead: Children with a disability are poorer than children without one, though
     this is the narrowest of the three age gaps. Child poverty is mostly a measure
     of the household a child lives in rather than of the child, so this map reflects
@@ -250,48 +440,23 @@ employment:
     are employed, compared with <strong>78 percent</strong> of working-age people
     without disabilities. Put another way, a person without a disability is close
     to <strong>twice as likely</strong> to be working.
-  - This fact sheet shows the three employment situations the Census Bureau distinguishes
-    for people aged 18 to 64. A person is <strong>employed</strong>, <strong>unemployed</strong>
-    (not working but actively looking for work), or <strong>not in the labor force</strong>
-    (neither working nor looking). Everyone is counted in exactly one of the three,
-    so for each group the shares add to 100 percent.<sup>2</sup>
-  - The largest difference is not in unemployment but in labor force participation.
-    Just under half of working-age people with disabilities are in the labor force
-    at all, against more than four in five people without disabilities. Barriers to
-    getting and keeping a job, including inaccessible workplaces, transportation,
-    benefit rules that penalize earnings, and outright discrimination, show up here
-    rather than in the unemployment figure.
-  employed_lead: The map below shows the share of working-age people with disabilities
-    who are employed in each state. It is the headline measure on this sheet, and
-    the spread across states is wide, from roughly a third of the age group in the
-    lowest states to more than half in the highest.
-  unemployed_lead: The share of <em>all</em> working-age people with disabilities
-    who are unemployed, meaning not working but actively looking for work. Because
-    the denominator is everyone in the age group rather than only those in the labor
-    force, this figure is not the unemployment rate as it is usually reported. Both
-    measures appear in the table further down, and they tell different stories.
-  notlabor_lead:
-  - The share of working-age people with disabilities who are neither working nor
-    looking for work. This is the largest of the three categories for disabled people
-    and the smallest for everyone else, which is the central finding of this sheet.
-  - The category covers a range of situations, including study, caregiving, and retirement
-    before 65, alongside people who have stopped looking after sustained difficulty
-    finding work. It is shaded so that lower shares read as the more favorable outcome,
-    on the reasoning that a person who wants to work should be able to. That framing
-    will not fit every individual it counts.
-  rates_table_lead:
-  - The maps above measure each category against everyone aged 18 to 64. The table
-    below reports the two figures that are more commonly quoted, and <strong>they
-    use different denominators</strong>. The <strong>labor force participation rate</strong>
-    is the share of the age group either working or looking. The <strong>unemployment
-    rate</strong> is the share <em>of those in the labor force</em> who are not working,
-    which is the definition the Bureau of Labor Statistics uses.
-  - The distinction matters. Nationally the unemployment rate for people with disabilities
-    is <strong>10.9 percent</strong> against <strong>4.8 percent</strong> for people
-    without, a gap of roughly two to one. The share of all disabled working-age people
-    who are unemployed is only 5.3 percent, because so many are not in the labor force
-    to begin with. Neither figure is wrong; they answer different questions, and quoting
-    one while meaning the other is the most common way this data gets misread.
+  - 'This sheet maps the share of working-age people with disabilities, ages 18 to
+    64, who are employed in each state. Two companion sheets cover the other employment
+    situations the Census Bureau distinguishes: <strong>unemployment</strong> (not
+    working but looking for work) and being <strong>not in the labor force</strong>
+    (neither working nor looking).<sup>2</sup> Labor force participation, whether
+    a person is working or looking at all, is where the disability gap is widest,
+    and it appears here as a key figure.'
+  takeaway: The Americans with Disabilities Act was written to secure equal opportunity
+    and economic self-sufficiency for people with disabilities.<sup>1</sup> <strong>More
+    than three decades on, only about 43% of working-age people with disabilities
+    are employed, against 78% of people without disabilities &ndash; one of the widest
+    gaps in this data.</strong>
+  employed_lead: The maps show the share of working-age people with disabilities who
+    are employed in each state, alongside the same measure for people without disabilities
+    on one shared scale. The spread across states is wide, from roughly a third of
+    the age group in the lowest states to more than half in the highest, but in every
+    state the disability rate sits well below the rate for people without disabilities.
   footnotes:
   - Americans With Disabilities Act of 1990. Pub. L. 101-336. &sect; 1 and Title I.
     26 July 1990. 104 Stat. 328.
@@ -300,258 +465,367 @@ employment:
     civilian noninstitutionalized population aged 18 to 64. Each share is calculated
     over the sum of the three C18120 categories for the same disability group, so
     the categories are mutually exclusive and sum to 100 percent.'
-education:
+not_in_labor_force:
   intro:
-  - 'Education shapes almost everything that follows it: the work available to a person,
-    what it pays, and how much choice they have about where and how they live. The
-    gap in educational attainment between disabled and non-disabled adults is one
-    of the widest in this data, and it opens early.'
-  - Among adults aged 25 and over, <strong>17.0 percent</strong> of people with disabilities
-    have not completed high school, against <strong>8.9 percent</strong> of people
-    without. At the other end, <strong>20.9 percent</strong> hold a bachelor's degree
-    or higher, against <strong>39.1 percent</strong>. On both measures the disparity
-    is close to two to one, in opposite directions.<sup>1</sup>
-  - 'A note on what these three measures do and do not cover. They are not a complete
-    account of educational attainment. People whose highest qualification is some
-    college without a degree, or an associate''s degree, are in none of the three,
-    and they are a large group: <strong>29 percent</strong> of adults with disabilities
-    and 28 percent of adults without. The three shares therefore add to between 63
-    and 79 percent depending on the state, not to 100.<sup>2</sup>'
-  - The final table on this sheet reports that remainder, so the full picture is visible
-    rather than implied.
-  no_hs_lead: The share of adults aged 25 and over with a disability whose formal
-    education ended before a high school diploma or its equivalent. This is the clearest
-    of the three measures, and the one most closely tied to later poverty and unemployment.
-    It ranges from about 9 percent to 23 percent depending on the state.
-  hs_lead:
-  - The share whose highest qualification is a high school diploma or GED. This map
-    is shaded by <strong>how large the share is</strong> rather than by performance,
-    because the measure reads two ways at once. A high figure can mean a state gets
-    more of its disabled residents through high school, and it can mean more of them
-    stop there.
-  - Read it against the two maps either side, which do carry a direction. A state
-    with a large share here and a small share below high school is doing something
-    different from a state with a large share here and a small share holding degrees.
-  bachelors_lead: The share holding a bachelor's degree or a higher qualification.
-    Nationally this is 20.9 percent of adults with disabilities against 39.1 percent
-    of adults without, the single largest gap on the sheet. Higher education remains
-    substantially harder to reach and to complete for disabled students, and the state
-    variation reflects both school systems and the accessibility of public universities.
-  remainder_table_lead:
-  - Some college without a degree, and associate's degrees, fall outside all three
-    measures above. This table reports that group directly, calculated as everything
-    the three categories leave out.
-  - It is a substantial share, <strong>29 percent</strong> of adults with disabilities
-    nationally, and it matters for interpretation. A state with a low share holding
-    bachelor's degrees is not necessarily a state where disabled adults stop at high
-    school; many may hold an associate's degree or have attended college without finishing.
-    This table makes that visible.
+  - The Americans with Disabilities Act (ADA) was written to secure equal opportunity
+    and economic self-sufficiency for people with disabilities.<sup>1</sup> The widest
+    gap in employment is not in unemployment but in whether people are counted in
+    the labor force at all, that is, working or actively looking for work.
+  - Nationally, close to <strong>half</strong> of working-age people with disabilities
+    are neither working nor looking for work, against roughly <strong>one in five</strong>
+    people without disabilities.<sup>2</sup> This is the largest of the three employment
+    categories for people with disabilities and the smallest for everyone else.
+  - The category covers a range of situations, including study, caregiving, and retirement
+    before 65, alongside people who have stopped looking after sustained difficulty
+    finding work. This sheet is shaded so that lower shares read as the more favorable
+    outcome, on the reasoning that a person who wants to work should be able to. That
+    framing will not fit every individual it counts.
+  takeaway: The widest disability gap in employment is in whether people are in the
+    labor force at all, not in unemployment.<sup>2</sup> <strong>Close to half of
+    working-age people with disabilities are neither working nor looking for work,
+    more than double the rate for people without disabilities.</strong>
+  notlabor_lead: The maps show the share of working-age people with disabilities who
+    are neither working nor looking for work, with the same measure for people without
+    disabilities on one shared scale. This is the largest of the three employment
+    categories for people with disabilities and the smallest for everyone else, which
+    is the central finding of the employment data.
   footnotes:
+  - Americans With Disabilities Act of 1990. Pub. L. 101-336. &sect; 1 and Title I.
+    26 July 1990. 104 Stat. 328.
   - 'U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
-    Table ACSST5Y{acs_year}.S1811. Universe: the civilian noninstitutionalized population
-    aged 25 and over. Shares are calculated against that population within each disability
-    group.'
-  - The three published categories are not exhaustive. Adults whose highest attainment
-    is some college without a degree, or an associate's degree, are counted in none
-    of them. The share in the final table is derived as 100 percent less the three
-    published shares, so it is exact rather than estimated.
-health_insurance:
+    Table ACSDT5Y{acs_year}.C18120, Employment Status by Disability Status. Universe:
+    civilian noninstitutionalized population aged 18 to 64. Each share is calculated
+    over the sum of the three C18120 categories for the same disability group, so
+    the categories are mutually exclusive and sum to 100 percent.'
+unemployment:
+  intro:
+  - The Americans with Disabilities Act (ADA) prohibits discrimination in employment
+    and was written to secure economic self-sufficiency for people with disabilities.<sup>1</sup>
+  - This sheet maps the share of <em>all</em> working-age people with disabilities
+    who are unemployed, meaning not working but actively looking for work. Nationally
+    that is about <strong>5 percent</strong>, against roughly <strong>3 percent</strong>
+    of people without disabilities.<sup>2</sup>
+  - Because the denominator here is everyone aged 18 to 64, not only those in the
+    labor force, this is not the unemployment rate as the Bureau of Labor Statistics
+    reports it. On that narrower base the disability gap is wider, about <strong>11
+    percent</strong> against <strong>5 percent</strong>, because so many working-age
+    people with disabilities are outside the labor force to begin with. Both figures
+    appear in the ranked table below; quoting one while meaning the other is the most
+    common way this data is misread.
+  takeaway: Unemployment counts only people who are actively looking for work, so
+    it captures just a fraction of the disability employment gap.<sup>2</sup> <strong>About
+    1 in 20 working-age people with disabilities are unemployed and looking for work,
+    and among those in the labor force the unemployment rate is roughly twice that
+    of people without disabilities.</strong>
+  unemployed_lead: The maps show the share of <em>all</em> working-age people with
+    disabilities who are unemployed, not working but actively looking for work, with
+    the same measure for people without disabilities on one shared scale. Because
+    the denominator is everyone in the age group rather than only those in the labor
+    force, this figure runs lower than the unemployment rate as it is usually reported;
+    the ranked table below carries both.
+  footnotes:
+  - Americans With Disabilities Act of 1990. Pub. L. 101-336. &sect; 1 and Title I.
+    26 July 1990. 104 Stat. 328.
+  - 'U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Table ACSDT5Y{acs_year}.C18120, Employment Status by Disability Status. Universe:
+    civilian noninstitutionalized population aged 18 to 64. Each share is calculated
+    over the sum of the three C18120 categories for the same disability group, so
+    the categories are mutually exclusive and sum to 100 percent.'
+health_insurance_uninsured:
   intro:
   - Health insurance is what makes health care reachable, and for people with disabilities
     it also pays for much of what makes community living possible, including personal
     care, equipment and long-term services and supports.
-  - This fact sheet begins with a result that runs against expectation. Among working-age
+  - 'This sheet begins with a result that runs against expectation. Among working-age
     adults, people with disabilities are <strong>less</strong> likely to be uninsured
-    than people without disabilities, <strong>9.9 percent</strong> against <strong>12.0
-    percent</strong>.<sup>1</sup>
-  - The reason is visible in the rest of the data. Public insurance, chiefly Medicaid
-    and Medicare, covers <strong>51.8 percent</strong> of working-age people with
-    disabilities, against <strong>15.0 percent</strong> of people without. Private
-    coverage runs the other way, <strong>49.1 percent</strong> against <strong>76.1
-    percent</strong>. Public programs are doing the work that employer-sponsored insurance
-    does for everyone else.
-  - That is worth stating plainly, because it is a policy achievement and also a dependency.
-    Coverage that rests on public programs is coverage that moves when eligibility
-    rules, waiver capacity or state budgets move. The state variation on the maps
-    below is largely variation in how far each state has extended those programs.
-  - One note on reading the figures. The four measures are not four slices of a whole.
-    Public and private coverage <strong>overlap</strong>, because a person can hold
-    both, so they add to more than the covered total.<sup>2</sup>
-  none_19to64_lead: The share of working-age people with disabilities who have no
-    health insurance of any kind. This is the clearest performance measure on the
-    sheet, and the one where state policy choices show up most directly. It ranges
-    from about 3 percent to nearly 20 percent depending on the state.
-  public_19to64_lead: The share with Medicaid, Medicare or another public plan. This
-    map is shaded by <strong>how large the share is</strong> rather than by performance,
-    because a high figure carries two readings at once. It can mean a state has extended
-    public coverage widely, and it can mean disabled residents are shut out of employer-sponsored
-    insurance and have nowhere else to go. Read it alongside the uninsured map rather
-    than on its own.
-  private_19to64_lead: 'The share with private insurance, most often through an employer.
-    This map is also shaded by size rather than performance, for the mirror-image
-    reason: a high figure may reflect good access to jobs that carry benefits, and
-    a low figure may reflect public programs successfully filling the gap. Note that
-    people can hold private and public coverage at the same time, so this measure
-    and the one above are not mutually exclusive.'
-  covered_table_lead: Coverage is the exact complement of no coverage, so it is reported
-    here rather than mapped a second time. The table gives both age groups side by
-    side.
-  age65_table_lead:
-  - Nearly everyone aged 65 and over is insured, because Medicare is close to universal
-    at that age. Coverage runs from <strong>98.5 to 99.9 percent</strong> across the
-    states for people with disabilities, and the uninsured share from 0.1 to 1.5 percent.
-  - That range is too narrow for state ranking to carry meaning, so these measures
-    are shown as a table rather than as maps. Sorting states on a spread of about
-    one percentage point would manufacture a difference that is not there. The figures
-    that do vary at this age are the coverage types, where private insurance still
-    reaches roughly half of older disabled adults as a supplement to Medicare.
+    than people without disabilities, about <strong>10 percent</strong> against <strong>12
+    percent</strong> nationally.<sup>1</sup> Companion sheets show why: public programmes
+    are doing the work that employer insurance does for everyone else.'
+  - Lower is the more favourable outcome. At age 65 and over, Medicare makes coverage
+    close to universal for both groups, so this sheet covers ages 19 to 64, where
+    state policy choices still show up.
+  takeaway: Health insurance is what makes both health care and community living reachable
+    for people with disabilities.<sup>1</sup> <strong>Working-age adults with disabilities
+    are actually less likely to be uninsured than other adults, because public programmes
+    fill the gap that employer coverage leaves.</strong>
+  uninsured_lead: The maps show the share of working-age people with and without disabilities
+    who have no health insurance of any kind, on one shared scale. It ranges from
+    about 3 percent to nearly 20 percent depending on the state, and it is the measure
+    on which state policy choices show up most directly.
+  footnotes: U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Table ACSDT5Y{acs_year}.B18135, Health Insurance Coverage Status by Disability
+    Status. Shares for ages 19 to 64 are calculated against the civilian noninstitutionalized
+    population with, or without, a disability in that age range.
+health_insurance_public:
+  intro:
+  - Public insurance, chiefly Medicaid and Medicare, covers about <strong>52 percent</strong>
+    of working-age people with disabilities, against roughly <strong>15 percent</strong>
+    of people without.<sup>1</sup> For many people with disabilities it is the coverage
+    that pays for personal care and the services that make community living possible.
+  - 'A high public-coverage share <strong>reads two ways at once</strong>: it can
+    mean a state has extended public coverage widely, and it can mean disabled residents
+    are shut out of employer-sponsored insurance and have nowhere else to go. This
+    sheet is therefore shaded by <em>how large</em> the share is, from the highest
+    quarter of states to the lowest, with no Excellent-to-Poor claim.'
+  - Read it alongside the <em>Uninsured</em> sheet rather than on its own. Public
+    and private coverage overlap, so they are not slices of a whole.<sup>2</sup>
+  takeaway: For most working-age adults with disabilities, public programmes, not
+    an employer, are what provide health coverage.<sup>1</sup> <strong>A high public-coverage
+    share can mean a state has extended Medicaid widely, or that disabled residents
+    have no other option, so this sheet ranks states only by size.</strong>
+  public_lead: The maps show the share of working-age people with and without disabilities
+    who have Medicaid, Medicare or another public plan, on one shared scale. Because
+    a high figure carries two readings, the four bands are labelled by size, highest
+    quarter to lowest quarter, rather than Excellent to Poor.
   footnotes:
   - U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
     Table ACSDT5Y{acs_year}.B18135, Health Insurance Coverage Status by Disability
     Status. Shares for ages 19 to 64 are calculated against the civilian noninstitutionalized
-    population with a disability in that age range; shares for age 65 and over against
-    the corresponding population aged 65 and over.
+    population with, or without, a disability in that age range.
   - Public and private coverage are not mutually exclusive in Table B18135. A person
-    with both Medicare and a private supplemental plan is counted in each. For ages
-    19 to 64 the two shares exceed the insured total by 7 to 14 percentage points,
-    and for age 65 and over by 40 to 62 points, which is why the categories must not
-    be read as parts of a whole.
-commuting:
+    with both Medicare and a private supplemental plan is counted in each, so for
+    ages 19 to 64 the two shares exceed the insured total by 7 to 14 percentage points.
+health_insurance_private:
   intro:
-  - Getting to work is a precondition for working. Transportation is one of the barriers
-    people with disabilities name most often, and the Americans with Disabilities
-    Act devotes a full title to it, requiring public transit systems to be accessible.<sup>1</sup>
-  - This fact sheet has an unusual shape, and it is worth understanding before reading
-    the maps. The Census question about commuting is asked only of <strong>people
-    who work</strong>. Everything on the maps below therefore describes disabled workers,
-    not disabled people generally.<sup>2</sup>
-  - That distinction carries the sheet's most striking number. Only <strong>23 percent</strong>
-    of people with disabilities are commuting workers, against <strong>51 percent</strong>
-    of people without disabilities. Before any question about how people travel to
-    work, there is a much larger question about who gets to work at all, and that
-    is the subject of the <em>Employment</em> fact sheet.
-  - Among those who do commute, the differences are modest. <strong>3.8 percent</strong>
-    of disabled workers travel by public transit against 3.2 percent of other workers,
-    and <strong>65.4 percent</strong> drive alone against 69.0 percent. The state-to-state
-    variation on the maps is driven far more by whether a place has a transit system
-    than by disability.
-  - The two modes shown here do not add up to everything. Carpooling, walking, cycling,
-    taxis and working from home make up the remainder, and together they account for
-    between a fifth and a half of commutes depending on the state.
-  transit_lead:
-  - The share of workers with disabilities who travel to work by public transit. This
-    map is shaded by <strong>how large the share is</strong> rather than by performance,
-    because a high figure has two readings. It can mean a state has accessible transit
-    that people can rely on, and it can mean workers have no alternative because they
-    cannot drive or cannot afford a car.
-  - Density explains most of what the map shows. The District of Columbia and New
-    York are far above every other state; most states sit below 3 percent because
-    they have little public transit for anyone to use, disabled or not.
-  drivealone_lead:
-  - The share of workers with disabilities who drive to work alone. This map is also
-    shaded by size rather than performance, for the mirror-image reason. Driving alone
-    can reflect independence and a vehicle adapted to a person's needs, and it can
-    reflect the absence of any usable transit.
-  - Workers with disabilities drive alone slightly less often than other workers,
-    65.4 percent against 69.0 percent nationally, a smaller gap than most people expect.
-  workers_table_lead:
-  - 'The table below shows the figure that the maps cannot: what share of each population
-    is in the commuting universe at all. This is the denominator behind every percentage
-    on this sheet.'
-  - Nationally it is <strong>23 percent</strong> of people with disabilities against
-    <strong>51 percent</strong> of people without. A state with a low share is not
-    necessarily doing badly on transportation; it may simply have fewer disabled residents
-    in work. Read this table alongside the <em>Employment</em> fact sheet, which measures
-    that directly.
+  - Private insurance, most often through an employer, covers about <strong>49 percent</strong>
+    of working-age people with disabilities, against roughly <strong>76 percent</strong>
+    of people without.<sup>1</sup>
+  - 'As with public coverage, a private-coverage share <strong>reads two ways</strong>:
+    a high figure may reflect good access to jobs that carry benefits, and a low figure
+    may reflect public programmes successfully filling the gap. This sheet is shaded
+    by size, not by performance.'
+  - People can hold private and public coverage at the same time, so this measure
+    and the public-coverage sheet are not mutually exclusive.<sup>2</sup>
+  takeaway: Employer-based private insurance reaches far fewer working-age adults
+    with disabilities than other adults.<sup>1</sup> <strong>A low private-coverage
+    share can reflect weak access to benefit-carrying jobs, or public programmes doing
+    that job instead, so this sheet ranks states only by size.</strong>
+  private_lead: The maps show the share of working-age people with and without disabilities
+    who have private insurance, most often through an employer, on one shared scale.
+    The four bands are labelled by size rather than Excellent to Poor, because a high
+    or low figure can each be read two ways.
   footnotes:
-  - Americans With Disabilities Act of 1990. Pub. L. 101-336, Title II, Part B and
-    Title III. 26 July 1990. 104 Stat. 328.
+  - U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Table ACSDT5Y{acs_year}.B18135, Health Insurance Coverage Status by Disability
+    Status. Shares for ages 19 to 64 are calculated against the civilian noninstitutionalized
+    population with, or without, a disability in that age range.
+  - Public and private coverage are not mutually exclusive in Table B18135. A person
+    with both Medicare and a private supplemental plan is counted in each, so for
+    ages 19 to 64 the two shares exceed the insured total by 7 to 14 percentage points.
+commuting_transit:
+  intro:
+  - Getting to work is a precondition for working, and the ADA devotes a full title
+    to public transit, requiring systems to be accessible.<sup>1</sup>
+  - This fact sheet has an unusual shape. The Census commuting question is asked only
+    of <strong>people who work</strong>, so everything on the maps describes disabled
+    workers, not disabled people generally.<sup>2</sup> Only about 23 percent of people
+    with disabilities are commuting workers, against about 51 percent of people without,
+    which is the far larger story and the subject of the <em>Employment</em> sheet.
+  - 'Among workers, a high transit share <strong>reads two ways</strong>: accessible
+    transit people can rely on, or no alternative for someone who cannot drive. This
+    sheet is shaded by size, highest quarter to lowest quarter, not by performance,
+    and is driven mostly by urban density.'
+  takeaway: The Census only asks about commuting of people who already work, so this
+    sheet describes disabled workers, not disabled people.<sup>2</sup> <strong>Among
+    workers, disabled and non-disabled people use public transit at similar rates;
+    the difference is driven by whether a place has transit at all.</strong>
+  transit_lead: The maps show the share of workers with and without disabilities who
+    travel to work by public transit, on one shared scale. The four bands are labelled
+    by size rather than Excellent to Poor. The share of each population that is in
+    the worker universe at all is reported as a key figure.
+  footnotes:
+  - Americans With Disabilities Act of 1990. Pub. L. 101-336, Title II (public services,
+    including public transit) and Title III. 26 July 1990. 104 Stat. 328.
   - 'U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
     Table ACSST5Y{acs_year}.S1811. Universe: workers aged 16 and over. Mode shares
     are calculated against the number of workers in each disability group, so they
     describe how workers travel, not how the whole population travels. The share of
-    each population that is in this worker universe is reported in the final table.'
-technology:
+    each population that is in the worker universe is reported as a key figure.'
+commuting_drivealone:
   intro:
-  - Applying for a job, renewing a benefit, joining a class, refilling a prescription
-    and seeing a doctor have all moved online over the past decade. A household without
-    a computer or a connection is not merely inconvenienced by that shift. It is cut
-    out of services that no longer have an offline route, and the exclusion lands
-    hardest on people who already face the most barriers to reaching those services
-    in person.
-  - <strong>72.8 percent</strong> of people with disabilities live in a household
-    with a laptop or desktop computer, against <strong>86.2 percent</strong> of people
-    without disabilities. <strong>89.6 percent</strong> have an internet subscription,
-    against 96.6 percent, and <strong>85.2 percent</strong> have a smartphone, against
-    95.2 percent.<sup>1</sup> The computer gap is the widest of the three at 13.4
-    points, and behind that percentage sit <strong>11.7 million people with disabilities
-    living in a household with no computer at all</strong>.
-  - The three measures are not three versions of one thing, and the sheet is worth
-    reading as a whole rather than one map at a time. In fifty of the fifty one states
-    and the District of Columbia, more people with disabilities have a smartphone
-    than have a computer, and nationally the difference is 12.4 points. In Mississippi
-    it is 22.8 points, where 60.8 percent have a computer and 83.6 percent have a
-    smartphone. A phone is enough to read a message and not enough to complete a long
-    benefits application, prepare a resume or sit a course, so a state that looks
-    well served on the smartphone map may still be leaving people without the tool
-    the task actually requires.
-  - One note on where these figures come from. Technology access is measured from
-    the American Community Survey Public Use Microdata Sample rather than from the
-    published summary tables behind the other fact sheets, because the three questions
-    are asked once per household and have to be tabulated from the person records
-    to describe people. The population here is therefore people with disabilities
-    living in occupied housing units, and all three measures rest on that one shared
-    base.<sup>2</sup> Anyone living in a nursing home, a group home, a correctional
-    facility or other group quarters is outside it, excluded from the count and the
-    base alike. That makes this sheet's population narrower than the one used on <em>Living
-    in Community</em> and <em>Living in Institution</em>, which count everyone.
-  computer_lead: The share of people with disabilities living in a household with
-    a laptop or desktop computer. This is the widest of the three disability gaps
-    and also the measure on which the states differ most, a spread of 23.4 points
-    from Mississippi at 60.8 percent to Utah at 84.2 percent. It is the measure most
-    closely tied to what a person can actually do online, since form filling, job
-    applications and coursework are difficult or impossible on a phone.
-  internet_lead: The share living in a household with an internet subscription of
-    any kind, whether the household pays for it or not. Access is higher here than
-    for either device and the states differ least, a spread of 11.2 points. Read it
-    as a floor rather than a ceiling. The survey asks whether a household has a subscription,
-    not how fast it is, how reliable it is or what share of the household budget it
-    takes, so a household counted here may still have a connection too slow for a
-    video appointment.<sup>3</sup>
-  smartphone_lead: The share living in a household with a smartphone. This is the
-    measure on which people with disabilities come closest to everyone else, and it
-    should be read against the computer map rather than on its own. Where the two
-    diverge sharply the phone is standing in for a computer rather than adding to
-    one, and a substitute is not an equivalent. Vermont is the single exception in
-    the other direction, the one state where computer access runs slightly ahead of
-    smartphone access.
-  combined_table_lead: The maps above sort the states into four performance groups
-    one measure at a time, which means a single state's three figures never appear
-    together. The table below puts them side by side in alphabetical order. It is
-    the quickest way to find the states that do well on one measure and badly on another,
-    which is where the substitution described above is happening.<sup>4</sup>
+  - Transportation is one of the barriers people with disabilities name most often,
+    and how workers get to work is one window on it.<sup>1</sup>
+  - As with the transit sheet, the Census commuting question is asked only of <strong>people
+    who work</strong>, so this describes disabled workers.<sup>2</sup> Only about
+    23 percent of people with disabilities are commuting workers, against about 51
+    percent of people without.
+  - 'Driving alone <strong>reads two ways</strong>: it can reflect independence and
+    a vehicle adapted to a person''s needs, and it can reflect the absence of any
+    usable transit. This sheet is shaded by size, not by performance. Workers with
+    disabilities drive alone slightly less often than other workers.'
+  takeaway: How workers get to work is one window on the transportation barriers people
+    with disabilities name most often.<sup>1</sup> <strong>Workers with disabilities
+    drive alone slightly less often than other workers, a smaller gap than most people
+    expect.</strong>
+  drivealone_lead: The maps show the share of workers with and without disabilities
+    who drive to work alone, on one shared scale. The four bands are labelled by size
+    rather than Excellent to Poor, because driving alone can be read two ways. The
+    share of each population in the worker universe is reported as a key figure.
+  footnotes:
+  - Americans With Disabilities Act of 1990. Pub. L. 101-336, Title II (public services,
+    including public transit) and Title III. 26 July 1990. 104 Stat. 328.
+  - 'U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Table ACSST5Y{acs_year}.S1811. Universe: workers aged 16 and over. Mode shares
+    are calculated against the number of workers in each disability group, so they
+    describe how workers travel, not how the whole population travels. The share of
+    each population that is in the worker universe is reported as a key figure.'
+education_below_hs:
+  intro:
+  - 'Education shapes almost everything that follows it: the work available to a person,
+    what it pays, and how much choice they have about where and how they live. The
+    attainment gap between disabled and non-disabled adults is one of the widest in
+    this data, and it opens early.'
+  - Among adults aged 25 and over, about <strong>17 percent</strong> of people with
+    disabilities have not completed high school, against about <strong>9 percent</strong>
+    of people without.<sup>1</sup>
+  - This is the clearest of the attainment measures and the one most closely tied
+    to later poverty and unemployment. Lower is the more favourable outcome.
+  takeaway: The educational-attainment gap between disabled and non-disabled adults
+    opens early and shapes everything downstream.<sup>1</sup> <strong>Adults with
+    disabilities are about twice as likely as other adults to have stopped their formal
+    education before a high school diploma.</strong>
+  belowhs_lead: The maps show the share of adults aged 25 and over, with and without
+    a disability, whose formal education ended before a high school diploma or its
+    equivalent, on one shared scale. Lower is better; it ranges from roughly 9 percent
+    to 23 percent depending on the state.
+  footnotes: 'U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Table ACSST5Y{acs_year}.S1811. Universe: the civilian noninstitutionalized population
+    aged 25 and over. Shares are calculated against that population within each disability
+    group.'
+education_high_school:
+  intro:
+  - A high school diploma or its equivalent is the most common highest qualification
+    for adults with disabilities.<sup>1</sup>
+  - 'This measure <strong>reads two ways at once</strong>: a high figure can mean
+    a state gets more of its disabled residents through high school, and it can mean
+    more of them stop there. This sheet is therefore shaded by <em>how large</em>
+    the share is, highest quarter to lowest quarter, with no Excellent-to-Poor claim.'
+  - Read it against the two sheets either side, which do carry a direction. A state
+    with a large share here and a small share below high school is doing something
+    different from a state with a large share here and a small share holding degrees.
+  takeaway: A high school diploma is the most common highest qualification for adults
+    with disabilities.<sup>1</sup> <strong>A large share stopping at high school can
+    mean a state gets people through, or that it does not get them further, so this
+    sheet ranks states only by size.</strong>
+  highschool_lead: The maps show the share of adults aged 25 and over, with and without
+    a disability, whose highest qualification is a high school diploma or GED, on
+    one shared scale. Because the measure reads two ways, the four bands are labelled
+    by size rather than Excellent to Poor.
+  footnotes: 'U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Table ACSST5Y{acs_year}.S1811. Universe: the civilian noninstitutionalized population
+    aged 25 and over. Shares are calculated against that population within each disability
+    group.'
+education_bachelors:
+  intro:
+  - Higher education is the attainment measure most closely tied to earnings and to
+    the range of work a person can do.
+  - Among adults aged 25 and over, about <strong>21 percent</strong> of people with
+    disabilities hold a bachelor's degree or higher, against about <strong>39 percent</strong>
+    of people without, close to two to one.<sup>1</sup>
+  - Higher is the more favourable outcome. The state variation reflects both school
+    systems and the accessibility of public universities.
+  takeaway: Higher education is the attainment measure most closely tied to earnings
+    and to the range of work a person can do.<sup>1</sup> <strong>Adults with disabilities
+    hold a bachelor's degree at close to half the rate of other adults, the single
+    widest attainment gap.</strong>
+  bachelors_lead: The maps show the share of adults aged 25 and over, with and without
+    a disability, holding a bachelor's degree or a higher qualification, on one shared
+    scale. Higher is the more favourable outcome; nationally it is about 21 percent
+    against 39 percent.
+  footnotes: 'U.S. Census Bureau. American Community Survey 5-year estimates ({acs_start}&ndash;{acs_end}).
+    Table ACSST5Y{acs_year}.S1811. Universe: the civilian noninstitutionalized population
+    aged 25 and over. Shares are calculated against that population within each disability
+    group.'
+technology_computer:
+  intro:
+  - Applying for a job, renewing a benefit, joining a class and seeing a doctor have
+    all moved online. A household without a computer is cut out of services that no
+    longer have an offline route.
+  - About <strong>73 percent</strong> of people with disabilities live in a household
+    with a laptop or desktop computer, against about <strong>86 percent</strong> of
+    people without.<sup>1</sup> This is the widest of the three technology gaps and
+    the measure most closely tied to what a person can actually do online, since form-filling,
+    job applications and coursework are difficult or impossible on a phone.
+  - Higher is the more favourable outcome. It is measured from the ACS Public Use
+    Microdata Sample, so the population is people living in occupied housing units;
+    anyone in a nursing home, group home or other group quarters is outside it.
+  takeaway: Services from benefits to health care have moved online, and a phone is
+    not enough to complete most of them.<sup>1</sup> <strong>People with disabilities
+    are about 13 points less likely to live in a household with a computer, the widest
+    of the three technology gaps.</strong>
+  computer_lead: The maps show the share of people with and without disabilities living
+    in a household with a laptop or desktop computer, on one shared scale. Higher
+    is better; the spread across states is the largest of the three technology measures.
   footnotes:
   - 'U.S. Census Bureau. American Community Survey 5-year Public Use Microdata Sample
     ({pums_start} to {pums_year}), variables LAPTOP, ACCESSINET and SMARTPHONE. Tabulated
-    by ADA-PARC from the person-level microdata using person weights (PWGTP), because
-    the published figure is a statement about people rather than about households.
-    Universe: people in occupied housing units, by disability status (DIS). Residents
-    of group quarters are excluded from both the count and the base.'
-  - All three questions are asked of the same households, so the three measures share
-    one denominator in every state by construction. That identity is asserted as a
-    test when the data is built, and an extract that violates it fails rather than
-    publishes. Internet access counts a subscription of any kind, paid or provided
-    free. Computer access counts laptops and desktops together.
-  - The Census Bureau suppressed the internet response for a small number of households
-    in selected areas for the 2024 data year. Those households are removed from all
-    three measures rather than from internet alone, so that the shared denominator
-    holds. They are 792 households in Pennsylvania, 0.23 percent of that state's base,
-    and no households anywhere else.
-  - These are sample estimates and carry sampling error. Margins of error are computed
-    by successive difference replication at the 90 percent confidence level and are
-    published with the data rather than printed on the maps, which would be unreadable.
-    Across states the margin on the disability percentage has a median of 0.6 points
-    for computer, 0.5 for internet and 0.5 for smartphone, and never exceeds 2.0 points.
-    Differences between states of less than about one point should not be read as
-    real.
+    by ADA-PARC from the person-level microdata using person weights. Universe: people
+    in occupied housing units, by disability status. Residents of group quarters are
+    excluded from both the count and the base.'
+  - These are sample estimates and carry sampling error; differences between states
+    of less than about one percentage point should not be read as real. Puerto Rico,
+    where a figure is published, is named in the ranked-table caption rather than
+    shown on the maps.
+technology_internet:
+  intro:
+  - An internet subscription is the second half of getting online; a computer without
+    a connection, or a connection without a device, leaves a household still shut
+    out.
+  - About <strong>90 percent</strong> of people with disabilities live in a household
+    with an internet subscription of any kind, against about <strong>97 percent</strong>
+    of people without.<sup>1</sup> Access is higher here than for either device and
+    the states differ least.
+  - Read it as a floor rather than a ceiling. The survey asks whether a household
+    has a subscription, not how fast or reliable it is, so a household counted here
+    may still have a connection too slow for a video appointment. Higher is the more
+    favourable outcome.
+  takeaway: An internet subscription is the second half of getting online, and the
+    survey only asks whether a household has one, not whether it is usable.<sup>1</sup>
+    <strong>Internet access is the technology measure on which people with disabilities
+    come closest to everyone else, and states vary least.</strong>
+  internet_lead: The maps show the share of people with and without disabilities living
+    in a household with an internet subscription of any kind, paid or provided free,
+    on one shared scale. Higher is better; treat it as a floor, since the survey does
+    not ask about speed or reliability.
+  footnotes:
+  - 'U.S. Census Bureau. American Community Survey 5-year Public Use Microdata Sample
+    ({pums_start} to {pums_year}), variables LAPTOP, ACCESSINET and SMARTPHONE. Tabulated
+    by ADA-PARC from the person-level microdata using person weights. Universe: people
+    in occupied housing units, by disability status. Residents of group quarters are
+    excluded from both the count and the base.'
+  - These are sample estimates and carry sampling error; differences between states
+    of less than about one percentage point should not be read as real. Puerto Rico,
+    where a figure is published, is named in the ranked-table caption rather than
+    shown on the maps.
+technology_smartphone:
+  intro:
+  - A smartphone is enough to read a message and not enough to complete a long benefits
+    application, prepare a resume or sit a course.
+  - About <strong>85 percent</strong> of people with disabilities live in a household
+    with a smartphone, against about <strong>95 percent</strong> of people without.<sup>1</sup>
+    This is the measure on which people with disabilities come closest to everyone
+    else.
+  - It should be read against the computer sheet rather than on its own. In almost
+    every state more people with disabilities have a smartphone than have a computer;
+    where the two diverge sharply, the phone is standing in for a computer rather
+    than adding to one, and a substitute is not an equivalent. Higher is the more
+    favourable outcome.
+  takeaway: A phone is enough to read a message and not enough to complete a benefits
+    application, a resume or a course.<sup>1</sup> <strong>In almost every state more
+    people with disabilities have a smartphone than a computer, so the phone is often
+    standing in for the tool the task needs.</strong>
+  smartphone_lead: 'The maps show the share of people with and without disabilities
+    living in a household with a smartphone, on one shared scale. Higher is better.
+    Read it against the computer sheet: where a state is far higher here than there,
+    the phone is a substitute rather than an addition.'
+  footnotes:
+  - 'U.S. Census Bureau. American Community Survey 5-year Public Use Microdata Sample
+    ({pums_start} to {pums_year}), variables LAPTOP, ACCESSINET and SMARTPHONE. Tabulated
+    by ADA-PARC from the person-level microdata using person weights. Universe: people
+    in occupied housing units, by disability status. Residents of group quarters are
+    excluded from both the count and the base.'
+  - These are sample estimates and carry sampling error; differences between states
+    of less than about one percentage point should not be read as real. Puerto Rico,
+    where a figure is published, is named in the ranked-table caption rather than
+    shown on the maps.
 

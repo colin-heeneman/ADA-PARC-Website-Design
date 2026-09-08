@@ -77,6 +77,20 @@ fmt_pct <- function(x, digits = 1) {
   ifelse(is.na(x), "N/A", paste0(formatC(x, format = "f", digits = digits), "%"))
 }
 
+# Percentage formatter for indicators whose two series are orders of magnitude
+# apart (e.g. nursing homes: ~3% with a disability, far under 0.1% without),
+# where a flat one-decimal format prints "0.0%" and a "0.0%-0.0%" legend band.
+# Identical to fmt_pct(x, 1) at or above 0.1%; below that it collapses to
+# "<0.1%" rather than a false "0.0%". Exact zero stays "0%".
+fmt_pct_adaptive <- function(x) {
+  vapply(x, function(v) {
+    if (is.na(v))            return("N/A")
+    if (v == 0)              return("0%")
+    if (abs(v) < 0.1)        return("&lt;0.1%")
+    paste0(formatC(v, format = "f", digits = 1), "%")
+  }, character(1))
+}
+
 fmt_count <- function(x) {
   # format = "f", digits = 0 rather than "d" to avoid the same 32-bit integer
   # overflow that affected fmt_dollars_full (counts are small today, but this
@@ -119,8 +133,13 @@ FS_TIERS <- c("excellent", "above", "below", "poor")
 # value judgment from every label. See fs_indicator_section(direction =
 # "magnitude"). The keys must stay as FS_TIERS because the CSS and the map
 # renderer both key their colors on those names.
-FS_TIER_LABELS_PERF <- c(excellent = "Excellent", above = "Above Average",
-                         below = "Below Average", poor = "Poor")
+# "Good" / "Subpar" replaced "Above Average" / "Below Average" on 2026-09-01,
+# bringing the fact sheets in line with the wording the scorecards already use.
+# This is the single source for the middle two labels; the map renderer's own
+# copy (ADAPARC_TIER_LABEL in assets/adaparc-map.js, which cannot call R) is
+# kept in step by hand.
+FS_TIER_LABELS_PERF <- c(excellent = "Excellent", above = "Good",
+                         below = "Subpar", poor = "Poor")
 
 FS_TIER_LABELS_MAGNITUDE <- c(excellent = "Highest quarter",
                               above     = "Second highest quarter",
@@ -945,8 +964,12 @@ fs_footnotes <- function(items, acs_year = NULL, source_year = NULL,
   lis <- fs_fill_values(lis, values)
   fs_assert_no_tokens(lis, "the footnotes")
   body <- paste0("        <li>", lis, "</li>", collapse = "\n")
+  # A visible "Notes and Sources" heading (title case), so the section shows up
+  # in a screen reader's heading list and reads as a real section rather than an
+  # unlabeled list at the foot of the page. Matches the locked template mockups.
   paste0(
 '    <div class="footnotes" role="note" aria-label="', fs_esc(aria_label), '">
+      <h2 class="footnotes-heading">Notes and Sources</h2>
       <ol>
 ', body, '
       </ol>
@@ -1064,18 +1087,28 @@ fs_html_head <- function(title, description, extra_css = "") {
 # The ADA National Network badge that used to sit in the right slot is gone,
 # displaced by the wordmark. The footer still links to adata.org, so the
 # affiliation is stated but no longer appears in the banner.
-fs_header <- function(title_html, subtitle = NULL) {
+# `eyebrow` is the small caps-spaced line above the title, added for the
+# simplified template (2026-09-01), e.g. "ADA-PARC &middot; Work &amp; Economic".
+# It is optional and third so the existing fs_header(title, subtitle) call sites
+# are unchanged. The simplified template also reads wordmark-left / icon-right,
+# the reverse of the original banner; both the DOM order here and the CSS in
+# factsheet-template.css carry that, so a sheet that loads only the base CSS
+# still gets a sensible reading order.
+fs_header <- function(title_html, subtitle = NULL, eyebrow = NULL) {
+  eyebrow_html <- if (!is.null(eyebrow) && nzchar(eyebrow)) {
+    paste0('\n      <div class="header-eyebrow">', eyebrow, '</div>')
+  } else ""
   subtitle_html <- if (!is.null(subtitle) && nzchar(subtitle)) {
     paste0('\n      <p class="header-subtitle">', subtitle, '</p>')
   } else ""
   paste0(
 '
   <header class="factsheet-header" role="banner">
-    <img class="brand-icon" src="', fs_brand_data_uri("PARC_white_icon_knockout.png"), '" alt="">
-    <div class="header-title">
+    <img class="brand-wordmark" src="', fs_brand_data_uri("PARC_white_text.png"), '" alt="ADA-PARC">
+    <div class="header-title">', eyebrow_html, '
       <h1>', title_html, '</h1>', subtitle_html, '
     </div>
-    <img class="brand-wordmark" src="', fs_brand_data_uri("PARC_white_text.png"), '" alt="ADA-PARC">
+    <img class="brand-icon" src="', fs_brand_data_uri("PARC_white_icon_knockout.png"), '" alt="">
   </header>
 ')
 }
@@ -1089,7 +1122,7 @@ fs_header <- function(title_html, subtitle = NULL) {
 # a new publication date is a single edit here rather than nine.
 fs_footer <- function(
     rights_sentence = "For more information about your rights, go to the ADA National Network at <a href=\"https://adata.org\" target=\"_blank\" rel=\"noopener noreferrer\">ADATA.ORG</a>.",
-    updated = "Last updated: August 2026") {
+    updated = "Last updated: September 2026") {
   updated_html <- if (!is.null(updated) && nzchar(updated)) {
     paste0('\n    <p class="updated-note">', updated, '</p>')
   } else ""
@@ -1125,7 +1158,11 @@ fs_footer <- function(
 # sheet's real first section in the heading list.
 fs_population_note <- function(note, detail = NULL, label = "Population covered") {
   if (is.null(note) || !nzchar(note)) return("")
-  detail_html <- if (!is.null(detail) && nzchar(detail)) paste0(" ", detail) else ""
+  # `note` is a noun phrase; when a `detail` sentence follows, join them with a
+  # full stop so the two do not run together (". " unless note already ends in
+  # sentence punctuation).
+  sep <- if (grepl("[.!?)]\\s*$", note)) " " else ". "
+  detail_html <- if (!is.null(detail) && nzchar(detail)) paste0(sep, detail) else ""
   paste0(
 '    <div class="population-note" role="note" aria-label="', fs_esc(label), '">
       <span class="population-note-label">', label, ':</span> ', note, detail_html, '
@@ -1135,15 +1172,23 @@ fs_population_note <- function(note, detail = NULL, label = "Population covered"
 
 # Shared <script> tags: D3 + topojson CDNs and the shared renderer asset,
 # followed by any per-factsheet JS data/render blocks (passed in `tail_js`).
-fs_scripts <- function(tail_js) {
+#
+# `extra_assets` names further shared JS asset files to inline after the map
+# renderer and before the per-sheet blocks. The simplified template passes
+# "factsheet-ranked-table.js" so fs_ranked_table()'s emitted config calls have
+# adaparcRankedTable() defined.
+fs_scripts <- function(tail_js, extra_assets = character()) {
   renderer <- fs_read_asset("adaparc-map.js")
+  extra <- if (length(extra_assets)) {
+    paste0("\n", vapply(extra_assets, fs_read_asset, character(1)), collapse = "\n")
+  } else ""
   paste0(
 '
 <!-- D3 MAP SCRIPTS (ADA-PARC shared) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script>
-', renderer, '
+', renderer, extra, '
 
 ', tail_js, '
 </script>
@@ -1425,6 +1470,375 @@ note_html,
 
 # Null-coalescing helper used by the section builder.
 `%||%` <- function(x, y) if (is.null(x)) y else x
+
+# =============================================================================
+# Simplified single-indicator template (2026-09-01)
+#
+# Builders for the page grammar locked through the "Living in Institution"
+# mockups: takeaway, comparative PWD/PWOD dual map, Why This Matters with Key
+# Numbers and a best/worst spotlight, explainer, and a searchable/sortable
+# ranked table. Sheets built on this template load factsheet-template.css on top
+# of the base stylesheet and pass "factsheet-ranked-table.js" to fs_scripts().
+#
+# Tier assignment is still fs_assign_tiers() upstream in the build chunk; every
+# builder here consumes a precomputed tier column and never re-derives a break.
+# =============================================================================
+
+# One lead sentence, full body width, with its key clause bolded in the prose.
+fs_takeaway <- function(html, values = NULL) {
+  txt <- paste(unlist(html), collapse = " ")
+  if (!nzchar(trimws(txt))) return("")
+  txt <- fs_fill_values(txt, values)
+  fs_assert_no_tokens(txt, "the takeaway")
+  paste0('    <p class="headline-finding">', txt, "</p>\n")
+}
+
+# Three stat cards under a "Key Numbers" subheading, inside Why This Matters.
+# `cards` is a list of list(number=, label=, gap=FALSE); `gap = TRUE` switches a
+# card to the gold accent (used for the ratio card).
+fs_key_numbers <- function(cards, heading = "Key Numbers") {
+  items <- vapply(cards, function(c) {
+    cls <- if (isTRUE(c$gap)) " gap" else ""
+    paste0(
+'        <div class="stat-card', cls, '">
+          <div class="stat-number">', c$number, '</div>
+          <div class="stat-label">', c$label, '</div>
+        </div>')
+  }, character(1))
+  paste0(
+'    <h3 class="subsection-heading">', heading, '</h3>
+    <section class="stat-band" aria-label="', fs_esc(heading), '">
+', paste(items, collapse = "\n"), '
+    </section>')
+}
+
+# Best/worst state pair, inside Why This Matters. `best` and `worst` are each
+# list(label=, state=, value=, note=).
+fs_spotlight <- function(best, worst, aria = "Best and worst performing states") {
+  card <- function(x, kind) paste0(
+'        <div class="spotlight-card ', kind, '">
+          <div class="spotlight-label">', x$label, '</div>
+          <div class="spotlight-state">', fs_esc(x$state), '</div>
+          <div class="spotlight-value">', x$value, '</div>',
+    if (!is.null(x$note) && nzchar(x$note))
+      paste0('\n          <p class="spotlight-note">', x$note, '</p>') else '', '
+        </div>')
+  paste0(
+'    <section class="spotlight-panel" aria-label="', fs_esc(aria), '">
+', card(best, "best"), '
+', card(worst, "worst"), '
+    </section>')
+}
+
+# Per-tier "lo-hi" range strings for a legend printed on ALL FOUR chips, from
+# the pooled breakpoints of a comparative dual map. `direction` decides which
+# end is Excellent: low_good -> lowest band, high_good -> highest band.
+fs_pooled_ranges <- function(breaks, direction = c("low_good", "high_good", "magnitude"),
+                             digits = 1, unit = "%", fmt = NULL) {
+  direction <- match.arg(direction)
+  f <- fmt %||% function(v) paste0(
+    formatC(round(v, digits), format = "f", digits = digits), unit)
+  # When both edges of a band round to the same label (a near-degenerate lowest
+  # band on a pooled scale where one series sits at ~0), show the single value
+  # rather than "x&ndash;x".
+  band <- function(lo, hi) {
+    a <- f(breaks[lo]); b <- f(breaks[hi])
+    if (identical(a, b)) a else paste0(a, "&ndash;", b)
+  }
+  if (direction == "low_good") {
+    # darkest chip (excellent) = lowest band
+    c(excellent = band(1, 2), above = band(2, 3),
+      below = band(3, 4), poor = band(4, 5))
+  } else {
+    # high_good and magnitude both bin highest values into the darkest chip
+    c(excellent = band(4, 5), above = band(3, 4),
+      below = band(2, 3), poor = band(1, 2))
+  }
+}
+
+# The comparative PWD / PWOD dual map: a plain title with no divider, the two
+# panels on one pooled scale, one shared four-chip legend with numeric ranges,
+# and one caption folding together how to read the shared scale and the source.
+#
+# `spec` fields:
+#   id             slug (element ids, JS object names)
+#   map_title      <h2 class="map-title"> text
+#   panel_dis      left panel heading  (default "People with disabilities")
+#   panel_nod      right panel heading (default "People without disabilities")
+#   dis_col/nod_col        value columns in `data`
+#   tier_dis_col/tier_nod_col  precomputed pooled-tier columns in `data`
+#   direction      "low_good" | "high_good"  (legend end + range order)
+#   fmt            function(x) -> chr, default 1dp percent
+#   value_label    tooltip label
+#   pooled_breaks  length-5 vector from fs_tier_breaks(c(dis, nod))
+#   legend_best/legend_worst   gloss on the two outer chips, e.g. "lowest rate"
+#   range_digits/range_unit    default 1 / "%"
+#   svg_title_dis/svg_desc_dis/svg_title_nod/svg_desc_nod   map a11y text
+#   caption        figcaption/caption text (how-to-read + citation, folded)
+# `spec$tier_labels` "performance" (default) or "magnitude". Magnitude drops the
+# Excellent/Poor framing for an indicator with no better/worse direction (e.g.
+# non-institutional group quarters): same four-colour ramp, but the legend, the
+# tooltips and the ranked-table chips read "Highest quarter" through "Lowest
+# quarter", and the outer-chip gloss is suppressed.
+fs_dual_map <- function(spec, data) {
+  fmt       <- spec$fmt %||% function(x) fmt_pct(x, 1)
+  magnitude <- identical(spec$tier_labels, "magnitude")
+  labels    <- if (magnitude) FS_TIER_LABELS_MAGNITUDE else FS_TIER_LABELS_PERF
+  dir       <- if (magnitude) "magnitude" else (spec$direction %||% "low_good")
+  map_tl    <- if (magnitude) "magnitude" else "performance"
+
+  mk_df <- function(vcol, tcol) {
+    keep <- !is.na(data[[tcol]]) & !is.na(data$fips)
+    data.frame(
+      fips    = data$fips[keep],
+      tier    = data[[tcol]][keep],
+      display = vapply(data[[vcol]][keep], function(v) fmt(v), character(1)),
+      stringsAsFactors = FALSE)
+  }
+
+  base_obj <- toupper(gsub("[^A-Za-z0-9]", "_", spec$id))
+  js_dis <- fs_map_js(
+    obj_name = paste0(base_obj, "_DIS_DATA"),
+    container_id = paste0("map-", spec$id, "-dis"),
+    desc_id = paste0(spec$id, "-dis-map-desc"),
+    data = mk_df(spec$dis_col, spec$tier_dis_col),
+    value_label = spec$value_label,
+    svg_title = spec$svg_title_dis, svg_desc = spec$svg_desc_dis,
+    tier_labels = map_tl)
+  js_nod <- fs_map_js(
+    obj_name = paste0(base_obj, "_NOD_DATA"),
+    container_id = paste0("map-", spec$id, "-nod"),
+    desc_id = paste0(spec$id, "-nod-map-desc"),
+    data = mk_df(spec$nod_col, spec$tier_nod_col),
+    value_label = spec$value_label,
+    svg_title = spec$svg_title_nod, svg_desc = spec$svg_desc_nod,
+    tier_labels = map_tl)
+
+  rng <- fs_pooled_ranges(spec$pooled_breaks, dir,
+                          digits = spec$range_digits %||% 1,
+                          unit   = spec$range_unit %||% "%",
+                          fmt    = spec$range_fmt)
+  if (magnitude) { spec$legend_best <- NULL; spec$legend_worst <- NULL }
+  chip <- function(t, gloss) paste0(
+    '        <span class="tier-chip ', t, '">', labels[[t]],
+    if (nzchar(gloss)) paste0(" (", gloss, ")") else "",
+    ' <span class="range">(', rng[[t]], ')</span></span>')
+  legend <- paste0(
+'      <div class="map-legend" aria-label="',
+    fs_esc(paste0("Map colour legend for ", spec$value_label,
+                  ", shared by both maps")), '">
+', paste(c(chip("excellent", spec$legend_best %||% ""),
+           chip("above", ""),
+           chip("below", ""),
+           chip("poor", spec$legend_worst %||% "")), collapse = "\n"), '
+      </div>')
+
+  panel <- function(sfx, label) paste0(
+'        <figure class="map-panel">
+          <h3>', label, '</h3>
+          <div id="map-', spec$id, '-', sfx, '" class="map-container" aria-labelledby="', spec$id, '-map-heading ', spec$id, '-', sfx, '-map-desc">
+            <p id="', spec$id, '-', sfx, '-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+            <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+          </div>
+        </figure>')
+
+  html <- paste0(
+'    <h2 class="map-title" id="', spec$id, '-map-heading">', spec$map_title, '</h2>
+    <div class="maps-grid">
+', panel("dis", spec$panel_dis %||% "People with disabilities"), '
+', panel("nod", spec$panel_nod %||% "People without disabilities"), '
+    </div>
+', legend, '
+      <p class="map-caption">', spec$caption, '</p>
+')
+  list(html = html, js = paste0(js_dis, "\n\n", js_nod))
+}
+
+# Single-series choropleth for a disability-only measure with no PWD/PWOD pair
+# (Housing: share of assisted-housing heads of household with a disability;
+# HCBS: Medicaid dollars per recipient). One map, states ranked among
+# themselves, four-chip legend with quartile ranges, one folded caption. Same
+# return shape as fs_dual_map so build_dual_sheet() can take either.
+#
+# `spec` fields (differences from fs_dual_map):
+#   value_col / tier_col   single value + precomputed self-ranked tier column
+#   breaks                 length-5 fs_tier_breaks(value) for the legend ranges
+#   direction              "high_good" | "low_good" | "magnitude"
+#   range_fmt              optional function(v)->chr for the legend ranges
+#   svg_title / svg_desc   map a11y text
+fs_single_map <- function(spec, data) {
+  fmt       <- spec$fmt %||% function(x) fmt_pct(x, 1)
+  magnitude <- identical(spec$tier_labels, "magnitude")
+  labels    <- if (magnitude) FS_TIER_LABELS_MAGNITUDE else FS_TIER_LABELS_PERF
+  dir       <- if (magnitude) "magnitude" else (spec$direction %||% "high_good")
+
+  keep <- !is.na(data[[spec$tier_col]]) & !is.na(data$fips)
+  df <- data.frame(
+    fips    = data$fips[keep],
+    tier    = data[[spec$tier_col]][keep],
+    display = vapply(data[[spec$value_col]][keep], function(v) fmt(v), character(1)),
+    stringsAsFactors = FALSE)
+
+  js <- fs_map_js(
+    obj_name     = paste0(toupper(gsub("[^A-Za-z0-9]", "_", spec$id)), "_DATA"),
+    container_id = paste0("map-", spec$id),
+    desc_id      = paste0(spec$id, "-map-desc"),
+    data         = df, value_label = spec$value_label,
+    svg_title    = spec$svg_title, svg_desc = spec$svg_desc,
+    tier_labels  = if (magnitude) "magnitude" else "performance")
+
+  rng <- fs_pooled_ranges(spec$breaks, dir,
+                          digits = spec$range_digits %||% 1,
+                          unit   = spec$range_unit %||% "%",
+                          fmt    = spec$range_fmt)
+  gloss <- if (magnitude) c("", "") else
+    c(spec$legend_best %||% "", spec$legend_worst %||% "")
+  chip <- function(t, g) paste0(
+    '        <span class="tier-chip ', t, '">', labels[[t]],
+    if (nzchar(g)) paste0(" (", g, ")") else "",
+    ' <span class="range">(', rng[[t]], ')</span></span>')
+  legend <- paste0(
+'      <div class="map-legend" aria-label="',
+    fs_esc(paste0("Map colour legend for ", spec$value_label)), '">
+', paste(c(chip("excellent", gloss[1]), chip("above", ""),
+           chip("below", ""), chip("poor", gloss[2])), collapse = "\n"), '
+      </div>')
+
+  html <- paste0(
+'    <h2 class="map-title" id="', spec$id, '-map-heading">', spec$map_title, '</h2>
+    <div class="maps-grid maps-grid-single">
+      <figure class="map-panel">
+        <div id="map-', spec$id, '" class="map-container" role="img" aria-labelledby="', spec$id, '-map-heading ', spec$id, '-map-desc">
+          <p id="', spec$id, '-map-desc" class="map-loading" aria-live="polite">Loading map&hellip;</p>
+          <noscript><p class="map-noscript">Map requires JavaScript. All data is in the table below.</p></noscript>
+        </div>
+      </figure>
+    </div>
+', legend, '
+      <p class="map-caption">', spec$caption, '</p>
+')
+  list(html = html, js = js)
+}
+
+# The ranked table: every state and DC by default, a top-5/bottom-5 toggle, a
+# search box, sortable columns, and a Tier chip column between Rank and State
+# using the same labels as the map legend. Plain right-aligned numbers, no bar
+# fills. Returns list(html=, js=); the JS is a config call to adaparcRankedTable
+# (assets/factsheet-ranked-table.js, wired via fs_scripts(extra_assets=)).
+#
+# `spec` fields:
+#   id             slug
+#   section_heading  <h2>
+#   intro          section-intro <p> text (chr or chr vector)
+#   rank_by_col    column deciding Rank and the toggle's 5/5 split
+#   rank_dir       "low_good" (rank 1 = lowest) | "high_good" (rank 1 = highest)
+#   tier_col       precomputed tier column for the chip
+#   cols           list of list(label=, value_col=, fmt=, emphasis=FALSE)
+#   caption        <caption> text
+#   toggle_label / restore_label / compare_note   button + footnote copy
+#   name_col       default "name";  abbr_col  default "ABBR"
+fs_ranked_table <- function(spec, data) {
+  name_col <- spec$name_col %||% "name"
+  abbr_col <- spec$abbr_col %||% "ABBR"
+  rank_dir <- spec$rank_dir %||% "low_good"
+  tlv      <- c("excellent", "above", "below", "poor")
+
+  rv  <- data[[spec$rank_by_col]]
+  ord <- if (rank_dir == "low_good") order(rv) else order(-rv)
+  rank <- integer(length(rv)); rank[ord] <- seq_along(rv)
+
+  jstr <- function(s) paste0('"', gsub('"', '\\\\"', s), '"')
+  jnum <- function(x) ifelse(is.na(x), "null",
+                             formatC(x, format = "f", digits = 4, drop0trailing = TRUE))
+
+  rows <- vapply(seq_len(nrow(data)), function(i) {
+    tier <- data[[spec$tier_col]][i]
+    tr   <- match(tier, tlv) - 1L
+    sortv <- vapply(spec$cols, function(cc) jnum(data[[cc$value_col]][i]), character(1))
+    dispv <- vapply(spec$cols, function(cc) {
+      f <- cc$fmt %||% function(x) fmt_pct(x, 1)
+      jstr(f(data[[cc$value_col]][i]))
+    }, character(1))
+    abbr <- if (abbr_col %in% names(data)) as.character(data[[abbr_col]][i]) else ""
+    paste0(
+      '  {name:', jstr(as.character(data[[name_col]][i])),
+      ',abbr:', jstr(abbr),
+      ',rank:', rank[i],
+      ',tier:', jstr(tier %||% "na"),
+      ',tierRank:', ifelse(is.na(tr), 9, tr),
+      ',sort:[', paste(sortv, collapse = ","), ']',
+      ',disp:[', paste(dispv, collapse = ","), ']}')
+  }, character(1))
+
+  thead_cols <- paste0(vapply(seq_along(spec$cols), function(k) {
+    paste0('              <th scope="col" class="num sortable" data-sort="c', k - 1L,
+           '">', spec$cols[[k]]$label, '<span class="sort-arrow"></span></th>')
+  }, character(1)), collapse = "\n")
+
+  cols_meta <- paste0(vapply(spec$cols, function(cc) {
+    cls <- if (isTRUE(cc$emphasis)) "num dis-cell" else "num"
+    paste0('{label:', jstr(cc$label), ',cls:', jstr(cls), '}')
+  }, character(1)), collapse = ",")
+
+  tl <- if (identical(spec$tier_labels, "magnitude"))
+    FS_TIER_LABELS_MAGNITUDE else FS_TIER_LABELS_PERF
+  tier_labels_js <- paste0(
+    '{excellent:', jstr(tl[["excellent"]]), ',above:', jstr(tl[["above"]]),
+    ',below:', jstr(tl[["below"]]), ',poor:', jstr(tl[["poor"]]), '}')
+
+  toggle_label  <- spec$toggle_label  %||% "Show the 5 lowest and 5 highest"
+  restore_label <- spec$restore_label %||% "Show all states"
+  intro_html <- paste0('    <p class="section-intro">',
+                       paste(unlist(spec$intro), collapse = " "), "</p>\n")
+  note_html <- if (!is.null(spec$compare_note) && nzchar(spec$compare_note))
+    paste0('      <p class="compare-note">', spec$compare_note, "</p>\n") else ""
+
+  # Disambiguate the search field per table: a sheet with several ranked tables
+  # (Poverty carries four) would otherwise present four identically labelled
+  # search boxes to a screen reader.
+  search_label <- paste0("Search for a state — ", spec$section_heading)
+
+  html <- paste0(
+'    <section class="compare-panel" aria-label="', fs_esc(spec$section_heading), '">
+      <h2 class="section-heading">', spec$section_heading, '</h2>
+', intro_html,
+'      <div class="compare-controls">
+        <input type="text" id="', spec$id, '-search" class="compare-search" placeholder="Search for a state&hellip;" aria-label="', fs_esc(search_label), '">
+        <button type="button" class="compare-toggle" id="', spec$id, '-toggle" aria-expanded="true">', toggle_label, '</button>
+      </div>
+      <div class="compare-table-wrap">
+        <table class="compare-table" id="', spec$id, '-table">
+          <caption>', spec$caption, '</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="num sortable" data-sort="rank" aria-sort="ascending">Rank<span class="sort-arrow">&#9650;</span></th>
+              <th scope="col" class="sortable" data-sort="tier">Tier<span class="sort-arrow"></span></th>
+              <th scope="col" class="sortable" data-sort="name">State<span class="sort-arrow"></span></th>
+', thead_cols, '
+            </tr>
+          </thead>
+          <tbody id="', spec$id, '-body"></tbody>
+        </table>
+      </div>
+      <p class="no-results" id="', spec$id, '-noresults" hidden>No state matches that search.</p>
+', note_html,
+'    </section>')
+
+  js <- paste0(
+'adaparcRankedTable({
+  tableId: "', spec$id, '-table", bodyId: "', spec$id, '-body",
+  searchId: "', spec$id, '-search", toggleId: "', spec$id, '-toggle",
+  noResultsId: "', spec$id, '-noresults",
+  cols: [', cols_meta, '],
+  tierLabels: ', tier_labels_js, ',
+  toggleLabel: ', jstr(toggle_label), ', restoreLabel: ', jstr(restore_label), ',
+  rows: [
+', paste(rows, collapse = ",\n"), '
+  ]
+});')
+
+  list(html = html, js = js)
+}
 
 # FIPS lookup keyed by 2-letter ABBR (50 states + DC).
 FS_ABBR_TO_FIPS <- c(
