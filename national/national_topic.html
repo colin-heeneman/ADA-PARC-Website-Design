@@ -3181,12 +3181,96 @@ max-width: 7in;
 text-align: left;
 }
 .map-summary .label { font-weight: 700; color: var(--adaparc-ink); }
-.source-note {
-font-size: 0.95rem;
-color: #444;
-margin: 0.75rem 0 0 0;
+
+
+.understanding {
+margin: 1.25rem 0 0 0;
+break-before: page;
+page-break-before: always;
 }
-.source-note .label { font-weight: 700; }
+.understanding .section-title { margin-bottom: 0.15rem; }
+.ud-rule {
+width: 64px;
+height: 4px;
+background: var(--adaparc-gold);
+border-radius: 2px;
+margin: 0.55rem 0 0 0;
+}
+.ud-block {
+margin-top: 1.15rem;
+background: #f6f8fb;
+border: 1px solid #d5dee8;
+border-left: 4px solid var(--adaparc-ink);
+border-radius: 6px;
+padding: 1.15rem 1.3rem;
+}
+.ud-subhead {
+display: flex;
+align-items: center;
+gap: 0.65rem;
+font-size: 1.15rem;
+font-weight: 700;
+color: var(--adaparc-ink);
+margin: 0 0 0.55rem 0;
+}
+.ud-chip {
+flex: none;
+width: 34px;
+height: 34px;
+border-radius: 50%;
+background: var(--adaparc-ink);
+display: flex;
+align-items: center;
+justify-content: center;
+-webkit-print-color-adjust: exact;
+print-color-adjust: exact;
+}
+.ud-glyph {
+width: 18px;
+height: 18px;
+fill: none;
+stroke: #ffffff;
+stroke-width: 1.7;
+stroke-linecap: round;
+stroke-linejoin: round;
+}
+.ud-body {
+font-size: 0.98rem;
+line-height: 1.6;
+color: #28394a;
+margin: 0;
+max-width: 6.8in;
+}
+
+.ud-defs { margin: 0.1rem 0 0 0; }
+.ud-def {
+padding: 0.7rem 0;
+border-top: 1px solid #d5dee8;
+}
+.ud-def:first-child { padding-top: 0.25rem; border-top: 0; }
+.ud-def:last-child { padding-bottom: 0.1rem; }
+.ud-def dt {
+font-weight: 700;
+color: var(--adaparc-ink);
+font-size: 0.95rem;
+}
+.ud-def dd {
+margin: 0.22rem 0 0 0;
+font-size: 0.95rem;
+line-height: 1.55;
+color: #28394a;
+max-width: 6.8in;
+}
+.ud-defs-note {
+font-size: 0.92rem;
+color: var(--adaparc-ink);
+background: #ffffff;
+border: 1px solid #d5dee8;
+border-left: 3px solid var(--adaparc-ink);
+border-radius: 4px;
+padding: 0.55rem 0.8rem;
+margin: 0.9rem 0 0 0;
+}
 
 .table-wrap { margin-top: 0.5rem; overflow-x: auto; }
 table.national-table {
@@ -3213,6 +3297,11 @@ font-weight: 600;
 }
 table.national-table tbody tr:nth-child(even) { background: #f6f3ee; }
 table.national-table thead th:not(:first-child) { text-align: right; }
+
+.sr-only {
+position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
 
 .adaparc-footer {
 margin-top: 1.5rem;
@@ -3297,8 +3386,17 @@ width: auto !important;
 max-width: 100% !important;
 }
 .map-summary { margin-top: 0.3rem; }
-.source-note { margin-top: 0.45rem; }
 .see-next { margin-top: 0.6rem; break-inside: avoid; }
+
+.understanding .section-title { break-after: avoid; }
+.ud-block,
+.ud-defs-note {
+break-inside: avoid;
+-webkit-print-color-adjust: exact;
+print-color-adjust: exact;
+}
+.ud-defs { font-size: 9pt; }
+.ud-def { break-inside: avoid; }
 
 .table-wrap,
 .cell-output-display,
@@ -3346,7 +3444,7 @@ ADA-PARC
 National Data · Demographics
 </p>
 </div>
-<img class="banner-icon" src="data:image/png;base64,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" alt>
+<img class="banner-icon" src="data:image/png;base64,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" alt="">
 </div>
 </div>
 <div class="print-bar">
@@ -3383,9 +3481,6 @@ stroke: none;
 <p class="map-summary">
 <span class="label">Summary: </span>According to the U.S. Census Bureau, a person is considered to have a disability if they report one of six disability types (hearing, vision, cognitive, ambulatory, self-care, or independent living). The lowest state or territory was Utah (UT) at 10.6%. The highest state or territory was Puerto Rico (PR) at 22.9%. (Source: 2020-2024 American Community Survey 5-Year Estimates (S1810))
 </p>
-<p class="source-note">
-<span class="label">This indicator sourced from: </span>2020-2024 American Community Survey 5-Year Estimates (S1810)
-</p>
 <p class="see-next">
 Data table begins on the next page.
 </p>
@@ -3396,482 +3491,485 @@ Data Table: People with Disabilities
 </h2>
 <div class="table-wrap">
 <table class="national-table">
+<caption class="sr-only">
+Data table: People with Disabilities
+</caption>
 <thead>
 <tr>
-<th style="text-align:left;">
+<th scope="col">
 State
 </th>
-<th style="text-align:right;">
+<th scope="col">
 # WITH Disabilities
 </th>
-<th style="text-align:right;">
+<th scope="col">
 % WITH Disabilities
 </th>
-<th style="text-align:right;">
+<th scope="col">
 # WITHOUT Disabilities
 </th>
-<th style="text-align:right;">
+<th scope="col">
 % WITHOUT Disabilities
 </th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:left;">
+<td>
 United States
 </td>
-<td style="text-align:right;">
+<td>
 43,869,797
 </td>
-<td style="text-align:right;">
+<td>
 13.3%
 </td>
-<td style="text-align:right;">
+<td>
 286,110,956
 </td>
-<td style="text-align:right;">
+<td>
 86.7%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Alabama
 </td>
-<td style="text-align:right;">
+<td>
 824,128
 </td>
-<td style="text-align:right;">
+<td>
 16.5%
 </td>
-<td style="text-align:right;">
+<td>
 4,179,577
 </td>
-<td style="text-align:right;">
+<td>
 83.5%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Alaska
 </td>
-<td style="text-align:right;">
+<td>
 96,026
 </td>
-<td style="text-align:right;">
+<td>
 13.6%
 </td>
-<td style="text-align:right;">
+<td>
 608,264
 </td>
-<td style="text-align:right;">
+<td>
 86.4%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Arizona
 </td>
-<td style="text-align:right;">
+<td>
 1,001,900
 </td>
-<td style="text-align:right;">
+<td>
 13.8%
 </td>
-<td style="text-align:right;">
+<td>
 6,265,943
 </td>
-<td style="text-align:right;">
+<td>
 86.2%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Arkansas
 </td>
-<td style="text-align:right;">
+<td>
 538,748
 </td>
-<td style="text-align:right;">
+<td>
 18.0%
 </td>
-<td style="text-align:right;">
+<td>
 2,456,749
 </td>
-<td style="text-align:right;">
+<td>
 82.0%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 California
 </td>
-<td style="text-align:right;">
+<td>
 4,497,552
 </td>
-<td style="text-align:right;">
+<td>
 11.6%
 </td>
-<td style="text-align:right;">
+<td>
 34,320,861
 </td>
-<td style="text-align:right;">
+<td>
 88.4%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Colorado
 </td>
-<td style="text-align:right;">
+<td>
 659,969
 </td>
-<td style="text-align:right;">
+<td>
 11.4%
 </td>
-<td style="text-align:right;">
+<td>
 5,104,379
 </td>
-<td style="text-align:right;">
+<td>
 88.6%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Connecticut
 </td>
-<td style="text-align:right;">
+<td>
 436,346
 </td>
-<td style="text-align:right;">
+<td>
 12.2%
 </td>
-<td style="text-align:right;">
+<td>
 3,145,321
 </td>
-<td style="text-align:right;">
+<td>
 87.8%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Delaware
 </td>
-<td style="text-align:right;">
+<td>
 141,931
 </td>
-<td style="text-align:right;">
+<td>
 14.1%
 </td>
-<td style="text-align:right;">
+<td>
 865,636
 </td>
-<td style="text-align:right;">
+<td>
 85.9%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 District of Columbia
 </td>
-<td style="text-align:right;">
+<td>
 76,989
 </td>
-<td style="text-align:right;">
+<td>
 11.5%
 </td>
-<td style="text-align:right;">
+<td>
 594,777
 </td>
-<td style="text-align:right;">
+<td>
 88.5%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Florida
 </td>
-<td style="text-align:right;">
+<td>
 3,016,072
 </td>
-<td style="text-align:right;">
+<td>
 13.7%
 </td>
-<td style="text-align:right;">
+<td>
 19,064,347
 </td>
-<td style="text-align:right;">
+<td>
 86.3%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Georgia
 </td>
-<td style="text-align:right;">
+<td>
 1,409,891
 </td>
-<td style="text-align:right;">
+<td>
 13.1%
 </td>
-<td style="text-align:right;">
+<td>
 9,336,557
 </td>
-<td style="text-align:right;">
+<td>
 86.9%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Hawaii
 </td>
-<td style="text-align:right;">
+<td>
 178,603
 </td>
-<td style="text-align:right;">
+<td>
 12.9%
 </td>
-<td style="text-align:right;">
+<td>
 1,207,205
 </td>
-<td style="text-align:right;">
+<td>
 87.1%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Idaho
 </td>
-<td style="text-align:right;">
+<td>
 269,122
 </td>
-<td style="text-align:right;">
+<td>
 14.1%
 </td>
-<td style="text-align:right;">
+<td>
 1,638,323
 </td>
-<td style="text-align:right;">
+<td>
 85.9%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Illinois
 </td>
-<td style="text-align:right;">
+<td>
 1,512,797
 </td>
-<td style="text-align:right;">
+<td>
 12.1%
 </td>
-<td style="text-align:right;">
+<td>
 11,009,261
 </td>
-<td style="text-align:right;">
+<td>
 87.9%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Indiana
 </td>
-<td style="text-align:right;">
+<td>
 957,906
 </td>
-<td style="text-align:right;">
+<td>
 14.2%
 </td>
-<td style="text-align:right;">
+<td>
 5,796,808
 </td>
-<td style="text-align:right;">
+<td>
 85.8%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Iowa
 </td>
-<td style="text-align:right;">
+<td>
 400,232
 </td>
-<td style="text-align:right;">
+<td>
 12.6%
 </td>
-<td style="text-align:right;">
+<td>
 2,763,673
 </td>
-<td style="text-align:right;">
+<td>
 87.4%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Kansas
 </td>
-<td style="text-align:right;">
+<td>
 389,024
 </td>
-<td style="text-align:right;">
+<td>
 13.5%
 </td>
-<td style="text-align:right;">
+<td>
 2,496,075
 </td>
-<td style="text-align:right;">
+<td>
 86.5%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Kentucky
 </td>
-<td style="text-align:right;">
+<td>
 797,116
 </td>
-<td style="text-align:right;">
+<td>
 17.9%
 </td>
-<td style="text-align:right;">
+<td>
 3,657,551
 </td>
-<td style="text-align:right;">
+<td>
 82.1%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Louisiana
 </td>
-<td style="text-align:right;">
+<td>
 737,712
 </td>
-<td style="text-align:right;">
+<td>
 16.3%
 </td>
-<td style="text-align:right;">
+<td>
 3,777,915
 </td>
-<td style="text-align:right;">
+<td>
 83.7%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Maine
 </td>
-<td style="text-align:right;">
+<td>
 217,077
 </td>
-<td style="text-align:right;">
+<td>
 15.8%
 </td>
-<td style="text-align:right;">
+<td>
 1,152,999
 </td>
-<td style="text-align:right;">
+<td>
 84.2%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Maryland
 </td>
-<td style="text-align:right;">
+<td>
 710,452
 </td>
-<td style="text-align:right;">
+<td>
 11.6%
 </td>
-<td style="text-align:right;">
+<td>
 5,399,241
 </td>
-<td style="text-align:right;">
+<td>
 88.4%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Massachusetts
 </td>
-<td style="text-align:right;">
+<td>
 861,255
 </td>
-<td style="text-align:right;">
+<td>
 12.3%
 </td>
-<td style="text-align:right;">
+<td>
 6,117,863
 </td>
-<td style="text-align:right;">
+<td>
 87.7%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Michigan
 </td>
-<td style="text-align:right;">
+<td>
 1,427,529
 </td>
-<td style="text-align:right;">
+<td>
 14.3%
 </td>
-<td style="text-align:right;">
+<td>
 8,543,808
 </td>
-<td style="text-align:right;">
+<td>
 85.7%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Minnesota
 </td>
-<td style="text-align:right;">
+<td>
 661,068
 </td>
-<td style="text-align:right;">
+<td>
 11.6%
 </td>
-<td style="text-align:right;">
+<td>
 5,017,611
 </td>
-<td style="text-align:right;">
+<td>
 88.4%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Mississippi
 </td>
-<td style="text-align:right;">
+<td>
 513,477
 </td>
-<td style="text-align:right;">
+<td>
 17.8%
 </td>
-<td style="text-align:right;">
+<td>
 2,370,172
 </td>
-<td style="text-align:right;">
+<td>
 82.2%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Missouri
 </td>
-<td style="text-align:right;">
+<td>
 906,873
 </td>
-<td style="text-align:right;">
+<td>
 14.9%
 </td>
-<td style="text-align:right;">
+<td>
 5,180,821
 </td>
-<td style="text-align:right;">
+<td>
 85.1%
 </td>
 </tr>
@@ -3885,465 +3983,468 @@ Data Table: People with Disabilities <span class="continued">(continued)</span>
 </h2>
 <div class="table-wrap">
 <table class="national-table">
+<caption class="sr-only">
+Data table: People with Disabilities (continued), page 2 of 2
+</caption>
 <thead>
 <tr>
-<th style="text-align:left;">
+<th scope="col">
 State
 </th>
-<th style="text-align:right;">
+<th scope="col">
 # WITH Disabilities
 </th>
-<th style="text-align:right;">
+<th scope="col">
 % WITH Disabilities
 </th>
-<th style="text-align:right;">
+<th scope="col">
 # WITHOUT Disabilities
 </th>
-<th style="text-align:right;">
+<th scope="col">
 % WITHOUT Disabilities
 </th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:left;">
+<td>
 Montana
 </td>
-<td style="text-align:right;">
+<td>
 159,730
 </td>
-<td style="text-align:right;">
+<td>
 14.5%
 </td>
-<td style="text-align:right;">
+<td>
 940,274
 </td>
-<td style="text-align:right;">
+<td>
 85.5%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Nebraska
 </td>
-<td style="text-align:right;">
+<td>
 240,525
 </td>
-<td style="text-align:right;">
+<td>
 12.3%
 </td>
-<td style="text-align:right;">
+<td>
 1,710,329
 </td>
-<td style="text-align:right;">
+<td>
 87.7%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Nevada
 </td>
-<td style="text-align:right;">
+<td>
 438,659
 </td>
-<td style="text-align:right;">
+<td>
 13.9%
 </td>
-<td style="text-align:right;">
+<td>
 2,707,557
 </td>
-<td style="text-align:right;">
+<td>
 86.1%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 New Hampshire
 </td>
-<td style="text-align:right;">
+<td>
 182,951
 </td>
-<td style="text-align:right;">
+<td>
 13.3%
 </td>
-<td style="text-align:right;">
+<td>
 1,195,607
 </td>
-<td style="text-align:right;">
+<td>
 86.7%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 New Jersey
 </td>
-<td style="text-align:right;">
+<td>
 999,922
 </td>
-<td style="text-align:right;">
+<td>
 10.8%
 </td>
-<td style="text-align:right;">
+<td>
 8,253,533
 </td>
-<td style="text-align:right;">
+<td>
 89.2%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 New Mexico
 </td>
-<td style="text-align:right;">
+<td>
 354,062
 </td>
-<td style="text-align:right;">
+<td>
 17.0%
 </td>
-<td style="text-align:right;">
+<td>
 1,728,495
 </td>
-<td style="text-align:right;">
+<td>
 83.0%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 New York
 </td>
-<td style="text-align:right;">
+<td>
 2,482,006
 </td>
-<td style="text-align:right;">
+<td>
 12.6%
 </td>
-<td style="text-align:right;">
+<td>
 17,173,820
 </td>
-<td style="text-align:right;">
+<td>
 87.4%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 North Carolina
 </td>
-<td style="text-align:right;">
+<td>
 1,428,780
 </td>
-<td style="text-align:right;">
+<td>
 13.6%
 </td>
-<td style="text-align:right;">
+<td>
 9,090,952
 </td>
-<td style="text-align:right;">
+<td>
 86.4%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 North Dakota
 </td>
-<td style="text-align:right;">
+<td>
 92,307
 </td>
-<td style="text-align:right;">
+<td>
 12.0%
 </td>
-<td style="text-align:right;">
+<td>
 674,373
 </td>
-<td style="text-align:right;">
+<td>
 88.0%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Ohio
 </td>
-<td style="text-align:right;">
+<td>
 1,678,429
 </td>
-<td style="text-align:right;">
+<td>
 14.4%
 </td>
-<td style="text-align:right;">
+<td>
 9,964,431
 </td>
-<td style="text-align:right;">
+<td>
 85.6%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Oklahoma
 </td>
-<td style="text-align:right;">
+<td>
 678,579
 </td>
-<td style="text-align:right;">
+<td>
 17.2%
 </td>
-<td style="text-align:right;">
+<td>
 3,262,289
 </td>
-<td style="text-align:right;">
+<td>
 82.8%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Oregon
 </td>
-<td style="text-align:right;">
+<td>
 650,866
 </td>
-<td style="text-align:right;">
+<td>
 15.5%
 </td>
-<td style="text-align:right;">
+<td>
 3,560,067
 </td>
-<td style="text-align:right;">
+<td>
 84.5%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Pennsylvania
 </td>
-<td style="text-align:right;">
+<td>
 1,842,249
 </td>
-<td style="text-align:right;">
+<td>
 14.4%
 </td>
-<td style="text-align:right;">
+<td>
 10,991,808
 </td>
-<td style="text-align:right;">
+<td>
 85.6%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Puerto Rico
 </td>
-<td style="text-align:right;">
+<td>
 735,603
 </td>
-<td style="text-align:right;">
+<td>
 22.9%
 </td>
-<td style="text-align:right;">
+<td>
 2,471,489
 </td>
-<td style="text-align:right;">
+<td>
 77.1%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Rhode Island
 </td>
-<td style="text-align:right;">
+<td>
 149,512
 </td>
-<td style="text-align:right;">
+<td>
 13.8%
 </td>
-<td style="text-align:right;">
+<td>
 935,556
 </td>
-<td style="text-align:right;">
+<td>
 86.2%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 South Carolina
 </td>
-<td style="text-align:right;">
+<td>
 761,090
 </td>
-<td style="text-align:right;">
+<td>
 14.6%
 </td>
-<td style="text-align:right;">
+<td>
 4,436,134
 </td>
-<td style="text-align:right;">
+<td>
 85.4%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 South Dakota
 </td>
-<td style="text-align:right;">
+<td>
 110,886
 </td>
-<td style="text-align:right;">
+<td>
 12.5%
 </td>
-<td style="text-align:right;">
+<td>
 776,730
 </td>
-<td style="text-align:right;">
+<td>
 87.5%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Tennessee
 </td>
-<td style="text-align:right;">
+<td>
 1,041,249
 </td>
-<td style="text-align:right;">
+<td>
 14.9%
 </td>
-<td style="text-align:right;">
+<td>
 5,929,406
 </td>
-<td style="text-align:right;">
+<td>
 85.1%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Texas
 </td>
-<td style="text-align:right;">
+<td>
 3,652,642
 </td>
-<td style="text-align:right;">
+<td>
 12.3%
 </td>
-<td style="text-align:right;">
+<td>
 26,044,119
 </td>
-<td style="text-align:right;">
+<td>
 87.7%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Utah
 </td>
-<td style="text-align:right;">
+<td>
 358,454
 </td>
-<td style="text-align:right;">
+<td>
 10.6%
 </td>
-<td style="text-align:right;">
+<td>
 3,007,457
 </td>
-<td style="text-align:right;">
+<td>
 89.4%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Vermont
 </td>
-<td style="text-align:right;">
+<td>
 92,544
 </td>
-<td style="text-align:right;">
+<td>
 14.4%
 </td>
-<td style="text-align:right;">
+<td>
 548,560
 </td>
-<td style="text-align:right;">
+<td>
 85.6%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Virginia
 </td>
-<td style="text-align:right;">
+<td>
 1,058,925
 </td>
-<td style="text-align:right;">
+<td>
 12.5%
 </td>
-<td style="text-align:right;">
+<td>
 7,417,728
 </td>
-<td style="text-align:right;">
+<td>
 87.5%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Washington
 </td>
-<td style="text-align:right;">
+<td>
 1,043,166
 </td>
-<td style="text-align:right;">
+<td>
 13.6%
 </td>
-<td style="text-align:right;">
+<td>
 6,654,938
 </td>
-<td style="text-align:right;">
+<td>
 86.4%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 West Virginia
 </td>
-<td style="text-align:right;">
+<td>
 332,584
 </td>
-<td style="text-align:right;">
+<td>
 19.1%
 </td>
-<td style="text-align:right;">
+<td>
 1,411,651
 </td>
-<td style="text-align:right;">
+<td>
 80.9%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Wisconsin
 </td>
-<td style="text-align:right;">
+<td>
 719,238
 </td>
-<td style="text-align:right;">
+<td>
 12.3%
 </td>
-<td style="text-align:right;">
+<td>
 5,132,041
 </td>
-<td style="text-align:right;">
+<td>
 87.7%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td>
 Wyoming
 </td>
-<td style="text-align:right;">
+<td>
 80,647
 </td>
-<td style="text-align:right;">
+<td>
 14.1%
 </td>
-<td style="text-align:right;">
+<td>
 491,364
 </td>
-<td style="text-align:right;">
+<td>
 85.9%
 </td>
 </tr>
@@ -4351,12 +4452,62 @@ Wyoming
 </table>
 </div>
 </div>
+<section class="understanding">
+<h2 class="section-title anchored">
+Understanding This Data
+</h2>
+<div class="ud-rule" aria-hidden="true">
+
+</div>
+<div class="ud-block">
+<h3 class="ud-subhead anchored">
+<span class="ud-chip" aria-hidden="true"><svg class="ud-glyph" viewbox="0 0 24 24" focusable="false"><circle cx="9" cy="8" r="3.1"></circle><path d="M3.7 19c0-2.9 2.4-4.8 5.3-4.8S14.3 16.1 14.3 19" /><circle cx="16.8" cy="9.6" r="2.5"></circle><path d="M15 14.3c2.3.2 4.3 1.9 4.3 4.7" /></svg></span><span>Population Examined</span>
+</h3>
+<p class="ud-body">
+Everyone in the state’s civilian noninstitutionalized population — people not living in an institution such as a nursing home or prison, and not on active military duty. Percentages show the share of this group that reports at least one of the six disability types the Census Bureau measures.
+</p>
+</div>
+<div class="ud-block">
+<h3 class="ud-subhead anchored">
+<span class="ud-chip" aria-hidden="true"><svg class="ud-glyph" viewbox="0 0 24 24" focusable="false"><path d="M6 3.6h7.5L18 8.1V19.4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.6a1 1 0 0 1 1-1z" /><path d="M13.3 3.6v4.6H18" /><path d="M8.4 12.4h7M8.4 15.8h7" /></svg></span><span>Data Source</span>
+</h3>
+<p class="ud-body">
+2020-2024 American Community Survey 5-Year Estimates (S1810)
+</p>
+</div>
+<div class="ud-block">
+<h3 class="ud-subhead anchored">
+<span class="ud-chip" aria-hidden="true"><svg class="ud-glyph" viewbox="0 0 24 24" focusable="false"><path d="M6.5 17.5 17.5 6.5" /><circle cx="8.3" cy="8.3" r="2.1"></circle><circle cx="15.7" cy="15.7" r="2.1"></circle></svg></span><span>What Each Percentage Column Means</span>
+</h3>
+<dl class="ud-defs">
+<div class="ud-def">
+<dt>
+% WITH Disabilities
+</dt>
+<dd>
+Of the state’s civilian noninstitutionalized population, the share who report at least one of the six disability types (hearing, vision, cognitive, ambulatory, self-care, or independent living).
+</dd>
+</div>
+<div class="ud-def">
+<dt>
+% WITHOUT Disabilities
+</dt>
+<dd>
+Of the state’s civilian noninstitutionalized population, the share who report none of the six disability types.
+</dd>
+</div>
+</dl>
+<p class="ud-defs-note">
+Count columns (#) show the number of people each percentage is based on.
+</p>
+</div>
+</section>
 <div class="adaparc-footer">
 <p class="funding-note">
 The ADA-PARC is funded by the National Institute for Disability, Independent Living, and Rehabilitation Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.
 </p>
 <p>
-ADA-PARC · ADA Participation Action Research Consortium · Generated August 19, 2026. Darker map colors always indicate more opportunity.
+ADA-PARC · ADA Participation Action Research Consortium · Generated September 08, 2026. Darker map colors always indicate more opportunity.
 </p>
 </div>
 </div>
