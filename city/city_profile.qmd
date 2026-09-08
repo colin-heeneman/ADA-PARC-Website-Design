@@ -339,11 +339,14 @@ table.city-compare td {
 
 /* ── Disability Demographics stat tiles (Race/Ethnicity, Sex, Age) ──────────
    Reuses the same class names (.city-demo-list / .city-demo-heading /
-   .city-demo-tile / .city-demo-label / .city-demo-pct / .city-demo-count /
-   .city-demo-sr) the on-screen summary card emits via render_demo_list() in
-   ADA_PARC.Rmd, restyled here in the print document's own maroon/gold
-   palette. Two figures per group, share of total population as the headline
-   with the count beneath, per the client's 2026-08-18 request; no table
+   .city-demo-tile / .city-demo-label { .city-demo-term + .city-demo-desc } /
+   .city-demo-figs { .city-demo-pct + .city-demo-count { .city-demo-count-val
+   + .city-demo-count-unit } } / .city-demo-sr) the on-screen summary card
+   emits via render_demo_list() in ADA_PARC.Rmd, restyled here in the print
+   document's own maroon/gold
+   palette. Two figures per group -- share of total population and the
+   headcount -- side by side, split by a hairline (Colin 2026-09-08; the
+   count sat beneath the percentage from 2026-08-18 until then). No table
    markup. Laid out as a grid of tiles rather than the earlier single narrow
    column, matching the on-screen card. The print rules below fix the grid to
    two columns and keep each list whole across page breaks. */
@@ -371,6 +374,8 @@ ul.city-demo-list {
   gap: 0.5rem;
 }
 li.city-demo-tile {
+  display: flex;
+  flex-direction: column;
   background: #f9f7f4;
   border: 1px solid #d9d4c9;
   border-left: 4px solid var(--adaparc-maroon);
@@ -378,33 +383,74 @@ li.city-demo-tile {
   padding: 0.4rem 0.6rem 0.45rem 0.6rem;
   margin: 0;
 }
-/* min-height reserves two lines for the label so the headline percentages
-   line up across a row of tiles even when one label wraps. A floor, not a
-   cap, so a longer label still gets a third line. */
+/* The figure row is pinned to the foot of the tile (flex column +
+   margin-top: auto, and tiles in a grid row share a height), so the
+   percentages line up across a row without a guessed min-height on the
+   label above them. */
 .city-demo-label {
   display: block;
-  font-size: 0.88rem;
+  margin-bottom: 0.3rem;
+}
+.city-demo-term {
+  display: block;
+  font-size: 0.98rem;
   font-weight: 600;
   line-height: 1.3;
-  min-height: 2.3rem;
-  margin-bottom: 0.15rem;
+  color: #1c1c1c;
+}
+/* Plain-language gloss, roman (not italic), a step down from the term. */
+.city-demo-desc {
+  display: block;
+  font-size: 0.82rem;
+  font-style: normal;
+  font-weight: 400;
+  color: #333;
+  line-height: 1.3;
+  margin-top: 0.05rem;
+}
+.city-demo-figs {
+  display: flex;
+  align-items: stretch;
+  margin-top: auto;
 }
 .city-demo-pct {
-  display: block;
-  font-size: 1.45rem;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding-right: 0.5rem;
+  font-size: 1.7rem;
   font-weight: 700;
   color: var(--adaparc-maroon);
-  line-height: 1.15;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 .city-demo-count {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 0.55rem;
+  border-left: 1px solid #d9d4c9;
+}
+.city-demo-count-val {
   display: block;
-  font-size: 0.85rem;
-  color: #333;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1c1c1c;
+  line-height: 1.15;
   font-variant-numeric: tabular-nums;
 }
-.city-demo-na {
+.city-demo-count-unit {
   display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: #333;
+  line-height: 1.2;
+}
+.city-demo-na {
+  align-self: center;
   font-size: 0.95rem;
   font-weight: 600;
   color: #333;
@@ -510,10 +556,10 @@ li.city-demo-tile {
   h2.section-title { font-size: 13pt; break-after: avoid; page-break-after: avoid; }
   h3.subhead { break-after: avoid; page-break-after: avoid; }
   p.section-help, p.help-note { break-after: avoid; page-break-after: avoid; }
-  /* Re-stated in pt for the same reason as .city-demo-label below: at the
+  /* Re-stated in pt for the same reason as .city-demo-term below: at the
      print body size the screen rem value would set these three labels
      larger than the h3.subhead they sit under. 11pt keeps them a clear step
-     above the 9pt tile labels and a step below the 13pt section title. */
+     above the 9pt tile terms and a step below the 13pt section title. */
   p.city-demo-heading {
     font-size: 11pt;
     break-after: avoid;
@@ -557,12 +603,17 @@ li.city-demo-tile {
   li.city-demo-tile {
     padding: 3px 6px 4px 6px;
   }
-  /* min-height is re-stated in pt because the screen value is two lines of
-     a rem-sized label; at the smaller print size that same rem value would
-     leave a visible band of empty space above every percentage. */
-  .city-demo-label { font-size: 9pt; min-height: 24pt; }
-  .city-demo-pct { font-size: 14pt; }
-  .city-demo-count { font-size: 8.5pt; }
+  /* No min-height here: the flex column plus margin-top:auto on
+     .city-demo-figs pins the percentage row to the foot of every tile, so a
+     one- or two-line label above it does not knock the percentages in a row
+     out of alignment. */
+  .city-demo-label { margin-bottom: 3pt; }
+  .city-demo-term { font-size: 9pt; }
+  .city-demo-desc { font-size: 8pt; }
+  .city-demo-pct { font-size: 15pt; padding-right: 4pt; }
+  .city-demo-count { padding-left: 5pt; }
+  .city-demo-count-val { font-size: 10pt; }
+  .city-demo-count-unit { font-size: 7.5pt; }
 
   .adaparc-footer {
     break-inside: avoid;

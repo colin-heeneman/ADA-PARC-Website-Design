@@ -3309,6 +3309,8 @@ grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
 gap: 0.5rem;
 }
 li.city-demo-tile {
+display: flex;
+flex-direction: column;
 background: #f9f7f4;
 border: 1px solid #d9d4c9;
 border-left: 4px solid var(--adaparc-maroon);
@@ -3319,28 +3321,68 @@ margin: 0;
 
 .city-demo-label {
 display: block;
-font-size: 0.88rem;
+margin-bottom: 0.3rem;
+}
+.city-demo-term {
+display: block;
+font-size: 0.98rem;
 font-weight: 600;
 line-height: 1.3;
-min-height: 2.3rem;
-margin-bottom: 0.15rem;
+color: #1c1c1c;
+}
+
+.city-demo-desc {
+display: block;
+font-size: 0.82rem;
+font-style: normal;
+font-weight: 400;
+color: #333;
+line-height: 1.3;
+margin-top: 0.05rem;
+}
+.city-demo-figs {
+display: flex;
+align-items: stretch;
+margin-top: auto;
 }
 .city-demo-pct {
-display: block;
-font-size: 1.45rem;
+flex: 1 1 0;
+min-width: 0;
+display: flex;
+align-items: center;
+padding-right: 0.5rem;
+font-size: 1.7rem;
 font-weight: 700;
 color: var(--adaparc-maroon);
-line-height: 1.15;
+line-height: 1.1;
 font-variant-numeric: tabular-nums;
 }
 .city-demo-count {
+flex: 1 1 0;
+min-width: 0;
+display: flex;
+flex-direction: column;
+justify-content: center;
+padding-left: 0.55rem;
+border-left: 1px solid #d9d4c9;
+}
+.city-demo-count-val {
 display: block;
-font-size: 0.85rem;
-color: #333;
+font-size: 1rem;
+font-weight: 700;
+color: #1c1c1c;
+line-height: 1.15;
 font-variant-numeric: tabular-nums;
 }
-.city-demo-na {
+.city-demo-count-unit {
 display: block;
+font-size: 0.78rem;
+font-weight: 400;
+color: #333;
+line-height: 1.2;
+}
+.city-demo-na {
+align-self: center;
 font-size: 0.95rem;
 font-weight: 600;
 color: #333;
@@ -3461,9 +3503,13 @@ li.city-demo-tile {
 padding: 3px 6px 4px 6px;
 }
 
-.city-demo-label { font-size: 9pt; min-height: 24pt; }
-.city-demo-pct { font-size: 14pt; }
-.city-demo-count { font-size: 8.5pt; }
+.city-demo-label { margin-bottom: 3pt; }
+.city-demo-term { font-size: 9pt; }
+.city-demo-desc { font-size: 8pt; }
+.city-demo-pct { font-size: 15pt; padding-right: 4pt; }
+.city-demo-count { padding-left: 5pt; }
+.city-demo-count-val { font-size: 10pt; }
+.city-demo-count-unit { font-size: 7.5pt; }
 .adaparc-footer {
 break-inside: avoid;
 font-size: 8pt;
@@ -3484,7 +3530,7 @@ ADA-PARC
 City Data · Illinois
 </p>
 </div>
-<img class="banner-icon" src="data:image/png;base64,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" alt>
+<img class="banner-icon" src="data:image/png;base64,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" alt="">
 </div>
 </div>
 <div class="print-bar">
@@ -3545,28 +3591,28 @@ Race / Ethnicity
 </p>
 <ul class="city-demo-list">
 <li class="city-demo-tile">
-<span class="city-demo-label">White alone (non-Hispanic)</span><span class="city-demo-pct">3.2%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">86,610 people</span>
+<span class="city-demo-label"><span class="city-demo-term">White alone</span><span class="city-demo-desc">non-Hispanic</span></span><span class="city-demo-figs"><span class="city-demo-pct">3.2%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">86,610</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Black/African American</span><span class="city-demo-pct">5.1%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">136,784 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Black/African American</span></span><span class="city-demo-figs"><span class="city-demo-pct">5.1%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">136,784</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">American Indian/Alaska Native</span><span class="city-demo-pct">0.12%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">3,300 people</span>
+<span class="city-demo-label"><span class="city-demo-term">American Indian/Alaska Native</span></span><span class="city-demo-figs"><span class="city-demo-pct">0.12%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">3,300</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Asian</span><span class="city-demo-pct">0.61%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">16,283 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Asian</span></span><span class="city-demo-figs"><span class="city-demo-pct">0.61%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">16,283</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Native Hawaiian/Other Pacific Islander</span><span class="city-demo-pct">0.003%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">82 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Native Hawaiian/Other Pacific Islander</span></span><span class="city-demo-figs"><span class="city-demo-pct">0.003%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">82</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Some other race(s) identified</span><span class="city-demo-pct">1.3%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">35,731 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Some other race(s) identified</span></span><span class="city-demo-figs"><span class="city-demo-pct">1.3%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">35,731</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Two or more races</span><span class="city-demo-pct">1.3%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">34,842 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Two or more races</span></span><span class="city-demo-figs"><span class="city-demo-pct">1.3%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">34,842</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Hispanic/Latino (any race)</span><span class="city-demo-pct">2.8%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">74,762 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Hispanic/Latino</span><span class="city-demo-desc">any race</span></span><span class="city-demo-figs"><span class="city-demo-pct">2.8%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">74,762</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 </ul>
 </div>
@@ -3576,10 +3622,10 @@ Sex
 </p>
 <ul class="city-demo-list">
 <li class="city-demo-tile">
-<span class="city-demo-label">Male</span><span class="city-demo-pct">5.4%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">144,026 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Male</span></span><span class="city-demo-figs"><span class="city-demo-pct">5.4%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">144,026</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Female</span><span class="city-demo-pct">6.7%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">180,561 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Female</span></span><span class="city-demo-figs"><span class="city-demo-pct">6.7%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">180,561</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 </ul>
 </div>
@@ -3592,16 +3638,16 @@ The Census asks about hearing and vision difficulty at every age, but the other 
 </p>
 <ul class="city-demo-list">
 <li class="city-demo-tile">
-<span class="city-demo-label">Under 5</span><span class="city-demo-pct">0.04%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">1,018 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Under 5</span></span><span class="city-demo-figs"><span class="city-demo-pct">0.04%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">1,018</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Ages 5 to 17</span><span class="city-demo-pct">0.74%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">19,904 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Ages 5 to 17</span></span><span class="city-demo-figs"><span class="city-demo-pct">0.74%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">19,904</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Ages 18 to 64</span><span class="city-demo-pct">6.4%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">173,224 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Ages 18 to 64</span></span><span class="city-demo-figs"><span class="city-demo-pct">6.4%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">173,224</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Ages 65 and older</span><span class="city-demo-pct">4.9%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">130,441 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Ages 65 and older</span></span><span class="city-demo-figs"><span class="city-demo-pct">4.9%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">130,441</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 </ul>
 </div>
@@ -3614,22 +3660,22 @@ Each percentage below is the share of the city’s total population, not just th
 </p>
 <ul class="city-demo-list">
 <li class="city-demo-tile">
-<span class="city-demo-label">Hearing</span><span class="city-demo-pct">2.4%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">64,409 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Hearing</span></span><span class="city-demo-figs"><span class="city-demo-pct">2.4%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">64,409</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Vision</span><span class="city-demo-pct">2.6%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">68,965 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Vision</span></span><span class="city-demo-figs"><span class="city-demo-pct">2.6%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">68,965</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Cognitive</span><span class="city-demo-pct">5.0%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">126,199 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Cognitive</span></span><span class="city-demo-figs"><span class="city-demo-pct">5.0%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">126,199</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Ambulatory (difficulty walking or climbing stairs)</span><span class="city-demo-pct">6.5%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">166,391 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Ambulatory</span><span class="city-demo-desc">difficulty walking or climbing stairs</span></span><span class="city-demo-figs"><span class="city-demo-pct">6.5%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">166,391</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Self Care (difficulty bathing or dressing)</span><span class="city-demo-pct">2.4%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">61,215 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Self Care</span><span class="city-demo-desc">difficulty bathing or dressing</span></span><span class="city-demo-figs"><span class="city-demo-pct">2.4%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">61,215</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 <li class="city-demo-tile">
-<span class="city-demo-label">Independent Living (difficulty doing errands alone)</span><span class="city-demo-pct">5.7%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count">123,651 people</span>
+<span class="city-demo-label"><span class="city-demo-term">Independent Living</span><span class="city-demo-desc">difficulty doing errands alone</span></span><span class="city-demo-figs"><span class="city-demo-pct">5.7%<span class="city-demo-sr"> of the city’s total population</span></span><span class="city-demo-count"><span class="city-demo-count-val">123,651</span><span class="city-demo-count-unit"> residents</span></span></span>
 </li>
 </ul>
 </div>
@@ -4091,7 +4137,7 @@ Living arrangement measures, covering whether people with disabilities live at h
 The ADA-PARC is funded by the National Institute for Disability, Independent Living, and Rehabilitation Research (NIDILRR) under grants 90DP0026 and 90DPAD0001.
 </p>
 <p>
-ADA-PARC · ADA Participation Action Research Consortium · Generated August 19, 2026. Some measures are not published for every city; see the notes above each table for coverage.
+ADA-PARC · ADA Participation Action Research Consortium · Generated September 08, 2026. Some measures are not published for every city; see the notes above each table for coverage.
 </p>
 </div>
 
