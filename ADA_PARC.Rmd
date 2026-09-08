@@ -10,7 +10,6 @@ output:
     css: www/styles.css
 runtime: shiny
 resource_files:
-- www/participant_logos.png
 - www/cssloaders.html
 - scripts/functions.R
 - scripts/palettes.R
@@ -20,9 +19,6 @@ resource_files:
 - data/final/tracts_data.Rds
 - data/final/tracts_sf.Rds
 - data/final/national_data.Rds
-- data/final/tracts_data.Rds
-- www/Status_for_Disabled_image.png
-- www/adaparclogo.png
 - www/brand
 - www/ScorecardReport.pdf
 - www/factsheets
@@ -158,7 +154,13 @@ city_place_full <- readRDS(here::here("data", "final", "city_place_full.Rds"))
 dict_location_crosswalk <- readRDS(here::here("data", "final", "dict_location_crosswalk.Rds")) 
 tracts_data <- readRDS(here::here("data", "final", "tracts_data.Rds")) 
 
-national_data <- readRDS(here::here("data", "final", "national_data.Rds")) 
+national_data <- readRDS(here::here("data", "final", "national_data.Rds"))
+
+# The race/ethnicity, sex and age-aggregate "without a disability" companions
+# (pop_cni_<stem>_nodis / pct_cni_<stem>_nodis) are produced upstream by the
+# pipeline's addACSCalculatedVariables(), alongside every other _nodis column,
+# so nothing is derived here. dict_vars carries the matching rows that place
+# them in each National Data topic table.
 
 tracts_sf <- readRDS(here::here("data", "final", "tracts_sf.Rds"))
 
@@ -970,16 +972,99 @@ library(shinycssloaders)
 library(DT)
 library(ggiraph)
 
-# Pre-compute initial topic choices so the selector has a valid value on load
-.initial_nat_choices <- dict_vars %>%
-  filter(is_demographics == TRUE, !is.na(national_dropdown_label)) %>%
-  select(national_dropdown_label, var_readable) %>%
-  tibble::deframe() %>%
-  names()
-.initial_nat_selected <- if ("People with Disabilities" %in% .initial_nat_choices) {
-  "People with Disabilities"
-} else {
-  .initial_nat_choices[1]
+# Build grouped <optgroup> choices for the "Select a topic" <select>. The group
+# heading is the text before the first ":" in national_dropdown_label; the
+# option VALUE stays the full label (the National Data server maps that label
+# to a var_readable downstream), while the visible option text is only the part
+# after the colon so the heading is not repeated on every row. Labels with no
+# colon (e.g. "People with Disabilities") render as ungrouped options first, in
+# dict_vars row order.
+nat_topic_choices <- function(cat_col) {
+  labs <- dict_vars %>%
+    dplyr::filter(.data[[cat_col]] == TRUE, !is.na(national_dropdown_label)) %>%
+    dplyr::distinct(national_dropdown_label) %>%
+    dplyr::pull(national_dropdown_label)
+
+  has_grp <- grepl(":", labs, fixed = TRUE)
+  grp <- ifelse(has_grp, trimws(sub(":.*$", "", labs)), "")
+  opt <- ifelse(has_grp, trimws(sub("^[^:]*:\\s*", "", labs)), labs)
+
+  out <- list()
+  for (g in unique(grp)) {
+    i <- which(grp == g)
+    if (identical(g, "")) {
+      for (k in i) out[[opt[k]]] <- labs[k]
+    } else {
+      out[[g]] <- stats::setNames(as.list(labs[i]), opt[i])
+    }
+  }
+  out
+}
+
+# Default topic label for a category ("People with Disabilities" when present,
+# else the first topic in dict_vars order). Marks the checked radio whenever the
+# topic list (re)renders on a category change.
+nat_topic_default <- function(cat_col) {
+  flat <- unlist(nat_topic_choices(cat_col), use.names = FALSE)
+  if ("People with Disabilities" %in% flat) "People with Disabilities" else flat[[1]]
+}
+
+# Grouped radio list for the collapsible topic picker. Real
+# <input type="radio" name="national_variable_selector"> elements, so Shiny's own
+# radio input binding carries the selection; each option VALUE is the full
+# national_dropdown_label (mapped to var_readable downstream) and the visible
+# text is only the part after the group's colon.
+#
+# Each visual group is wrapped in <div role="group" aria-labelledby=heading-id>
+# so a screen reader announces "Employment" (etc.) on entry rather than reading
+# a flat list of leaf labels with no context. Shiny's radio binding queries
+# radios by name across all descendants, so the extra wrapper is transparent to
+# it; the sticky .ntt-group-head still pins to the scroll container's top.
+nat_topic_radios <- function(cat_col, selected) {
+  grp  <- nat_topic_choices(cat_col)
+  kids <- list()
+  mk_row <- function(text, value) {
+    on <- identical(value, selected)
+    tags$div(
+      class = "ntt-row",
+      tags$label(
+        class = "ntt-row-label",
+        tags$input(
+          type    = "radio",
+          class   = "ntt-radio",
+          name    = "national_variable_selector",
+          value   = value,
+          checked = if (on) "checked"
+        ),
+        tags$span(class = "ntt-dot", `aria-hidden` = "true"),
+        tags$span(class = "ntt-row-text", text)
+      )
+    )
+  }
+  for (nm in names(grp)) {
+    v <- grp[[nm]]
+    if (is.list(v)) {
+      head_id <- paste0("ntt-grp-", gsub("[^a-z0-9]+", "-", tolower(nm)))
+      kids[[length(kids) + 1]] <- tags$div(
+        class = "ntt-group",
+        role  = "group",
+        `aria-labelledby` = head_id,
+        tags$div(class = "ntt-group-head", id = head_id, nm),
+        lapply(names(v), function(leaf) mk_row(leaf, v[[leaf]]))
+      )
+    } else {
+      kids[[length(kids) + 1]] <- mk_row(nm, v)
+    }
+  }
+  tags$div(
+    id = "national_variable_selector",
+    class = "shiny-input-radiogroup shiny-input-container ntt-list",
+    role = "radiogroup",
+    # Point at the visible field label rather than repeat the string, so the
+    # group name can't drift out of sync with it.
+    `aria-labelledby` = "national-topic-label",
+    kids
+  )
 }
 
 ui <- fluidPage(
@@ -1170,13 +1255,116 @@ ui <- fluidPage(
         margin-bottom: 5px;
       }
 
-      /* Source note below table */
-      .national-source-note {
+      /* ── Understanding This Data card ────────────────────────────────────
+         One reference card below the table: who is counted, where the numbers
+         come from, and what each percentage column means. Tuned to the site's
+         slate/navy chrome - navy top edge and navy left bars on each section
+         panel - with very light panel fills so body text keeps maximum
+         contrast (a core accessibility principle here). Gold appears once, on
+         the title rule. */
+      .national-understanding-card {
+        background: #ffffff;
+        border: 1px solid #e4e8ef;
+        border-top: 4px solid #1c2b3a;
+        box-shadow: 0 1px 4px rgba(28, 43, 58, 0.07);
+        padding: 2rem 2.1rem 2.15rem 2.1rem;
+      }
+      .national-understanding-heading {
         font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1c2b3a;
+        margin: 0;
+        line-height: 1.25;
+        letter-spacing: 0.005em;
+      }
+      .understanding-rule {
+        width: 64px;
+        height: 4px;
+        background: #c8a743;
+        border-radius: 2px;
+        margin: 0.8rem 0 0 0;
+      }
+      .understanding-sections {
+        display: flex;
+        flex-direction: column;
+        gap: 1.15rem;
+        margin-top: 1.7rem;
+      }
+      .understanding-block {
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        background: #f6f8fb;
+        border: 1px solid #d5dee8;
+        border-left: 4px solid #1c2b3a;
+        border-radius: 6px;
+        padding: 1.4rem 1.55rem;
+      }
+      .understanding-subhead {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-size: 19px;
+        font-weight: 700;
+        color: #1c2b3a;
+        margin: 0 0 0.8rem 0;
+        line-height: 1.25;
+      }
+      .understanding-chip {
+        flex: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #1c2b3a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .understanding-glyph {
+        width: 21px;
+        height: 21px;
+        fill: none;
+        stroke: #ffffff;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .understanding-body {
         font-size: 16px;
-        color: #444;
-        margin-top: 0.75rem;
-        margin-bottom: 1rem;
+        line-height: 1.62;
+        color: #28394a;
+        margin: 0;
+        max-width: 74ch;
+      }
+      /* One definition per row: term, then its plain-language meaning directly
+         beneath it, hairline-separated so the list stays scannable. */
+      .understanding-defs { margin: 0.15rem 0 0 0; }
+      .understanding-def {
+        padding: 0.85rem 0;
+        border-top: 1px solid #d5dee8;
+      }
+      .understanding-def:first-child { padding-top: 0.35rem; border-top: 0; }
+      .understanding-def:last-child { padding-bottom: 0.15rem; }
+      .understanding-def dt {
+        font-weight: 700;
+        color: #1c2b3a;
+        font-size: 16px;
+      }
+      .understanding-def dd {
+        margin: 0.28rem 0 0 0;
+        font-size: 16px;
+        line-height: 1.55;
+        color: #28394a;
+        max-width: 74ch;
+      }
+      .understanding-defs-note {
+        font-size: 15px;
+        color: #1c2b3a;
+        background: #ffffff;
+        border: 1px solid #d5dee8;
+        border-left: 3px solid #1c2b3a;
+        border-radius: 4px;
+        padding: 0.7rem 0.95rem;
+        margin: 1rem 0 0 0;
       }
 
       /* ── National controls panel ─────────────────────────────────────────
@@ -1210,8 +1398,8 @@ ui <- fluidPage(
       .national-control-field .form-group {
         margin-bottom: 0;
       }
-      /* The download occupies its own full-height column, set off by a rule
-         so it reads as a separate action rather than a third control. */
+      /* The download sits in its own full-height column, set off by a hairline
+         rule so it reads as a separate action rather than a third control. */
       .national-control-action {
         flex: 0 0 auto;
         display: flex;
@@ -1221,33 +1409,46 @@ ui <- fluidPage(
         padding-left: 1.5rem;
       }
 
-      /* Download Selected Topic button */
+      /* Download button: the single primary action on this tab. Solid navy,
+         white label (12.34:1), generous target, shape + radius + focus ring
+         consistent with the category buttons. Sized in px, not rem: this
+         fluidPage() resolves rem against a 10px Bootstrap-3 root, which is
+         why the label read tiny before. */
       .btn-download-national {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 48px !important;
+        padding: 12px 30px !important;
         background: #013176 !important;
         color: #ffffff !important;
         border: 1.5px solid #013176 !important;
-        border-radius: 6px !important;
+        border-radius: 7px !important;
         font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-        font-size: 1.1rem !important;
-        font-weight: 700 !important;
-        padding: 9px 20px !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        letter-spacing: 0.01em !important;
+        white-space: nowrap !important;
+        text-align: center !important;
         cursor: pointer !important;
-        line-height: 1.4 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        white-space: normal !important;
-        text-align: left !important;
+        transition: background-color .12s ease, border-color .12s ease !important;
       }
       .btn-download-national:hover {
         background: #01214f !important;
         border-color: #01214f !important;
       }
-      .btn-download-national:focus {
-        outline: 3px solid #0d3b8e !important;
-        outline-offset: 2px !important;
-        /* White halo in the offset gap so the ring does not rely on the page
-           tone behind the button. White on #013176 is 12.34:1. */
-        box-shadow: 0 0 0 2px #ffffff !important;
+      .btn-download-national:focus,
+      .btn-download-national:focus-visible {
+        /* #0d3b8e is almost the button's own #013176 navy, so the ring reads as
+           a fatter edge, not a focus indicator. Dark ink ring (~14:1 on white)
+           + a 3px white halo so it separates from the fill on any background. */
+        outline: 3px solid #1c2b3a !important;
+        outline-offset: 3px !important;
+        box-shadow: 0 0 0 3px #ffffff !important;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .btn-download-national { transition: none !important; }
       }
       /* Narrow screens: stack the columns and turn the vertical rule into a
          horizontal one above the button. */
@@ -1266,6 +1467,274 @@ ui <- fluidPage(
         .national-control-field .form-group {
           margin-bottom: 0.25rem;
         }
+      }
+
+      /* Category = segmented control, Topic = grouped native select.
+         The category picker is radioGroupButtons() (real radio inputs inside
+         btn/btn-national-cat labels), so arrow-key navigation within the group
+         is native. The topic picker is a native select (selectize = FALSE) so
+         optgroup headings, the mobile OS picker and screen-reader semantics all
+         work with no extra wiring. Focus rings match .btn-download-national
+         (3px #0d3b8e + white halo). */
+      .national-controls-stack {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .national-controls-stack .national-cat-field,
+      .national-controls-stack .national-control-field {
+        flex: 0 0 auto;
+      }
+      .national-cat-field .form-group,
+      .national-control-field .form-group {
+        margin-bottom: 0;
+      }
+      .national-cat-field .control-label,
+      .national-control-field .control-label,
+      .national-control-field > .shiny-input-container > label,
+      .national-control-field label.control-label {
+        display: block;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1c2b3a;
+        margin-bottom: 0.4rem;
+      }
+
+      /* Segmented category buttons. shinyWidgets radioGroupButtons renders a
+         btn.radiobtn.btn-national-cat <button> (with a hidden radio inside)
+         per item, wrapped in .btn-group-toggle, all inside
+         .btn-group-container-sw. */
+      .national-cat-field br { display: none; }
+      .national-cat-field .btn-group-container-sw {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+      }
+      .national-cat-field .btn-group-container-sw > .btn-group-toggle {
+        flex: 1 1 auto;
+        display: flex;
+      }
+      .btn.btn-national-cat {
+        width: 100%;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.3;
+        min-height: 44px;
+        padding: 10px 16px;
+        margin: 0;
+        color: #1c2b3a;
+        background: #f2f0ec;
+        border: 1.5px solid #c9c0ac;
+        border-radius: 6px;
+        cursor: pointer;
+        white-space: normal;
+        transition: background-color .12s ease, border-color .12s ease;
+      }
+      .btn.btn-national-cat:hover {
+        background: #e7e2d6;
+        border-color: #1c2b3a;
+      }
+      /* Selected state: shinyWidgets adds .active to the button; :has() is the
+         fallback for when a keyboard arrow-change doesn't fire Bootstrap's
+         .active sync (e.g. Firefox). */
+      .btn.btn-national-cat.active,
+      .btn.btn-national-cat:has(> input:checked) {
+        background: #013176;
+        border-color: #013176;
+        color: #ffffff;
+        box-shadow: none;
+      }
+      /* Focus lands on the visually-hidden radio -> show the ring on the
+         button, matching .btn-download-national. */
+      .btn.btn-national-cat:focus-within {
+        outline: 3px solid #0d3b8e;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 2px #ffffff;
+      }
+      /* Selected button is #013176 navy; the #0d3b8e focus token is nearly the
+         same blue, so the ring vanishes into the fill. Swap to the dark ink ring
+         (14:1 on white, well clear of the navy) with a 3px white halo so the
+         indicator reads on every category state. */
+      .btn.btn-national-cat.active:focus-within {
+        outline-color: #1c2b3a;
+        outline-offset: 3px;
+        box-shadow: 0 0 0 3px #ffffff;
+      }
+      .btn-national-cat > input[type=radio] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Collapsible topic picker: disclosure button + grouped radio list.
+         The trigger echoes .btn-national-cat; the list is the inline Option A
+         list, revealed in the page flow (no floating layer). */
+      .national-topic-field .field-label-text {
+        display: block;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1c2b3a;
+        margin-bottom: 0.4rem;
+      }
+      .national-topic-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        min-height: 46px;
+        padding: 10px 14px;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 18px;
+        font-weight: 500;
+        color: #1c2b3a;
+        background: #ffffff;
+        border: 1.5px solid #8a8a8a;
+        border-radius: 7px;
+        cursor: pointer;
+        text-align: left;
+      }
+      .national-topic-toggle:hover { border-color: #1c2b3a; }
+      .national-topic-toggle:focus-visible {
+        outline: 3px solid #0d3b8e;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 2px #ffffff;
+      }
+      .national-topic-toggle .ntt-value {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .national-topic-toggle .ntt-value .shiny-text-output { white-space: nowrap; }
+      .national-topic-toggle .ntt-caret {
+        flex: 0 0 auto;
+        width: 11px; height: 11px;
+        border-right: 2px solid #4a4a4a;
+        border-bottom: 2px solid #4a4a4a;
+        transform: rotate(45deg) translate(-2px, -2px);
+      }
+      .national-topic-toggle[aria-expanded=true] .ntt-caret {
+        transform: rotate(-135deg) translate(-1px, -1px);
+      }
+
+      .national-topic-region { display: grid; grid-template-rows: 1fr; }
+      .national-topic-region.is-collapsed { grid-template-rows: 0fr; }
+      .national-topic-region > .national-topic-clip { overflow: hidden; min-height: 0; }
+      .national-topic-region.is-collapsed > .national-topic-clip { visibility: hidden; }
+
+      .ntt-list {
+        margin-top: 8px;
+        max-height: 320px;
+        overflow-y: auto;
+        /* Don't let a wheel/trackpad scroll that reaches the end of the list
+           chain out and scroll the whole page. */
+        overscroll-behavior: contain;
+        background: #ffffff;
+        border: 1.5px solid #8a8a8a;
+        border-radius: 7px;
+        padding: 4px 0 6px;
+      }
+      .ntt-group-head {
+        position: sticky;
+        top: 0;
+        background: #f2f0ec;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #55503f;
+        padding: 7px 16px 5px;
+        border-bottom: 1px solid #e0d9c7;
+        z-index: 1;
+      }
+      .ntt-row { border-left: 3px solid transparent; }
+      .ntt-row + .ntt-row { border-top: 1px solid #efeadd; }
+      .ntt-row-label {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        margin: 0;
+        /* ~44px row so the pointer/touch target clears the WCAG 2.5.8 minimum */
+        padding: 12px 16px 12px 13px;
+        font-family: 'EB Garamond', Garamond, Georgia, serif;
+        font-size: 17px;
+        font-weight: 400;
+        color: #1c2b3a;
+        cursor: pointer;
+      }
+      .ntt-radio {
+        position: absolute;
+        width: 1px; height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .ntt-dot {
+        flex: 0 0 auto;
+        width: 16px; height: 16px;
+        border-radius: 50%;
+        border: 1.5px solid #8a8a8a;
+        background: #ffffff;
+        display: grid;
+        place-items: center;
+      }
+      .ntt-dot::after {
+        content: '';
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #013176;
+        transform: scale(0);
+      }
+      .ntt-row:hover { background: #f1eee6; }
+      .ntt-radio:checked ~ .ntt-dot { border-color: #013176; }
+      .ntt-radio:checked ~ .ntt-dot::after { transform: scale(1); }
+      .ntt-radio:checked ~ .ntt-row-text { font-weight: 600; }
+      .ntt-radio:focus-visible ~ .ntt-dot {
+        outline: 3px solid #0d3b8e;
+        outline-offset: 2px;
+      }
+      /* Progressive enhancement: tint the whole row that holds the checked
+         radio (browsers without :has() still show the filled dot + bold text). */
+      .ntt-row:has(.ntt-radio:checked) {
+        background: #eef2f8;
+        border-left-color: #013176;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .national-topic-region { transition: grid-template-rows .18s ease; }
+        .ntt-dot::after { transition: transform .12s ease; }
+        .national-topic-toggle .ntt-caret { transition: transform .15s ease; }
+      }
+
+      /* Visually hidden but announced (clip pattern, not display:none). */
+      .nat-sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      /* Narrow screens: one category button per row. */
+      @media (max-width: 760px) {
+        .national-cat-field .btn-group-container-sw > .btn-group-toggle {
+          flex: 1 1 100%;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .btn.btn-national-cat { transition: none; }
       }
 
       /* Length + search controls: left-aligned with some spacing */
@@ -1427,7 +1896,7 @@ ui <- fluidPage(
       h1("National Data"),
       tags$p(
         class = "national-intro",
-        "To explore the data first select a category and then a topic. You can navigate the boxes below using the mouse or keyboard."
+        "Pick a category, then a topic; the map, summary, and table update to match. The Download button gives a print-ready report of the current topic: map and key on page one, full state table on page two."
       )
     ),
 
@@ -1443,40 +1912,70 @@ ui <- fluidPage(
         div(
           class = "national-controls-split",
           div(
-            class = "national-controls-row",
+            class = "national-controls-stack",
             div(
-              class = "national-control-field",
-              selectInput(
-                inputId = "national_category_selector",
-                label   = "Select a category",
-                choices = c(
+              class = "national-cat-field",
+              radioGroupButtons(
+                inputId  = "national_category_selector",
+                label    = "Select a category",
+                choices  = c(
                   "Demographics",
                   "Community Living",
                   "Community Participation",
                   "Work/Economic"
                 ),
-                selected = "Demographics"
+                selected = "Demographics",
+                status   = "national-cat",
+                size     = "normal"
               )
             ),
             div(
-              class = "national-control-field",
-              selectInput(
-                inputId  = "national_variable_selector",
-                label    = "Select a topic",
-                choices  = .initial_nat_choices,
-                selected = .initial_nat_selected
+              class = "national-control-field national-topic-field",
+              tags$span(
+                class = "field-label-text",
+                id    = "national-topic-label",
+                "Select a topic"
+              ),
+              tags$button(
+                type              = "button",
+                id                = "national-topic-toggle",
+                class             = "national-topic-toggle",
+                `aria-expanded`   = "false",
+                `aria-controls`   = "national-topic-region",
+                `aria-labelledby` = "national-topic-label national_topic_current",
+                tags$span(
+                  class = "ntt-value",
+                  textOutput("national_topic_current", inline = TRUE)
+                ),
+                tags$span(class = "ntt-caret", `aria-hidden` = "true")
+              ),
+              tags$div(
+                id    = "national-topic-region",
+                class = "national-topic-region is-collapsed",
+                tags$div(
+                  class = "national-topic-clip",
+                  uiOutput("national_topic_group")
+                )
               )
             )
           ),
-          tags$section(
-            `aria-label` = "Download the selected topic",
+          # Visually hidden live region: names the active category, how many
+          # topics it has, and the topic now shown. Worded differently from the
+          # map-summary live region so the two don't read on top of each other.
+          div(
+            class = "nat-sr-only",
+            role  = "status",
+            `aria-live` = "polite",
+            textOutput("national_selection_status", inline = TRUE)
+          ),
+          div(
             class = "national-control-action",
             downloadButton(
               "download_national_topic",
-              "Download Selected Topic",
+              "Download",
               class        = "btn-download-national",
               icon         = dl_icon(),
-              `aria-label` = "Download the selected topic as an accessible, print-ready ADA-PARC report: map and key on page one, full data table on page two"
+              `aria-label` = "Download a print-ready report of the current topic"
             )
           )
         )
@@ -1500,6 +1999,8 @@ ui <- fluidPage(
           `aria-live` = "polite",
           uiOutput("national_map_summary") %>% withSpinner()
         )
+        # "Population examined" now lives in the "Understanding This Data" card
+        # below the table, alongside the source and column definitions.
       )
     ),
 
@@ -1554,16 +2055,119 @@ ui <- fluidPage(
       )
     ),
 
-    # ── Source note ───────────────────────────────────────────────────────────
-    tags$section(
-      `aria-label` = "Data source",
-      `aria-live` = "polite",
-      uiOutput("national_source_note")
+    # ── Understanding This Data ───────────────────────────────────────────────
+    # One reference card below the table: who is counted (universe_note), where
+    # the numbers come from (data_source_label), and what each percentage column
+    # means (pct_definition). Built as a single output so it refreshes atomically
+    # and stays in lockstep with the downloaded report (national_topic.qmd).
+    div(
+      class = "national-card national-understanding-card",
+      tags$section(
+        `aria-labelledby` = "national-understanding-heading",
+        h2(
+          "Understanding This Data",
+          id    = "national-understanding-heading",
+          class = "national-understanding-heading"
+        ),
+        div(class = "understanding-rule", `aria-hidden` = "true"),
+        div(
+          `aria-live` = "polite",
+          uiOutput("national_understanding") %>% withSpinner()
+        )
+      )
     )
     # NOTE: the "Download Selected Topic" button previously lived here at the
     # foot of the page. It now sits in the controls card, to the right of the
     # category and topic selectors.
   )
+  ,
+  # Disclosure behaviour for the collapsible topic picker. Delegated listeners
+  # on the static #national-topic-region survive the server re-rendering the
+  # list on a category change. Selection itself is native (real radios) and
+  # reported by Shiny's radio binding; this only opens/closes the panel and
+  # manages focus. If the script never runs, the list just stays visible.
+  tags$script(HTML("
+  (function () {
+    var toggle = document.getElementById('national-topic-toggle');
+    var region = document.getElementById('national-topic-region');
+    if (!toggle || !region) return;
+    var field = toggle.parentNode;
+    // Timestamp of the last close that was triggered by picking a topic row.
+    // Used to swallow a toggle click that lands a beat later (see below).
+    var lastRowClose = 0;
+    // Viewport scroll captured the instant a topic row is pressed with a mouse
+    // or finger, BEFORE the browser moves focus. Restored after the pick so the
+    // page does not creep (see the pointerdown / click handlers below). Null for
+    // keyboard selection, which keeps its native scroll-focus-into-view.
+    var rowScroll = null;
+    function isOpen() { return !region.classList.contains('is-collapsed'); }
+    // focus() with preventScroll: the real radios are 1px, opacity:0,
+    // position:absolute nodes sitting low in a 320px scroll list, so a plain
+    // focus() lets the browser scrollIntoView() and yank the page down past the
+    // map to the table. preventScroll keeps the caret move invisible.
+    function focusNoScroll(el) {
+      if (!el) return;
+      try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+    }
+    function openList() {
+      region.classList.remove('is-collapsed');
+      toggle.setAttribute('aria-expanded', 'true');
+      focusNoScroll(region.querySelector('input.ntt-radio:checked') ||
+                    region.querySelector('input.ntt-radio'));
+    }
+    function closeList(focusToggle) {
+      region.classList.add('is-collapsed');
+      toggle.setAttribute('aria-expanded', 'false');
+      if (focusToggle) focusNoScroll(toggle);
+    }
+    toggle.addEventListener('click', function () {
+      // Picking a topic row auto-closes the list on a 0ms timeout. If the user
+      // is also reaching for the collapse caret, their click can land just after
+      // that auto-close: without this guard it reads as 'open' and re-expands
+      // the list (and refocuses the freshly-checked radio). Treat a toggle click
+      // within 400ms of a row-driven close as a no-op.
+      if (!isOpen() && (Date.now() - lastRowClose) < 400) return;
+      isOpen() ? closeList(true) : openList();
+    });
+    toggle.addEventListener('keydown', function (e) {
+      // Enter / Space already trigger the button's own click (handled above);
+      // wiring them here too raced open-then-closed. Only ArrowDown needs help.
+      if (!isOpen() && e.key === 'ArrowDown') { e.preventDefault(); openList(); }
+    });
+    // Snapshot the scroll position before the click focuses the visually hidden
+    // radio. pointerdown fires ahead of the focus move (mouse and touch); a
+    // keyboard pick has no pointerdown, so rowScroll stays null there.
+    region.addEventListener('pointerdown', function (e) {
+      rowScroll = e.target.closest('.ntt-row')
+        ? { x: window.scrollX, y: window.scrollY }
+        : null;
+    });
+    region.addEventListener('click', function (e) {
+      var s = rowScroll;          // consume the snapshot on any click in the list
+      rowScroll = null;
+      if (!e.target.closest('.ntt-row')) return;
+      lastRowClose = Date.now();
+      // Clicking the <label> makes the browser scroll its 1px, off-screen radio
+      // into view. For a mouse/touch pick, pin the viewport where the user left
+      // it: sync (undo the focus scroll), next frame (spinner reflow settling),
+      // and after the 0ms collapse. The toggle above the list never moves, so a
+      // restore to the captured offset reads as 'nothing moved'.
+      var restore = function () { if (s) window.scrollTo(s.x, s.y); };
+      restore();
+      requestAnimationFrame(restore);
+      setTimeout(function () { closeList(true); restore(); }, 0);
+    });
+    region.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); closeList(true); }
+    });
+    field.addEventListener('focusout', function (e) {
+      if (isOpen() && e.relatedTarget && !field.contains(e.relatedTarget)) closeList(false);
+    });
+    document.addEventListener('mousedown', function (e) {
+      if (isOpen() && !field.contains(e.target)) closeList(false);
+    });
+  })();
+  "))
   , adaparc_footer
 )
 
@@ -1592,33 +2196,36 @@ server <- function(input, output, session) {
     )
   })
 
-  # ─────────────────────────────────────────────────────────────────────
-  # Pre-populate the topic selector BEFORE the first reactive flush so the
-  # map + table render with defaults on initial page load (without the
-  # user having to change a dropdown). Uses freezeReactiveValue so
-  # downstream reactives don't see a transient NULL/"" during the
-  # selectize rebuild.
-  # ─────────────────────────────────────────────────────────────────────
-  observe({
-    freezeReactiveValue(input, "national_variable_selector")
+  # ── Collapsible topic picker ──────────────────────────────────────────
+  # The grouped radio list is server-rendered and re-rendered only when the
+  # CATEGORY changes, never on a topic click, so picking a topic never rebuilds
+  # the DOM (native radios carry it, Shiny's radio binding reports it). On a
+  # category change the new list mounts with its default topic checked, the
+  # binding re-reads it and input$national_variable_selector updates.
+  # suspendWhenHidden = FALSE so the list renders (and binds) while the picker
+  # is collapsed on first paint.
+  output$national_topic_group <- renderUI({
     cat_col <- national_category_selected()
-    init_choices <- dict_vars %>%
-      filter(!!sym(cat_col) == TRUE, !is.na(national_dropdown_label)) %>%
-      select(national_dropdown_label, var_readable) %>%
-      tibble::deframe() %>%
-      names()
-    init_default <- if ("People with Disabilities" %in% init_choices) {
-      "People with Disabilities"
+    nat_topic_radios(cat_col, nat_topic_default(cat_col))
+  })
+  outputOptions(output, "national_topic_group", suspendWhenHidden = FALSE)
+
+  # Label on the collapsed picker button: "Group · Leaf" (or the bare label when
+  # it has no group), matching the list rows.
+  output$national_topic_current <- renderText({
+    req(national_variable_selected())
+    lbl <- dict_vars %>%
+      filter(var_readable == national_variable_selected()) %>%
+      head(1) %>%
+      pull(national_dropdown_label)
+    if (length(lbl) && grepl(":", lbl, fixed = TRUE)) {
+      paste0(trimws(sub(":.*$", "", lbl)), " · ",
+             trimws(sub("^[^:]*:\\s*", "", lbl)))
     } else {
-      init_choices[1]
+      lbl
     }
-    updateSelectInput(
-      session,
-      "national_variable_selector",
-      choices  = init_choices,
-      selected = init_default
-    )
-  }, priority = 1000)
+  })
+  outputOptions(output, "national_topic_current", suspendWhenHidden = FALSE)
 
   # When both selectors have values, allow rendering
   observe({
@@ -1645,6 +2252,31 @@ server <- function(input, output, session) {
     req(current)
     choices[[current]]
   })
+
+  # Screen-reader status line for the selection controls (rendered into the
+  # visually hidden aria-live region beside the selectors). Announces the
+  # active category, how many topics it offers, and which topic is now shown.
+  # Wording is kept distinct from output$national_map_summary so the two
+  # aria-live regions don't talk over each other.
+  output$national_selection_status <- renderText({
+    req(national_variable_selected())
+    n_topics  <- length(national_variable_choices())
+    topic_lbl <- dict_vars %>%
+      filter(var_readable == national_variable_selected()) %>%
+      head(1) %>%
+      pull(national_dropdown_label)
+    topic_lbl <- trimws(sub(".*:", "", topic_lbl))
+    sprintf(
+      "%s category selected. %d topic%s available. Now showing %s.",
+      input$national_category_selector %||% "Demographics",
+      n_topics,
+      if (n_topics == 1) "" else "s",
+      topic_lbl
+    )
+  })
+  # The status text lives in a clipped (1x1) container, so keep it rendering
+  # even if Shiny's visibility heuristic ever decides otherwise.
+  outputOptions(output, "national_selection_status", suspendWhenHidden = FALSE)
 
   # Reactively update the map image's aria-label whenever the topic changes,
   # so screen readers announce which variable is currently shown on the map.
@@ -1727,10 +2359,20 @@ server <- function(input, output, session) {
       interp_note <- paste0(lead, direction)
     }
 
-    # Source note (mirrors output$national_source_note)
+    # Data source line (consumed by output$national_understanding and the
+    # download's "Understanding This Data" block).
     source_text <- var_row %>% pull(data_source_label)
     if (length(source_text) == 0 || is.na(source_text) || !nzchar(trimws(source_text))) {
       source_text <- "2020-2024 American Community Survey 5-Year Estimates"
+    }
+
+    # Population / denominator note for the selected topic. Blank for topics
+    # that have not been given one yet, in which case the outputs below and the
+    # download simply omit the block.
+    universe_text <- var_row %>% pull(universe_note)
+    if (length(universe_text) == 0 || is.na(universe_text) ||
+        !nzchar(trimws(universe_text))) {
+      universe_text <- ""
     }
 
     # Friendly table (mirrors former inline logic in output$sortable_table)
@@ -1746,6 +2388,20 @@ server <- function(input, output, session) {
         display == TRUE
       ) %>%
       select(var_pretty, var_readable)
+
+    # Plain-language definition of each column, in table order. Keyed by
+    # var_readable, labelled by the same pretty header the table uses. Columns
+    # without a definition yet (e.g. the count columns) are dropped, so a topic
+    # with no definitions at all yields a zero-row frame and no block renders.
+    column_defs <- national_vars_in_topic %>%
+      left_join(
+        dict_vars %>%
+          select(var_readable, pct_definition) %>%
+          distinct(var_readable, .keep_all = TRUE),
+        by = "var_readable"
+      ) %>%
+      filter(!is.na(pct_definition) & nzchar(trimws(pct_definition))) %>%
+      transmute(term = var_pretty, definition = trimws(pct_definition))
 
     table_df <- national_data %>%
       mutate("State" = NAME) %>%
@@ -1764,14 +2420,16 @@ server <- function(input, output, session) {
       rename(!!!national_vars_in_topic %>% deframe())
 
     list(
-      sel         = sel,
-      title       = title,
-      category    = input$national_category_selector %||% "",
-      interp_note = interp_note,
-      source_note = source_text,
-      alt_text    = altText(national_data, sel),
-      table_df    = table_df,
-      vars        = national_vars_in_topic
+      sel          = sel,
+      title        = title,
+      category     = input$national_category_selector %||% "",
+      interp_note  = interp_note,
+      source_note  = source_text,
+      universe_note = universe_text,
+      column_defs  = column_defs,
+      alt_text     = altText(national_data, sel),
+      table_df     = table_df,
+      vars         = national_vars_in_topic
     )
   })
 
@@ -1786,21 +2444,76 @@ server <- function(input, output, session) {
     )
   })
 
-  output$national_source_note <- renderUI({
+  # "Understanding This Data" card body. One output so the three blocks refresh
+  # together and stay in lockstep with the downloaded report (national_topic.qmd
+  # builds the same structure from the same bundle fields). "Data source" is
+  # always present, so the card always renders; the other two blocks appear only
+  # when the selected topic has been given that text in dict_vars.
+  output$national_understanding <- renderUI({
     req(ready_to_render())
     req(national_variable_selected())
-    source_text <- dict_vars %>%
-      filter(var_readable == national_variable_selected()) %>%
-      head(1) %>%
-      pull(data_source_label)
-    if (length(source_text) == 0 || is.na(source_text) || !nzchar(trimws(source_text))) {
-      source_text <- "2020-2024 American Community Survey 5-Year Estimates"
+    b <- national_topic_bundle()
+
+    # Decorative glyph inside a solid navy chip; aria-hidden. Kept as literal
+    # SVG so the same markup can be reused verbatim in the download template.
+    chip <- function(kind) {
+      p <- switch(
+        kind,
+        pop = '<circle cx="9" cy="8" r="3.1"/><path d="M3.7 19c0-2.9 2.4-4.8 5.3-4.8S14.3 16.1 14.3 19"/><circle cx="16.8" cy="9.6" r="2.5"/><path d="M15 14.3c2.3.2 4.3 1.9 4.3 4.7"/>',
+        src = '<path d="M6 3.6h7.5L18 8.1V19.4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.6a1 1 0 0 1 1-1z"/><path d="M13.3 3.6v4.6H18"/><path d="M8.4 12.4h7M8.4 15.8h7"/>',
+        pct = '<path d="M6.5 17.5 17.5 6.5"/><circle cx="8.3" cy="8.3" r="2.1"/><circle cx="15.7" cy="15.7" r="2.1"/>'
+      )
+      HTML(sprintf(
+        paste0('<span class="understanding-chip" aria-hidden="true">',
+               '<svg class="understanding-glyph" viewBox="0 0 24 24" focusable="false">%s</svg>',
+               '</span>'),
+        p
+      ))
     }
-    tags$p(
-      class = "national-source-note",
-      tags$strong("This indicator sourced from: "),
-      source_text
-    )
+
+    blocks <- list()
+
+    note <- b$universe_note %||% ""
+    if (nzchar(trimws(note))) {
+      blocks <- c(blocks, list(div(
+        class = "understanding-block",
+        h3(class = "understanding-subhead", chip("pop"), "Population Examined"),
+        p(class = "understanding-body", note)
+      )))
+    }
+
+    src <- b$source_note %||% ""
+    if (!nzchar(trimws(src))) {
+      src <- "2020-2024 American Community Survey 5-Year Estimates"
+    }
+    blocks <- c(blocks, list(div(
+      class = "understanding-block",
+      h3(class = "understanding-subhead", chip("src"), "Data Source"),
+      p(class = "understanding-body", src)
+    )))
+
+    defs <- b$column_defs
+    if (is.data.frame(defs) && nrow(defs) > 0) {
+      blocks <- c(blocks, list(div(
+        class = "understanding-block",
+        h3(class = "understanding-subhead", chip("pct"),
+           "What Each Percentage Column Means"),
+        tags$dl(
+          class = "understanding-defs",
+          lapply(seq_len(nrow(defs)), function(i) {
+            tags$div(
+              class = "understanding-def",
+              tags$dt(defs$term[i]),
+              tags$dd(defs$definition[i])
+            )
+          })
+        ),
+        p(class = "understanding-defs-note",
+          "Count columns (#) show the number of people each percentage is based on.")
+      )))
+    }
+
+    tagList(div(class = "understanding-sections", blocks))
   })
 
   output$national_map_title <- renderUI({
@@ -2021,6 +2734,8 @@ server <- function(input, output, session) {
             category    = bundle$category,
             interp_note = bundle$interp_note,
             source_note = bundle$source_note,
+            universe_note = bundle$universe_note,
+            column_defs = bundle$column_defs,
             alt_text    = bundle$alt_text,
             table_df    = bundle$table_df,
             map_svg     = map_svg,
@@ -2039,6 +2754,7 @@ server <- function(input, output, session) {
             )
             rendered <- file.path(national_dir, "national_topic.html")
             if (file.exists(rendered)) {
+              fix_decorative_banner_alt(rendered)  # audit finding C3
               file.copy(rendered, file, overwrite = TRUE)
             } else {
               writeLines("<html><body>Report could not be generated.</body></html>", file)
@@ -2082,6 +2798,25 @@ library(shinycssloaders)
 state_choices <- tibble::tibble(NAME = state.name, ABB = state.abb) %>%
   add_row(NAME = c("District of Columbia", "Puerto Rico"), ABB = c("DC", "PR")) %>%
   tibble::deframe()
+
+# Grouped choices for the native <select> (selectize = FALSE): 50 states + D.C.
+# A–Z, then a one-item Territories optgroup. Option VALUES stay the display
+# names — the server still maps name -> abbreviation through state_choices.
+# The optgroup gives screen readers a spoken section boundary and keeps Puerto
+# Rico from looking like a missing state at the bottom of the list.
+state_select_choices <- list(
+  `States & D.C.` = as.list(sort(c(state.name, "District of Columbia"))),
+  `Territories`   = list("Puerto Rico")
+)
+
+# Cities for the default state (Illinois), so the #city_selector <select> paints
+# populated on first load rather than briefly empty before the state observer
+# flushes. Same filter/order as the city_choices() reactive.
+initial_city_choices <- dict_location_crosswalk %>%
+  dplyr::filter(state == "IL", !stringr::str_detect(place_NAME, " CDP")) %>%
+  dplyr::distinct(place_NAME) %>%
+  dplyr::arrange(place_NAME) %>%
+  dplyr::pull(place_NAME)
 
 # ----------------------------
 # Helpers (ALL pct cols are dbl on 0–100 scale)
@@ -2242,18 +2977,22 @@ render_comparison_table <- function(row, rows, caption) {
 # a single label/value line, and the <ul> is a responsive CSS grid, so the
 # groups fill the full-width card instead of stacking in one narrow column
 # that left most of the card empty. Inside a tile the reading order is
-# label, then the share of total population set large as the headline
-# figure, then the count on its own line. Sizing and colour live in the
-# stylesheet (.city-demo-list and friends); this function only emits markup.
+# label (a bold term and, where the label carried a "(gloss)", a lighter
+# description line), then a .city-demo-figs row holding the share of total
+# population set large as the headline figure and the count beside it, split
+# by a hairline (Colin 2026-09-08; the count sat beneath until then). Sizing
+# and colour live in the stylesheet (.city-demo-list and friends); this
+# function only emits markup.
 #
 # Accessibility notes on the tile markup:
 #   - the <ul>/<li> structure is unchanged, so screen readers still announce
 #     the group count and step through one group at a time;
 #   - the headline percentage is visually labelled only by its position, so
 #     a visually hidden span (.city-demo-sr) carries the words a sighted
-#     reader gets from the heading above and the count below. Without it the
-#     percentage would be read as a bare number;
-#   - nothing is encoded in colour, and the count is text, not a bar.
+#     reader gets from the heading above and the count beside it. Without it
+#     the percentage would be read as a bare number;
+#   - the count carries a visible "residents" unit rather than a bare
+#     number, and nothing is encoded in colour or by a bar.
 #
 # The whole figure block is built in one is.na() branch rather than
 # concatenated from separately-computed pieces, so a missing group_dis
@@ -2266,30 +3005,57 @@ demo_row <- function(label, group_dis_pop) {
 
 # One tile. Split out of render_demo_list() on 2026-08-18 so the Disability
 # Types block can emit the same markup without duplicating the class names
-# in a second place. label and figure are both already-built HTML.
+# in a second place. figure is already-built HTML; label is a plain string
+# that demo_label_html() splits into a bold term and, where the label
+# carried a "(plain-language gloss)", a lighter description line beneath it.
 demo_tile <- function(label, figure) {
   paste0(
     "<li class=\"city-demo-tile\">",
-    "<span class=\"city-demo-label\">", label, "</span>",
+    demo_label_html(label),
     figure,
     "</li>"
   )
 }
 
-# The figure half of a tile: headline percentage, then the count beneath it.
-# Both the demographics groups and the disability types express the same
-# quantity, a share of the city's total population, so both carry the same
-# visually hidden wording. Built in one branch rather than concatenated from
-# separately-computed pieces, so a missing value collapses to a single
-# "Not available" rather than pairing a real "Not available" with a
-# leftover formatted "NA".
+# "Ambulatory (difficulty walking or climbing stairs)" -> a "city-demo-term"
+# span for "Ambulatory" and a "city-demo-desc" span for the gloss, shown on
+# its own line (roman, not italic, per Colin 2026-09-08). Labels with no
+# trailing "(...)" -- every race, sex and age band -- get the term span only.
+# "Some other race(s) identified" does not match: the pattern needs the "("
+# preceded by a space and the ")" at the very end of the string.
+# The gloss keeps its own line rather than parentheses so the term reads as
+# a field name, and a screen reader gets "term  gloss" with no bracket
+# characters spoken.
+demo_label_html <- function(label) {
+  parts <- regmatches(label, regexec("^\\s*(.+?)\\s+\\((.+)\\)\\s*$", label))[[1]]
+  term  <- if (length(parts) == 3L) parts[2] else label
+  desc  <- if (length(parts) == 3L) parts[3] else NA_character_
+  paste0(
+    "<span class=\"city-demo-label\">",
+    "<span class=\"city-demo-term\">", term, "</span>",
+    if (is.na(desc)) "" else paste0("<span class=\"city-demo-desc\">", desc, "</span>"),
+    "</span>"
+  )
+}
+
+# The figure half of a tile: the headline percentage and the count sit side
+# by side in a .city-demo-figs row, split by a hairline rule, with the
+# percentage keeping the visual lead. Both the demographics groups and the
+# disability types express the same quantity, a share of the city's total
+# population, so both carry the same visually hidden wording -- which is now
+# the only thing telling a screen reader what the bare percentage means, so
+# it stays even though the visible layout no longer spells it out. Built in
+# one branch rather than concatenated from separately-computed pieces, so a
+# missing value collapses to a single "Not available" rather than pairing a
+# real "Not available" with a leftover formatted "NA".
 demo_figure <- function(pct, count) {
   pct   <- as.numeric(pct)
   count <- as.numeric(count)
   if (is.na(pct)) {
-    return("<span class=\"city-demo-na\">Not available</span>")
+    return("<span class=\"city-demo-figs\"><span class=\"city-demo-na\">Not available</span></span>")
   }
   paste0(
+    "<span class=\"city-demo-figs\">",
     "<span class=\"city-demo-pct\">",
     fmt_pct_dynamic(pct),
     "<span class=\"city-demo-sr\"> of the city's total population</span>",
@@ -2297,8 +3063,14 @@ demo_figure <- function(pct, count) {
     if (is.na(count)) {
       ""
     } else {
-      paste0("<span class=\"city-demo-count\">", fmt_num(count), " people</span>")
-    }
+      paste0(
+        "<span class=\"city-demo-count\">",
+        "<span class=\"city-demo-count-val\">", fmt_num(count), "</span>",
+        "<span class=\"city-demo-count-unit\"> residents</span>",
+        "</span>"
+      )
+    },
+    "</span>"
   )
 }
 
@@ -2431,7 +3203,9 @@ ui <- fluidPage(
         color: #1c1c1c;
         line-height: 1.6;
         max-width: 72ch;
-        font-weight: 600;
+        /* Regular weight: this class now only styles the long footer caveat,
+           and semibold over ~150 words of running text hurts readability. */
+        font-weight: 400;
       }
       /* The footer caveat sits under the full-width two-column summary, so
          the 72ch measure inherited from .city-note made it look as though
@@ -2456,26 +3230,49 @@ ui <- fluidPage(
         border-top: 4px solid #1c2b3a;
       }
 
-      /* Controls card: label and input text — match national data styling */
+      /* Controls card: label and input text — match national data styling
+         (18px / 600, ink). */
       .city-controls-card .shiny-input-container label {
         font-size: 18px;
         color: #1c2b3a;
-        font-weight: 500;
+        font-weight: 600;
       }
-      .city-controls-card select.form-control,
-      .city-controls-card .selectize-input {
+
+      /* Native <select> (selectize = FALSE): carry over the look the selectize
+         box had — 1.5px #5c6672 border, 4px radius, white ground — and give it
+         a real ~44px target height. */
+      .city-controls-card select.form-control {
         font-size: 18px !important;
         color: #1c2b3a !important;
+        min-height: 44px;
+        padding: 9px 12px !important;
+        border: 1.5px solid #5c6672 !important;
+        border-radius: 4px !important;
+        background-color: #ffffff !important;
+        box-shadow: none !important;
       }
-      /* Ensure sufficient contrast on selectize dropdown items (WCAG AA) */
-      .city-controls-card .selectize-dropdown,
-      .city-controls-card .selectize-dropdown-content .option {
-        font-size: 17px !important;
-        color: #1c2b3a !important;
+      /* Bootstrap 3's default is a faint blue inset glow with the outline
+         suppressed; restore the app-wide 3px focus ring instead. */
+      .city-controls-card select.form-control:focus,
+      .city-controls-card select.form-control:focus-visible {
+        border-color: #0d3b8e !important;
+        outline: 3px solid #0d3b8e !important;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 3px rgba(13, 59, 142, 0.15) !important;
       }
-      .city-controls-card .selectize-dropdown-content .option.active {
-        background-color: #e8edf3 !important;
-        color: #1c2b3a !important;
+
+      /* Visually hidden, still announced (clip pattern — not display:none). */
+      .city-sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
       }
 
       /* ── Controls row + download action ────────────────────────────────
@@ -2512,30 +3309,46 @@ ui <- fluidPage(
         border-left: 1px solid #d8cdb8;
         padding-left: 1.5rem;
       }
+      /* Download button: kept byte-for-byte in step with .btn-download-national
+         so the two tabs' primary action reads the same — 48px target,
+         12px/30px padding, 7px radius, 18px/600 centred label on one line.
+         Sized in px because this fluidPage() resolves rem against a 10px
+         Bootstrap-3 root. */
       .btn-download-city {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 48px !important;
+        padding: 12px 30px !important;
         background: #013176 !important;
         color: #ffffff !important;
         border: 1.5px solid #013176 !important;
-        border-radius: 6px !important;
+        border-radius: 7px !important;
         font-family: 'EB Garamond', Garamond, Georgia, serif !important;
-        font-size: 1.1rem !important;
-        font-weight: 700 !important;
-        padding: 9px 20px !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        letter-spacing: 0.01em !important;
+        white-space: nowrap !important;
+        text-align: center !important;
         cursor: pointer !important;
-        line-height: 1.4 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        white-space: normal !important;
-        text-align: left !important;
+        transition: background-color .12s ease, border-color .12s ease !important;
       }
       .btn-download-city:hover {
         background: #01214f !important;
         border-color: #01214f !important;
       }
-      .btn-download-city:focus {
-        outline: 3px solid #0d3b8e !important;
-        outline-offset: 2px !important;
-        box-shadow: 0 0 0 2px #ffffff !important;
+      @media (prefers-reduced-motion: reduce) {
+        .btn-download-city { transition: none !important; }
+      }
+      /* Button fill is #013176 navy and the #0d3b8e focus token is nearly the
+         same blue, so the ring sinks into it. Use the dark ink ring (~14:1 on
+         white) with a 3px white halo so focus is unmistakable. */
+      .btn-download-city:focus,
+      .btn-download-city:focus-visible {
+        outline: 3px solid #1c2b3a !important;
+        outline-offset: 3px !important;
+        box-shadow: 0 0 0 3px #ffffff !important;
       }
       .btn-download-city:disabled,
       .btn-download-city[disabled] {
@@ -2771,7 +3584,9 @@ ui <- fluidPage(
          groups no longer render as four-column tables (count, rate within
          group, share of city PWD, share of total population). Each group
          now shows two figures, its share of the city's total population as
-         the headline and the count beneath it. See render_demo_list().
+         the headline and the count beside it, split by a hairline (the
+         count sat beneath the percentage from 2026-08-18 until Colin's
+         2026-09-08 revision). See render_demo_list().
 
          Laid out as a responsive grid of tiles, replacing the earlier
          single narrow column. That column was capped at 30rem to keep a
@@ -2809,26 +3624,24 @@ ui <- fluidPage(
         grid-template-columns: repeat(2, 1fr);
       }
       /* Below roughly a tablet width two tiles are narrower than the long
-         race labels want, so drop to one. */
+         race labels want, so drop to one. The narrow-band figure stacking
+         that pairs with this lives after the base tile rules below, so it
+         can override them. */
       @media (max-width: 48em) {
         .city-summary-wide ul.city-demo-list {
           grid-template-columns: 1fr;
         }
       }
-      /* At two columns in a full-width card each tile is wide enough that
-         even the longest label (Native Hawaiian/Other Pacific Islander,
-         Ambulatory (difficulty walking or climbing stairs)) stays on one
-         line, so the two-line floor below would leave a visible empty band
-         above every percentage. Dropped to a one-line floor here only. The
-         3.9rem floor still applies between 48em and 62em, where two columns
-         are narrow enough that labels do wrap and the percentages need it
-         to stay level across a row. */
-      @media (min-width: 62em) {
-        .city-summary-wide ul.city-demo-list .city-demo-label {
-          min-height: 2rem;
-        }
-      }
+      /* The figure row is pinned to the bottom of each tile with
+         margin-top: auto (the tile is a flex column, and grid stretches
+         tiles in a row to equal height), so the percentages line up across
+         a row no matter how many lines the label above them takes. This
+         replaces an earlier min-height floor on the label, which guessed a
+         line count and left a band of empty space -- or lost the alignment
+         -- when the browser text size changed. */
       .city-summary ul.city-demo-list li.city-demo-tile {
+        display: flex;
+        flex-direction: column;
         background: #faf8f5;
         border: 1px solid #e0dbd2;
         border-left: 4px solid #1c2b3a;
@@ -2836,37 +3649,110 @@ ui <- fluidPage(
         padding: 0.9rem 1.1rem 1rem 1.1rem;
         margin: 0;
       }
-      /* min-height reserves two lines for the label so the headline
-         percentages line up across a row of tiles even when one label
-         wraps (Native Hawaiian/Other Pacific Islander is the long one).
-         It is a floor, not a cap, so a third line still fits on narrow
-         screens. */
       .city-summary ul.city-demo-list .city-demo-label {
         display: block;
-        font-size: 1.45rem;
+        margin-bottom: 0.7rem;
+      }
+      .city-summary ul.city-demo-list .city-demo-term {
+        display: block;
+        font-size: 1.6rem;
         font-weight: 600;
         color: #1c1c1c;
-        line-height: 1.35;
-        min-height: 3.9rem;
-        margin-bottom: 0.35rem;
+        line-height: 1.3;
+      }
+      /* The plain-language gloss that used to sit in parentheses inside the
+         label. Roman, not italic (Colin 2026-09-08), and a step down in
+         size and contrast so the term reads first. Still inside
+         .city-demo-label, so a screen reader announces 'term  gloss' as one
+         label with no bracket characters. #3a3a3a on the #faf8f5 tile is
+         about 10.6:1, well past WCAG AA for this ~15px text. */
+      .city-summary ul.city-demo-list .city-demo-desc {
+        display: block;
+        font-size: 1.35rem;
+        font-style: normal;
+        font-weight: 400;
+        color: #3a3a3a;
+        line-height: 1.3;
+        margin-top: 0.1rem;
+      }
+      /* Percentage and count side by side, split by a hairline; margin-top:
+         auto drops the whole row to the foot of the tile. */
+      .city-summary ul.city-demo-list .city-demo-figs {
+        display: flex;
+        align-items: stretch;
+        margin-top: auto;
       }
       .city-summary ul.city-demo-list .city-demo-pct {
-        display: block;
-        font-size: 2.8rem;
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        padding-right: 1rem;
+        font-size: 3.4rem;
         font-weight: 700;
         color: #1c2b3a;
-        line-height: 1.1;
+        line-height: 1.05;
         font-variant-numeric: tabular-nums;
       }
       .city-summary ul.city-demo-list .city-demo-count {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-left: 1.1rem;
+        border-left: 1px solid #e0dbd2;
+      }
+      .city-summary ul.city-demo-list .city-demo-count-val {
         display: block;
-        font-size: 1.4rem;
-        color: #3a3a3a;
+        font-size: 1.95rem;
+        font-weight: 700;
+        color: #1c1c1c;
+        line-height: 1.1;
         font-variant-numeric: tabular-nums;
-        margin-top: 0.15rem;
+      }
+      .city-summary ul.city-demo-list .city-demo-count-unit {
+        display: block;
+        font-size: 1.3rem;
+        font-weight: 400;
+        color: #3a3a3a;
+        line-height: 1.2;
+        margin-top: 0.1rem;
+      }
+      /* Narrower two-column band (48-62em): shrink the figures so a long
+         count and a 3-plus-rem percentage still clear the hairline. */
+      @media (min-width: 48.01em) and (max-width: 62em) {
+        .city-summary ul.city-demo-list .city-demo-pct { font-size: 2.9rem; }
+        .city-summary ul.city-demo-list .city-demo-count-val { font-size: 1.75rem; }
+      }
+      /* At or below a tablet width (one tile per row) a half-tile is too
+         tight for a 3-plus-rem percentage beside a six-figure count, and
+         beside a long share like 0.003%, so the figure row stacks --
+         percentage over count, the hairline moving from the side to the
+         top. Placed after the base rules above so it overrides them. */
+      @media (max-width: 48em) {
+        .city-summary ul.city-demo-list .city-demo-figs {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .city-summary ul.city-demo-list .city-demo-pct {
+          padding-right: 0;
+          font-size: 3.2rem;
+        }
+        .city-summary ul.city-demo-list .city-demo-count {
+          padding-left: 0;
+          border-left: 0;
+          border-top: 1px solid #e0dbd2;
+          margin-top: 0.5rem;
+          padding-top: 0.4rem;
+          width: 100%;
+        }
+        .city-summary ul.city-demo-list .city-demo-count-val {
+          font-size: 1.9rem;
+        }
       }
       .city-summary ul.city-demo-list .city-demo-na {
-        display: block;
+        align-self: center;
         font-size: 1.6rem;
         font-weight: 600;
         color: #3a3a3a;
@@ -2968,7 +3854,8 @@ ui <- fluidPage(
 
       /* ── Select inputs: font, sizing, and maroon accent on focus ──────── */
       .control-label {
-        font-size: 20px !important;
+        /* 18px / 600 to match the National Data selector labels. */
+        font-size: 18px !important;
         font-weight: 600;
         color: #1c2b3a;
         margin-bottom: 0.3rem;
@@ -3077,23 +3964,46 @@ ui <- fluidPage(
               class = "city-control-field",
               selectInput(
                 "state_selector", "Select a state",
-                choices = names(state_choices),
-                selected = "Illinois"
+                choices  = state_select_choices,
+                selected = "Illinois",
+                selectize = FALSE,
+                width = "100%"
               )
             ),
-            div(class = "city-control-field", uiOutput("city_selector_ui"))
+            div(
+              class = "city-control-field",
+              # Static native <select>; seeded with the default state's cities,
+              # then kept in sync by the observeEvent below (no renderUI remount
+              # per state).
+              selectInput(
+                "city_selector", "Select a city",
+                choices  = initial_city_choices,
+                selected = if ("Chicago" %in% initial_city_choices) "Chicago" else initial_city_choices[1],
+                selectize = FALSE,
+                width = "100%"
+              )
+            )
           ),
           tags$section(
             `aria-label` = "Download the selected city",
             class = "city-control-action",
             downloadButton(
               "download_city",
-              "Download Selected City",
+              "Download",
               class        = "btn-download-city",
               icon         = dl_icon(),
               `aria-label` = "Download the selected city as an accessible, print-ready ADA-PARC report: map and key, then summary tables for people with disabilities in this city"
             )
           )
+        ),
+        # Visually hidden live region: names the state, how many cities it has,
+        # and the city now shown. Mirrors national_selection_status so the two
+        # tabs give screen-reader users the same feedback on a change.
+        div(
+          class = "city-sr-only",
+          role  = "status",
+          `aria-live` = "polite",
+          textOutput("city_selection_status", inline = TRUE)
         )
       )
     ),
@@ -3152,27 +4062,55 @@ server <- function(input, output, session) {
   })
 
   # --- City choices for selected state ---
+  # May be empty for a place with no non-CDP cities; the req() in city_selected()
+  # (and updateSelectInput leaving the control empty) is the guard downstream, so
+  # this no longer req()s on row count and the status line can report "0".
   city_choices <- reactive({
     req(state_selected())
-    choices <- dict_location_crosswalk %>%
+    dict_location_crosswalk %>%
       filter(state == state_selected(), !str_detect(place_NAME, " CDP")) %>%
-      select(place_NAME, place_GEOID) %>%
-      distinct(place_NAME, place_GEOID)
-    req(nrow(choices) > 0)
-    tibble::deframe(choices) %>% sort()
+      distinct(place_NAME, place_GEOID) %>%
+      # Order by city NAME. The old `deframe() %>% sort()` sorted by the GEOID
+      # values, so the list came out in an arbitrary-looking order — tolerable
+      # with selectize's search box, confusing in a plain <select>.
+      arrange(place_NAME) %>%
+      tibble::deframe()
   })
 
-  output$city_selector_ui <- renderUI({
-    selectInput("city_selector", "Select a city",
-                choices = names(city_choices()),
-                selected = "Chicago")
-  })
-
+  # Keep the static #city_selector <select> in sync with the chosen state.
+  # Fires once on startup (ignoreInit = FALSE) to populate the initial list.
   observeEvent(input$state_selector, {
-    updateSelectInput(session, "city_selector",
-                      choices = names(city_choices()),
-                      selected = "Chicago")
+    cities <- names(city_choices())
+    updateSelectInput(
+      session, "city_selector",
+      choices  = cities,
+      selected = if ("Chicago" %in% cities) "Chicago" else cities[1]
+    )
   })
+
+  # Visually hidden status line for the selection controls: active state, how
+  # many cities it offers, and which city is shown. Worded distinctly from the
+  # map/summary aria-live regions so they don't read on top of each other.
+  output$city_selection_status <- renderText({
+    req(state_selected())
+    cities <- names(city_choices())
+    n_cities <- length(cities)
+    state_lbl <- input$state_selector %||% "the selected state"
+    if (n_cities == 0) {
+      sprintf("%s selected. No cities available for this location.", state_lbl)
+    } else {
+      current <- if (!is.null(input$city_selector) && nzchar(input$city_selector)) {
+        input$city_selector
+      } else {
+        cities[1]
+      }
+      sprintf(
+        "%s selected. %d cit%s available. Now showing %s.",
+        state_lbl, n_cities, if (n_cities == 1) "y" else "ies", current
+      )
+    }
+  })
+  outputOptions(output, "city_selection_status", suspendWhenHidden = FALSE)
 
   # --- City selected GEOID ---
   city_selected <- reactive({
@@ -3552,8 +4490,9 @@ server <- function(input, output, session) {
     # Stat tiles, matching Race/Ethnicity, Sex and Age, per Colin's
     # 2026-08-18 request. The returned fragment is a complete
     # <ul class="city-demo-list">, so neither consumer wraps it in a <ul>
-    # of its own any more. Labels keep the parenthetical plain-language
-    # gloss that the bullet version carried.
+    # of its own any more. Labels keep the plain-language gloss the bullet
+    # version carried in parentheses; demo_label_html() lifts it out of the
+    # brackets onto its own line as .city-demo-desc.
     disability_types <- render_type_list(
       city_place(),
       list(
@@ -4139,6 +5078,7 @@ server <- function(input, output, session) {
             )
             rendered <- file.path(city_dir, "city_profile.html")
             if (file.exists(rendered)) {
+              fix_decorative_banner_alt(rendered)  # audit finding C3
               file.copy(rendered, file, overwrite = TRUE)
             } else {
               writeLines("<html><body>Report could not be generated.</body></html>", file)
@@ -5080,6 +6020,7 @@ server <- function(input, output, session) {
             )
             rendered <- file.path(scorecard_dir, "state_scorecard_print.html")
             if (file.exists(rendered)) {
+              fix_decorative_banner_alt(rendered)  # audit finding C3
               file.copy(rendered, file, overwrite = TRUE)
             } else {
               writeLines("<html><body>Report could not be generated.</body></html>", file)
@@ -5213,6 +6154,7 @@ server <- function(input, output, session) {
             )
             rendered <- file.path(scorecard_dir, "category_scorecard_print.html")
             if (file.exists(rendered)) {
+              fix_decorative_banner_alt(rendered)  # audit finding C3
               file.copy(rendered, file, overwrite = TRUE)
             } else {
               writeLines("<html><body>Report could not be generated.</body></html>", file)
@@ -5248,612 +6190,612 @@ library(htmltools)
 
 # factsheets/ HTML files live in www/factsheets/ (always included in deployment bundle).
 # Explicitly register the path so it is reliably served in all contexts — local dev,
-# flexdashboard embedded shinyApp(), and Posit Connect.
+# flexdashboard embedded shinyApp(), and Posit Connect. www/brand/ carries the
+# ADA-PARC wordmark and app icon shown on the landing screen; registered the same
+# way because the shinyApp() sub-app renders in an isolated resource context.
 shiny::addResourcePath("factsheets", normalizePath("www/factsheets", mustWork = FALSE))
+shiny::addResourcePath("brand",      normalizePath("www/brand",      mustWork = FALSE))
 
-# Fact sheet metadata — title, subtitle, description, and filename.
+# Fact sheet registry — one entry per published sheet, in display order within
+# its category. Each sheet is a single-topic brief; the single-topic sheets here
+# replaced the 10 broad sheets that preceded the factsheet overhaul (September 2026).
 #
-# Sheets are listed in the order they should appear within their category.
-# Adding a sheet here is only half the job: the HTML file also has to be
-# promoted into www/factsheets/ with scripts/promote_factsheets.R.
+# Fields:
+#   id        stable slug, also the DOM id stem
+#   category  ADA-PARC outcome domain (see fs_categories for display order)
+#   cluster   topic group shown as a sub-heading within the category; sheets
+#             sharing a cluster render together, in list order
+#   title     matches the sheet's own banner <h1> (fs_header() in
+#             factsheets/_generate/R/factsheet-functions.R) — keep the two in step
+#   subtitle  the sheet's banner subtitle: the descriptive phrase, not the
+#             category (the category is the sheet's eyebrow)
+#   desc      one plain-language line, for the card and the screen-reader
+#             description
+#   file      HTML in www/factsheets/, promoted by scripts/promote_factsheets.R
 #
-# The Nursing Home Rates sheet was retired on 28 July 2026 and replaced by
-# Living in Institution, which carries its content forward with a corrected
-# denominator. The retired file is kept in factsheets/old/retired-2026-07-28/
-# and is not served.
+# Adding a sheet is two edits: an entry here, and promoting the file. The
+# "Download all" bundle (adaparc-factsheets.zip) is rebuilt by the promote
+# script, not here.
 fact_sheets <- list(
-  list(
-    id       = "living-community",
-    category = "Community Living",
-    title    = "Living in Community",
-    subtitle = "At Home and in Non-Institutional Group Quarters",
-    desc     = "Shows the share of people with disabilities living in the community in each state, covering both living at home and living in non-institutional group quarters such as group homes.",
-    file     = "factsheet-living-community.html"
-  ),
-  list(
-    id       = "living-institution",
-    category = "Community Living",
-    title    = "Living in Institution",
-    subtitle = "Nursing Homes, Medical Facilities and Correctional Facilities",
-    desc     = "Shows the share of people with disabilities living in institutions, broken into nursing homes and medical facilities and adult correctional facilities, with nursing home rates by age group.",
-    file     = "factsheet-living-institution.html"
-  ),
-  list(
-    id       = "housing",
-    category = "Community Living",
-    title    = "Access to Housing",
-    subtitle = "Community Living for People with Disabilities",
-    desc     = "Examines access to Public Housing and Housing Choice Voucher programs for people with disabilities, with state-by-state rankings and interactive maps.",
-    file     = "factsheet-housing.html"
-  ),
-  list(
-    id       = "hcbs",
-    category = "Community Living",
-    title    = "Spending on Home & Community Based Services",
-    subtitle = "Medicaid HCBS Spending per Recipient",
-    desc     = "Compares state Medicaid spending on Home and Community-Based Services that support people with disabilities in living in the community, and how each state divides its long-term care budget between community and institutional settings.",
-    file     = "factsheet-hcbs.html"
-  ),
-  list(
-    id       = "poverty",
-    category = "Work & Economic",
-    title    = "Poverty",
-    subtitle = "Working-Age People with Disabilities",
-    desc     = "Compares poverty rates between people with and without disabilities of working age, highlighting state-level disparities across the country.",
-    file     = "factsheet-poverty.html"
-  ),
-  list(
-    id       = "employment",
-    category = "Work & Economic",
-    title    = "Employment",
-    subtitle = "Employment, Unemployment and Labor Force Participation, Ages 18 to 64",
-    desc     = "Shows how many working-age people with disabilities are employed, unemployed, or outside the labor force in each state, with labor force participation and unemployment rates reported separately.",
-    file     = "factsheet-employment.html"
-  ),
-  list(
-    id       = "health-insurance",
-    category = "Community Participation",
-    title    = "Health Insurance Access",
-    subtitle = "Coverage and Coverage Type, Ages 19 to 64 and 65 and Over",
-    desc     = "Examines health insurance among people with disabilities, covering uninsured rates and the split between public and private coverage, and showing how far public programs close a gap that employer insurance leaves open.",
-    file     = "factsheet-health-insurance.html"
-  ),
-  list(
-    id       = "commuting",
-    category = "Community Participation",
-    title    = "Commuting to Work",
-    subtitle = "How Workers with Disabilities Travel, Age 16 and Over",
-    desc     = "Shows how workers with disabilities get to work, by public transit and by driving alone, alongside the share of each population counted as a commuting worker at all.",
-    file     = "factsheet-commuting.html"
-  ),
-  list(
-    id       = "education",
-    category = "Community Participation",
-    title    = "Educational Attainment",
-    subtitle = "Adults with Disabilities Age 25 and Over",
-    desc     = "Compares educational attainment between adults with and without disabilities, from those who did not complete high school through to those holding a bachelor's degree or higher.",
-    file     = "factsheet-education.html"
-  ),
-  list(
-    id       = "technology",
-    category = "Community Participation",
-    title    = "Technology Access",
-    subtitle = "Computers, Home Internet and Smartphones",
-    desc     = "Shows how many people with disabilities live in a household with a computer, an internet subscription and a smartphone, and why the three measures have to be read together rather than one at a time.",
-    file     = "factsheet-technology.html"
-  )
+
+  # ── Community Living ──────────────────────────────────────────────────
+  list(id = "living-at-home", category = "Community Living",
+       cluster = "Where People Live", title = "Living at Home",
+       subtitle = "People With Disabilities Living in a House or Apartment, Not a Group Setting",
+       desc = "Living in a house or apartment, not any group or institutional setting.",
+       file = "factsheet-living-at-home.html"),
+  list(id = "group-quarters", category = "Community Living",
+       cluster = "Where People Live", title = "Non-Institutional Group Quarters",
+       subtitle = "People With Disabilities in Group Homes, Supported Living, Shelters or Dorms",
+       desc = "Group homes, supported living, shelters and college dormitories.",
+       file = "factsheet-group-quarters.html"),
+  list(id = "nursing-homes", category = "Community Living",
+       cluster = "Where People Live", title = "Nursing Homes",
+       subtitle = "People With Disabilities Living in a Nursing Home or Long-Term Medical Facility",
+       desc = "Living in a nursing home or other long-term medical facility, by age group.",
+       file = "factsheet-nursing-homes.html"),
+  list(id = "corrections", category = "Community Living",
+       cluster = "Where People Live", title = "Correctional Facilities",
+       subtitle = "People With Disabilities Held in Prisons, Jails or Other Correctional Group Quarters",
+       desc = "Held in prisons, jails and other correctional group quarters.",
+       file = "factsheet-corrections.html"),
+  list(id = "public-housing", category = "Community Living",
+       cluster = "Housing Programs", title = "Public Housing",
+       subtitle = "Disability Representation Among Public Housing Households",
+       desc = "How far people with disabilities are represented among public housing households.",
+       file = "factsheet-public-housing.html"),
+  list(id = "housing-vouchers", category = "Community Living",
+       cluster = "Housing Programs", title = "Housing Choice Vouchers",
+       subtitle = "Disability Representation Among Housing Choice Voucher Households",
+       desc = "How far people with disabilities are represented among Housing Choice Voucher households.",
+       file = "factsheet-housing-vouchers.html"),
+  list(id = "hcbs-spending-per-recipient", category = "Community Living",
+       cluster = "Medicaid HCBS", title = "HCBS Spending per Recipient",
+       subtitle = "Medicaid Home- and Community-Based Services Dollars per Person Served",
+       desc = "State Medicaid home- and community-based services spending, per person served.",
+       file = "factsheet-hcbs-spending-per-recipient.html"),
+  list(id = "hcbs-community-share", category = "Community Living",
+       cluster = "Medicaid HCBS", title = "Community Share of Long-Term Care Spending",
+       subtitle = "Share of Medicaid Long-Term Care Dollars Going to Home and Community, Not Institutions",
+       desc = "The share of each state's Medicaid long-term care dollars spent on home and community, not institutions.",
+       file = "factsheet-hcbs-community-share.html"),
+
+  # ── Work & Economic ───────────────────────────────────────────────────
+  # Labor Force Status before Income & Poverty: the three labor-force
+  # situations are the domain's core measures, poverty is the outcome.
+  list(id = "employment", category = "Work & Economic",
+       cluster = "Labor Force Status", title = "Employment",
+       subtitle = "Working-Age People With Disabilities Who Hold a Job",
+       desc = "The share of working-age people with disabilities who hold a job.",
+       file = "factsheet-employment.html"),
+  list(id = "unemployment", category = "Work & Economic",
+       cluster = "Labor Force Status", title = "Unemployment",
+       subtitle = "Working-Age People With Disabilities Looking for Work",
+       desc = "The share of working-age people with disabilities looking for work but not employed.",
+       file = "factsheet-unemployment.html"),
+  list(id = "not-in-labor-force", category = "Work & Economic",
+       cluster = "Labor Force Status", title = "Not in the Labor Force",
+       subtitle = "Working-Age People With Disabilities Neither Working Nor Looking for Work",
+       desc = "The share of working-age people with disabilities neither working nor looking for work.",
+       file = "factsheet-not-in-labor-force.html"),
+  list(id = "median-earnings", category = "Work & Economic",
+       cluster = "Income & Poverty", title = "Median Earnings",
+       subtitle = "What Workers With Disabilities Earn, Against Workers Without",
+       desc = "Median earnings for workers with and without disabilities, age 16 and older, by state.",
+       file = "factsheet-median-earnings.html"),
+  list(id = "poverty", category = "Work & Economic",
+       cluster = "Income & Poverty", title = "Poverty",
+       subtitle = "People With Disabilities Living Below the Poverty Line",
+       desc = "Poverty rates for people with and without disabilities — all ages and by age group.",
+       file = "factsheet-poverty.html"),
+
+  # ── Community Participation ───────────────────────────────────────────
+  list(id = "health-insurance-uninsured", category = "Community Participation",
+       cluster = "Health Insurance", title = "Uninsured",
+       subtitle = "Working-Age People With Disabilities Who Have No Health Coverage",
+       desc = "The share of working-age people with disabilities with no health coverage at all.",
+       file = "factsheet-health-insurance-uninsured.html"),
+  list(id = "health-insurance-public", category = "Community Participation",
+       cluster = "Health Insurance", title = "Public Health Coverage",
+       subtitle = "Working-Age People With Disabilities on Medicaid, Medicare or Another Public Plan",
+       desc = "The share on Medicaid, Medicare or another public plan.",
+       file = "factsheet-health-insurance-public.html"),
+  list(id = "health-insurance-private", category = "Community Participation",
+       cluster = "Health Insurance", title = "Private Health Coverage",
+       subtitle = "Working-Age People With Disabilities Covered by Private, Usually Employer, Insurance",
+       desc = "The share covered by private, usually employer-sponsored, insurance.",
+       file = "factsheet-health-insurance-private.html"),
+  list(id = "commuting-transit", category = "Community Participation",
+       cluster = "Commuting", title = "Commuting by Public Transit",
+       subtitle = "Workers With Disabilities Who Travel to Work by Public Transit",
+       desc = "The share of workers with disabilities who travel to work by public transit.",
+       file = "factsheet-commuting-transit.html"),
+  list(id = "commuting-drive-alone", category = "Community Participation",
+       cluster = "Commuting", title = "Commuting by Driving Alone",
+       subtitle = "Workers With Disabilities Who Drive to Work Alone",
+       desc = "The share of workers with disabilities who drive to work alone.",
+       file = "factsheet-commuting-drive-alone.html"),
+  list(id = "education-below-hs", category = "Community Participation",
+       cluster = "Education", title = "Education Below High School",
+       subtitle = "Adults With Disabilities Whose Formal Education Ended Before a High School Diploma",
+       desc = "Adults 25 and over whose formal education ended before a high school diploma.",
+       file = "factsheet-education-below-hs.html"),
+  list(id = "education-high-school", category = "Community Participation",
+       cluster = "Education", title = "High School Completion",
+       subtitle = "Adults With Disabilities Whose Highest Qualification Is a High School Diploma",
+       desc = "Adults 25 and over whose highest qualification is a high school diploma.",
+       file = "factsheet-education-high-school.html"),
+  list(id = "education-bachelors", category = "Community Participation",
+       cluster = "Education", title = "Bachelor's Degree or Higher",
+       subtitle = "Adults With Disabilities Holding a Bachelor's Degree or a Higher Qualification",
+       desc = "Adults 25 and over holding a bachelor's degree or a higher qualification.",
+       file = "factsheet-education-bachelors.html"),
+  list(id = "technology-computer", category = "Community Participation",
+       cluster = "Technology", title = "Computer Access",
+       subtitle = "People With Disabilities Living in a Household With a Laptop or Desktop Computer",
+       desc = "Living in a household with a laptop or desktop computer.",
+       file = "factsheet-technology-computer.html"),
+  list(id = "technology-internet", category = "Community Participation",
+       cluster = "Technology", title = "Internet Access",
+       subtitle = "People With Disabilities Living in a Household With an Internet Subscription",
+       desc = "Living in a household with an internet subscription.",
+       file = "factsheet-technology-internet.html"),
+  list(id = "technology-smartphone", category = "Community Participation",
+       cluster = "Technology", title = "Smartphone Access",
+       subtitle = "People With Disabilities Living in a Household With a Smartphone",
+       desc = "Living in a household with a smartphone.",
+       file = "factsheet-technology-smartphone.html")
 )
 
-# Category display order, matching the ADA-PARC outcome domains as presented on
-# the rest of the site. Categories with no sheets yet still render with a
-# "coming soon" note so the structure signals where new sheets will appear.
-# No category is in that state now: all ten sheets are built, Technology Access
-# last, once the PUMS rebuild gave it reproducible figures. This registry is
-# back in step with ADA_PARC.Rmd as of 10 August 2026.
+# Category display order, matching the ADA-PARC outcome domains used across the
+# rest of the site.
 fs_categories <- c("Community Living", "Work & Economic", "Community Participation")
 
-# ── Layout ────────────────────────────────────────────────────────────────
-# A single centred column. Heading, rule, subline, navigation and document all
-# sit on one vertical axis, so nothing has to be found off to one side.
+# Slug for data-* hooks and element ids: same transform the category tabs used
+# before, plus a trim of any leading / trailing dash.
+fs_slug <- function(x) gsub("(^-|-$)", "", gsub("[^a-z0-9]+", "-", tolower(x)))
+
+fs_in_category <- function(cat) Filter(function(s) s$category == cat, fact_sheets)
+fs_clusters_of <- function(sheets) unique(vapply(sheets, function(s) s$cluster, character(1)))
+
+# ── Layout: landing → area → reader ─────────────────────────────────────
+# Three screens in one centred column; only one is ever in the visible state,
+# the other two carry [hidden] (which also drops them from the a11y tree, so
+# exactly one <h1> is exposed at a time):
 #
-# This replaces the master-and-detail split of 9 August 2026, whose sticky left
-# rail pushed the document into a wide right-hand column. The sheets themselves
-# are laid out at 900px (factsheets/_generate/assets/factsheet-base.css
-# .page-wrapper), so on a 1440px page the document read as pinned to the right
-# rather than presented.
+#   1. Landing (#fs_home)  — masthead + three upright "area" cards, one per
+#      ADA-PARC outcome domain. Each card is a <button> with a matching line
+#      symbol. A Download-All button and the ADA-PARC brand mark sit at the
+#      foot.
+#   2. Area (#fs_area)      — the chosen domain's sheets only, grouped under
+#      topic-cluster <h2>s as a roomy vertical list of <button> rows. Built
+#      on demand from a small JSON copy of the registry.
+#   3. Reader (#fs_reader)  — a back control, download / open actions and the
+#      sheet itself in one lazy <iframe>. Only one sheet is ever in the DOM.
 #
-# Navigation is two tiers: a row of category tabs, then the sheets belonging to
-# the selected category. Ten sheets split 4 / 2 / 4 across the three
-# categories, so the sheet row never wraps at full width and the whole
-# navigation block stays under about 100px tall. That is what buys the space
-# the rail used to take, and it is why the tiers must not be collapsed into one
-# flat row of ten: at ten pills the row wraps to three lines and the saving is
-# gone.
+# Navigation is a self-contained in-memory state machine (showHome / showArea /
+# showReader) — NOT the History API. This sub-app is an embedded shinyApp(), i.e.
+# an iframe that shares its session history with the surrounding flexdashboard
+# site; driving screen state through history.pushState / history.back() let a
+# Back click walk past the app's own entries onto another site tab (the
+# Scorecard). The in-app Back controls now move reader → area → home directly;
+# the browser / device Back button leaves the Fact Sheets tab, as it does from
+# every other tab. Forward moves send focus to the destination <h1>
+# (tabindex=-1); Back restores focus to the card / row that opened the screen
+# being left. An aria-live region names each screen change.
 #
-# Colour follows the blue-dominant canon: #1c2b3a for the heading and body
-# ink, brand navy #013176 for the selected pill, the category underline, the
-# centred rule and the primary button, #01214f for its hover, #0d3b8e for
-# focus rings, #e4e8ef for hairlines, #f5f8fc for hover tints and #c9d3e0 for
-# the resting pill edge. Gold is deliberately absent: in this document it
-# marks explanatory prose, not structure.
+# This replaces the filtered card grid that showed all 25 sheets at once: the
+# landing now asks one question — which domain? — with large targets, and no
+# sheet list appears until the set is down to 2–12. The lists stay plain
+# <ul>/<button>; a 25-item tablist would be an ARIA anti-pattern.
 #
-# ALL SIZES ARE IN px, NOT rem. fluidPage() loads Bootstrap 3, whose scaffolding
-# sets html { font-size: 10px }, so rem values in a sub-app style block resolve
-# against a 10px root. An earlier version of this page was written in rem and
-# was rendering its body copy at 13px rather than the intended 20.8px. See
-# project memory "Bootstrap 3 rem Trap".
+# Chrome is the site's NAVY palette on warm off-white, the same framing the
+# scorecards use — deliberately NOT the sheet's own maroon/gold, so the colour
+# break tells the reader the framed document is a separate thing. Gold stays
+# absent from the chrome. There is no dark theme; the sub-app palette is fixed.
+#
+# ALL SIZES ARE IN px, NOT rem. fluidPage() loads Bootstrap 3, whose
+# scaffolding sets html { font-size: 10px }, so rem in a sub-app style block
+# resolves against a 10px root. See project memory "Bootstrap 3 rem Trap".
+
+# One matched set of line symbols, one per outcome domain. Decorative:
+# aria-hidden + focusable=false in the markup, so the button's own text and
+# aria-label carry the meaning.
+fs_symbols <- list(
+  "Community Living" = HTML('<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 22 24 7l17 15"/><path d="M11 20v20h26V20"/><path d="M20 40v-10h8v10"/></svg>'),
+  "Work & Economic" = HTML('<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="7" y="15" width="34" height="24" rx="3"/><path d="M18 15v-3.5A3.5 3.5 0 0 1 21.5 8h5A3.5 3.5 0 0 1 30 11.5V15"/><path d="M7 26h34"/><path d="M21.5 24h5v4h-5z"/></svg>'),
+  "Community Participation" = HTML('<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="24" cy="15" r="5"/><path d="M14 39c0-6 4.5-10 10-10s10 4 10 10"/><circle cx="9.5" cy="20" r="3.6"/><path d="M3.5 35c0-4.2 2.7-7.4 6.4-7.9"/><circle cx="38.5" cy="20" r="3.6"/><path d="M44.5 35c0-4.2-2.7-7.4-6.4-7.9"/></svg>')
+)
+
+# Registry reshaped for the client:
+#   { slug: { name, clusters: [ { name, sheets: [ {file,title,sub,desc} ] } ] } }
+# jsonlite::unbox keeps every scalar a JSON string and every list a JSON array,
+# so a future single-sheet cluster still serialises as an array.
+fs_client_data <- setNames(
+  lapply(fs_categories, function(cat) {
+    sheets <- fs_in_category(cat)
+    list(
+      name = jsonlite::unbox(cat),
+      clusters = lapply(fs_clusters_of(sheets), function(cl) {
+        list(
+          name = jsonlite::unbox(cl),
+          sheets = lapply(Filter(function(s) s$cluster == cl, sheets), function(s) {
+            list(
+              file  = jsonlite::unbox(s$file),
+              title = jsonlite::unbox(s$title),
+              sub   = jsonlite::unbox(s$subtitle),
+              desc  = jsonlite::unbox(s$desc)
+            )
+          })
+        )
+      })
+    )
+  }),
+  vapply(fs_categories, fs_slug, character(1))
+)
+fs_data_json <- as.character(jsonlite::toJSON(fs_client_data))
 
 ui <- fluidPage(
   tags$head(
     tags$style(HTML("
-      /* EB Garamond: declared here because shinyApp() sub-apps run in an
-         isolated context where the parent flexdashboard www/styles.css
-         does not reliably cascade into the rendered content. */
+      /* EB Garamond: declared here because shinyApp() sub-apps render in an
+         isolated context where the parent flexdashboard www/styles.css does
+         not reliably cascade into the rendered content. */
       *, *::before, *::after { font-family: 'EB Garamond', Garamond, Georgia, serif !important; }
-      body {
-        background: #f9f7f4;
-        margin: 0;
-      }
-      /* The inactive category groups are hidden with the boolean HTML
-         attribute. Its user-agent rule is display: none, which any display
-         declaration in author CSS overrides, so it has to be restated here or
-         a hidden group would still be laid out. */
+      body { background: #f9f7f4; margin: 0; }
+      /* [hidden] is display:none in the UA sheet, which any author `display`
+         declaration overrides, so it is restated here. */
       [hidden] { display: none !important; }
 
-      .fs-page {
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 30px 24px 44px;
+      /* ---- palette: site navy on warm off-white; committed light ---- */
+      .fs-wrap {
+        --page: #f9f7f4; --surface: #ffffff; --surface-2: #f5f8fc;
+        --ink: #1c2b3a; --mute: #4a5560;
+        --navy: #013176; --navy-deep: #01214f;
+        --rule: #e4e8ef; --rule-strong: #c9d3e0;
+        --focus: #0d3b8e; --shadow: 0 1px 5px rgba(28,43,58,.08);
+        max-width: 1040px; margin: 0 auto; padding: 26px 24px 72px; color: var(--ink);
       }
+      .fs-wrap :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 
-      /* ── Page heading ─────────────────────────────────────────────── */
-      .fs-head {
-        text-align: center;
-        max-width: 68ch;
-        margin: 0 auto 22px;
-      }
-      .fs-heading {
-        font-size: 34px;
-        font-weight: 700;
-        color: #1c2b3a;
-        margin: 0;
-      }
-      /* Centred navy rule in place of the left border the other tabs use. A
-         left rule under centred text reads as a layout fault rather than as an
-         accent. Gold is deliberately absent from this page: it marks
-         explanatory prose, see .national-summary-card, so spending it on
-         structure here would blur what it means elsewhere. */
-      .fs-rule {
-        width: 72px;
-        height: 3px;
-        background: #013176;
-        margin: 12px auto 14px;
-      }
-      .fs-subheading {
-        font-size: 19px;
-        color: #1c2b3a;
-        margin: 0;
-        line-height: 1.55;
-      }
+      /* ---- masthead ---- */
+      .fs-mast { margin-bottom: 4px; }
+      .fs-heading { font-size: 34px; font-weight: 700; color: var(--ink); margin: 0; letter-spacing: -.01em; }
+      .fs-rule { width: 72px; height: 3px; background: var(--navy); margin: 12px 0 14px; }
+      .fs-subheading { font-size: 18px; color: var(--ink); margin: 0; line-height: 1.55; max-width: 60ch; }
 
-      /* ── Tier one: categories ─────────────────────────────────────── */
-      .fs-cats {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 32px;
-        border-bottom: 1px solid #e4e8ef;
-        margin: 0 auto 18px;
+      /* ---- landing: three upright area cards ---- */
+      .fs-areas { margin-top: 40px; }
+      .fs-vgrid {
+        list-style: none; margin: 0; padding: 0;
+        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px;
       }
-      .fs-cat {
-        background: transparent;
-        border: none;
-        border-bottom: 3px solid transparent;
-        margin-bottom: -1px;
-        padding: 8px 2px 10px;
-        font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 15px;
-        font-weight: 700;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-        color: #4a5560;
-        cursor: pointer;
+      .fs-vcard {
+        width: 100%; min-height: 300px;
+        display: flex; flex-direction: column; align-items: center; text-align: center;
+        background: var(--surface); border: 1px solid var(--rule); border-radius: 20px;
+        padding: 40px 26px 32px; cursor: pointer; font-family: inherit; color: var(--ink);
+        transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
       }
-      .fs-cat:hover { color: #013176; }
-      /* Selection carries three cues, not colour alone: a navy underline, a
-         colour change and the underline's own weight. */
-      .fs-cat[aria-selected='true'] {
-        color: #013176;
-        border-bottom-color: #013176;
+      .fs-vcard:hover { border-color: var(--navy); transform: translateY(-4px); box-shadow: 0 14px 34px -20px rgba(1,49,118,.42); }
+      .fs-vcard-title { font-size: 30px; font-weight: 700; color: var(--navy); line-height: 1.16; letter-spacing: -.01em; max-width: 11ch; }
+      .fs-vcard-bar { width: 24px; height: 2px; background: var(--navy); opacity: .32; margin: 15px 0 18px; flex: none; }
+      .fs-vcard-sym { color: var(--navy); width: 44px; height: 44px; }
+      .fs-vcard-sym svg { width: 100%; height: 100%; display: block; }
+      .fs-vcard-spacer { flex: 1 1 auto; }
+      .fs-vcard-go {
+        margin-top: 26px; font-size: 16px; font-weight: 600; color: var(--navy);
+        background: var(--surface); border: 1.6px solid var(--navy); border-radius: 999px; padding: 10px 24px;
+        transition: background .16s ease, color .16s ease;
       }
-      .fs-cat:focus-visible {
-        outline: 3px solid #0d3b8e;
-        outline-offset: 2px;
-      }
+      .fs-vcard:hover .fs-vcard-go,
+      .fs-vcard:focus-visible .fs-vcard-go { background: var(--navy); color: #fff; }
 
-      /* ── Tier two: sheets in the selected category ────────────────── */
-      .fs-sheets {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 10px;
+      /* ---- landing foot: Download All + brand mark ---- */
+      .fs-home-foot {
+        display: flex; align-items: center; justify-content: space-between; gap: 18px 24px; flex-wrap: wrap;
+        margin-top: 44px; padding-top: 26px; border-top: 1px solid var(--rule);
       }
-      .fs-sheets-panel {
-        margin: 0 0 24px;
+      .fs-dl-all {
+        font-size: 15px; font-weight: 700; color: #fff; text-decoration: none; display: inline-block;
+        background: var(--navy); border: 1.6px solid var(--navy); border-radius: 999px; padding: 13px 30px;
+        transition: background .16s ease, border-color .16s ease;
       }
-      /* #c9d3e0 rather than the --border hairline #e4e8ef: at 1.4:1 on white
-         the hairline disappears at pill scale and the row reads as loose text
-         rather than as controls. */
-      .fs-tab {
-        background: #fff;
-        border: 1.5px solid #c9d3e0;
-        border-radius: 999px;
-        padding: 8px 18px;
-        font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 17px;
-        line-height: 1.4;
-        color: #1c2b3a;
-        cursor: pointer;
-      }
-      .fs-tab:hover {
-        border-color: #013176;
-        background: #f5f8fc;
-      }
-      .fs-tab[aria-selected='true'] {
-        background: #013176;
-        border-color: #013176;
-        color: #fff;
-        font-weight: 700;
-      }
-      /* Focus ink is chosen against what sits BEHIND the ring, not against the
-         control it surrounds. outline-offset is positive, so the ring lands on
-         the page ground in every state, selected or not, and one rule covers
-         both. #0d3b8e is the focus token; on #f9f7f4 it measures about
-         8:1, well past the 3:1 floor for a non-text indicator. */
-      .fs-tab:focus-visible {
-        outline: 3px solid #0d3b8e;
-        outline-offset: 2px;
-      }
-      .fs-sheets-empty {
-        text-align: center;
-        font-size: 17px;
-        color: #4a5560;
-        font-style: italic;
-        margin: 0;
-      }
+      .fs-dl-all:hover, .fs-dl-all:focus-visible { background: var(--navy-deep); border-color: var(--navy-deep); color: #fff; }
+      .fs-brand { display: inline-flex; align-items: center; gap: 15px; }
+      .fs-brand-word { height: 46px; width: auto; display: block; }
+      .fs-brand-icon { height: 34px; width: 34px; border-radius: 7px; display: block; }
 
-      /* ── Viewer ───────────────────────────────────────────────────── */
-      .fs-viewer {
-        background: #fff;
-        border: 1px solid #e4e8ef;
-        border-radius: 6px;
-        overflow: hidden;
-        box-shadow: 0 1px 5px rgba(28,43,58,0.08);
+      /* ---- area screen ---- */
+      .fs-area-title { font-size: 30px; font-weight: 700; color: var(--navy); margin: 14px 0 0; line-height: 1.2; letter-spacing: -.01em; }
+      .fs-area-sub { font-size: 16px; color: var(--mute); margin: 10px 0 0; }
+      .fs-cluster { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); margin: 34px 0 14px; }
+      .fs-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+      .fs-row {
+        width: 100%; text-align: left; font-family: inherit; cursor: pointer; color: var(--ink);
+        background: var(--surface); border: 1px solid var(--rule); border-radius: 16px;
+        padding: 26px 30px; display: flex; align-items: center; justify-content: space-between; gap: 24px;
+        transition: border-color .16s ease, transform .16s ease;
       }
-      /* The viewer head is now only the two actions. Title, subtitle and
-         description were removed on 9 August 2026: the sheet's own banner
-         states the topic and category three lines further down, so the header
-         was repeating what the document already said and pushing the document
-         itself off the first screen. The registry text survives as the
-         visually hidden heading below, which is what names the panel and
-         catches focus on selection. */
-      .fs-viewer-head {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        padding: 14px 18px;
-        border-bottom: 1px solid #e4e8ef;
+      .fs-row:hover { border-color: var(--navy); transform: translateX(4px); }
+      .fs-row-x { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+      .fs-row-t { font-size: 21px; font-weight: 700; color: var(--navy); line-height: 1.18; }
+      .fs-row-d { font-size: 15px; color: var(--mute); line-height: 1.5; max-width: 64ch; }
+      .fs-row-go { font-size: 22px; color: var(--navy); opacity: .4; flex: none; transition: opacity .16s ease; }
+      .fs-row:hover .fs-row-go { opacity: 1; }
+
+      /* ---- back control (area + reader) ---- */
+      .fs-back {
+        font-family: inherit; font-size: 15px; font-weight: 700; color: var(--navy);
+        background: none; border: 0; cursor: pointer; padding: 6px 2px;
       }
-      .fs-viewer-title:focus-visible {
-        outline: 3px solid #0d3b8e;
-        outline-offset: 3px;
-      }
+      .fs-back:hover { text-decoration: underline; }
+
+      /* ---- reader ---- */
+      .fs-reader { margin-top: 8px; }
+      .fs-reader-title { font-size: 22px; font-weight: 700; color: var(--navy); margin: 6px 0 2px; line-height: 1.25; }
+      .fs-reader-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 14px; }
       .fs-btn-dl, .fs-btn-open {
-        border-radius: 4px;
-        padding: 9px 16px;
-        font-family: 'EB Garamond', Garamond, Georgia, serif;
-        font-size: 16px;
-        font-weight: 600;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        line-height: 1.4;
-        white-space: nowrap;
-        transition: background 0.15s;
+        font-family: inherit; font-size: 15px; font-weight: 600; border-radius: 6px;
+        padding: 9px 18px; cursor: pointer; text-decoration: none; display: inline-block;
+        border: 1.5px solid var(--navy); line-height: 1.4;
       }
-      .fs-btn-dl {
-        background: #013176;
-        color: #fff !important;
-        border: 1.5px solid #013176;
-      }
-      .fs-btn-dl:hover, .fs-btn-dl:focus {
-        background: #01214f;
-        border-color: #01214f;
-        color: #fff !important;
-        text-decoration: none;
-      }
-      .fs-btn-open {
-        background: #fff;
-        color: #013176 !important;
-        border: 1.5px solid #013176;
-      }
-      .fs-btn-open:hover, .fs-btn-open:focus {
-        background: #f5f8fc;
-        color: #013176 !important;
-        text-decoration: none;
-      }
-      /* Same rule as the pills. The ring sits outside the button, on the white
-         card, so both buttons take the focus token whatever their own fill
-         is. */
-      .fs-btn-dl:focus-visible, .fs-btn-open:focus-visible {
-        outline: 3px solid #0d3b8e;
-        outline-offset: 2px;
-      }
+      .fs-btn-dl { background: var(--navy); color: #fff; }
+      .fs-btn-dl:hover, .fs-btn-dl:focus { background: var(--navy-deep); border-color: var(--navy-deep); color: #fff; text-decoration: none; }
+      .fs-btn-open { background: var(--surface); color: var(--navy); }
+      .fs-btn-open:hover, .fs-btn-open:focus { background: var(--surface-2); color: var(--navy); text-decoration: none; }
       #fs_frame {
-        display: block;
-        width: 100%;
-        height: 78vh;
-        min-height: 560px;
-        border: none;
-        background: #fff;
+        display: block; width: 100%; height: 78vh; min-height: 560px;
+        border: 1px solid var(--rule); border-radius: 6px; background: #fff; box-shadow: var(--shadow);
       }
 
-      /* Screen-reader-only live region for load announcements. */
+      /* ---- screen-reader-only ---- */
       .fs-sr-only {
-        position: absolute;
-        width: 1px; height: 1px;
-        padding: 0; margin: -1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-        white-space: nowrap;
-        border: 0;
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
       }
 
-      /* ── Narrow screens ───────────────────────────────────────────── */
-      /* Both navigation rows already wrap on their own, so no alternative
-         control is needed. Below 940px the page simply stops being wider than
-         the 900px document and the frame shortens to keep the navigation and
-         the top of the sheet on screen together. */
-      @media (max-width: 940px) {
-        .fs-cats { gap: 22px; }
-        #fs_frame { height: 72vh; }
+      @media (max-width: 860px) {
+        .fs-vgrid { grid-template-columns: 1fr; }
+        .fs-vcard { min-height: 0; padding: 32px 24px; }
+        .fs-row { padding: 20px 20px; }
       }
+      @media (max-width: 760px) { #fs_frame { height: 72vh; } }
       @media (max-width: 620px) {
-        .fs-page { padding: 20px 14px 34px; }
+        .fs-wrap { padding: 20px 14px 44px; }
         .fs-heading { font-size: 28px; }
-        .fs-subheading { font-size: 18px; }
-        .fs-cats { gap: 16px; }
-        .fs-cat { font-size: 14px; letter-spacing: 0.05em; }
-        .fs-tab { font-size: 16px; padding: 8px 14px; }
-        .fs-viewer-head { flex-direction: column; }
+        .fs-subheading { font-size: 17px; }
+        .fs-area-title { font-size: 25px; }
+        .fs-reader-actions { flex-direction: column; }
+        /* On a phone the inline iframe is the least comfortable way to read a
+           sheet, so surface the open-in-new-tab action first. */
+        #fs_open { order: -1; }
+        .fs-btn-dl, .fs-btn-open { text-align: center; }
       }
+      @media (prefers-reduced-motion: reduce) { .fs-wrap * { transition: none !important; } }
     "))
   ),
 
-  div(class = "fs-page",
+  div(class = "fs-wrap",
 
-    div(class = "fs-head",
-      h2(class = "fs-heading", "ADA-PARC Fact Sheets"),
-      div(class = "fs-rule", `aria-hidden` = "true"),
-      p(class = "fs-subheading",
-        "Choose a fact sheet to read, or download."
-      )
-    ),
-
-    # ── Tier one: category tabs ───────────────────────────────────────
-    # ARIA tablist. Each category tab controls its own group of sheet tabs,
-    # which is a tabpanel. Roving tabindex: exactly one category tab is in the
-    # tab order at a time and arrow keys move between them.
-    tags$nav(class = "fs-cats", role = "tablist",
-      `aria-label` = "Fact sheet categories",
-      lapply(fs_categories, function(cat) {
-        slug <- gsub("[^a-z0-9]+", "-", tolower(cat))
-        tags$button(
-          class           = "fs-cat",
-          id              = paste0("fs_cat_", slug),
-          role            = "tab",
-          type            = "button",
-          `aria-selected` = "false",
-          `aria-controls` = paste0("fs_grp_", slug),
-          tabindex        = "-1",
-          cat
-        )
-      })
-    ),
-
-    # ── Tier two: the sheets in each category ─────────────────────────
-    # One panel per category, all but the selected one hidden. Each panel
-    # holds its own tablist, whose tabs all point at the single document
-    # viewer, so aria-controls is constant and the viewer's aria-labelledby is
-    # updated on selection instead.
-    lapply(fs_categories, function(cat) {
-      sheets_in_cat <- Filter(function(fs) fs$category == cat, fact_sheets)
-      slug <- gsub("[^a-z0-9]+", "-", tolower(cat))
-      div(
-        id                = paste0("fs_grp_", slug),
-        class             = "fs-sheets-panel",
-        role              = "tabpanel",
-        `aria-labelledby` = paste0("fs_cat_", slug),
-        hidden            = NA,
-        if (length(sheets_in_cat) == 0) {
-          p(class = "fs-sheets-empty", "Coming soon.")
-        } else {
-          div(class = "fs-sheets", role = "tablist",
-            `aria-label` = paste(cat, "fact sheets"),
-            lapply(sheets_in_cat, function(fs) {
-              # Sheet metadata rides on data-* attributes rather than a JS
-              # literal, so htmltools handles the escaping. Several
-              # descriptions contain apostrophes.
-              tags$button(
-                class           = "fs-tab",
-                id              = paste0("fs_tab_", fs$id),
-                role            = "tab",
-                type            = "button",
-                `aria-selected` = "false",
-                `aria-controls` = "fs_panel",
-                tabindex        = "-1",
-                `data-file`     = fs$file,
-                `data-title`    = fs$title,
-                `data-sub`      = fs$subtitle,
-                `data-desc`     = fs$desc,
-                fs$title
-              )
-            })
-          )
-        }
-      )
-    }),
-
-    # ── Viewer ────────────────────────────────────────────────────────
-    div(class = "fs-viewer", id = "fs_panel", role = "tabpanel",
-        `aria-labelledby` = "",
-      div(class = "fs-viewer-head",
-        # Visually hidden, but still the panel's heading. It gives the tabpanel
-        # an accessible name, it is where focus lands when a sheet is chosen,
-        # and it carries the registry description, which a sighted reader now
-        # gets from the sheet itself but a screen reader user would otherwise
-        # lose entirely.
-        h3(class = "fs-sr-only fs-viewer-title", id = "fs_title",
-           tabindex = "-1", ""),
-        p(class = "fs-sr-only", id = "fs_desc", ""),
-        tags$a(class = "fs-btn-dl",   id = "fs_dl",   href = "#", download = NA, "Download"),
-        tags$a(class = "fs-btn-open", id = "fs_open", href = "#", target = "_blank",
-               rel = "noopener", "Open in new tab")
+    # ---- screen 1: landing ----
+    tags$div(id = "fs_home",
+      tags$div(class = "fs-mast",
+        h1(class = "fs-heading", id = "fs_home_h", tabindex = "-1", "ADA-PARC Fact Sheets"),
+        tags$div(class = "fs-rule", `aria-hidden` = "true"),
+        p(class = "fs-subheading",
+          "Short, plain-language briefs on single disability outcomes. Choose an area to begin.")
       ),
-      tags$iframe(id = "fs_frame", src = "", title = "Fact sheet")
+      tags$nav(class = "fs-areas", `aria-label` = "Fact sheet areas",
+        tags$ul(class = "fs-vgrid", role = "list",
+          lapply(fs_categories, function(cat) {
+            tags$li(
+              tags$button(type = "button", class = "fs-vcard", `data-cat` = fs_slug(cat),
+                `aria-label` = sprintf("%s — %d fact sheets", cat, length(fs_in_category(cat))),
+                tags$span(class = "fs-vcard-title", cat),
+                tags$span(class = "fs-vcard-bar", `aria-hidden` = "true"),
+                tags$span(class = "fs-vcard-sym", `aria-hidden` = "true", fs_symbols[[cat]]),
+                tags$span(class = "fs-vcard-spacer", `aria-hidden` = "true"),
+                tags$span(class = "fs-vcard-go", `aria-hidden` = "true", HTML("View &rarr;"))
+              )
+            )
+          })
+        )
+      ),
+      tags$div(class = "fs-home-foot",
+        tags$a(class = "fs-dl-all", href = "factsheets/adaparc-factsheets.zip",
+          download = "adaparc-factsheets.zip",
+          "Download All",
+          tags$span(class = "fs-sr-only",
+            sprintf(" — all %d fact sheets as a ZIP archive", length(fact_sheets)))),
+        tags$span(class = "fs-brand",
+          tags$img(class = "fs-brand-word", src = "brand/PARC_blue_text.png",
+            alt = "ADA-PARC", width = "78", height = "46"),
+          tags$img(class = "fs-brand-icon", src = "brand/PARC_blue_icon.png",
+            alt = "", width = "34", height = "34")
+        )
+      )
     ),
 
-    div(id = "fs_live", class = "fs-sr-only", role = "status",
-        `aria-live` = "polite")
+    # ---- screen 2: area (heading, sub and rows populated on demand) ----
+    tags$div(id = "fs_area", hidden = NA,
+      tags$button(class = "fs-back", type = "button", id = "fs_area_back",
+        `aria-label` = "Back to all fact sheet areas", HTML("&larr; All areas")),
+      h1(class = "fs-area-title", id = "fs_area_h", tabindex = "-1",
+         `aria-describedby` = "fs_area_sub", ""),
+      p(class = "fs-area-sub", id = "fs_area_sub", ""),
+      tags$div(id = "fs_area_body")
+    ),
+
+    # ---- screen 3: reader (hidden until a sheet is chosen) ----
+    tags$div(id = "fs_reader", class = "fs-reader", hidden = NA,
+      tags$button(class = "fs-back", type = "button", id = "fs_back", HTML("&larr; Back")),
+      # h1 for the reader screen: the other two screens are fully hidden while
+      # this is shown, so exactly one h1 is ever exposed.
+      h1(class = "fs-reader-title", id = "fs_title", tabindex = "-1",
+         `aria-describedby` = "fs_desc", ""),
+      p(class = "fs-sr-only", id = "fs_desc", ""),
+      tags$div(class = "fs-reader-actions",
+        tags$a(class = "fs-btn-dl", id = "fs_dl", href = "#", download = NA, "Download sheet"),
+        tags$a(class = "fs-btn-open", id = "fs_open", href = "#", target = "_blank",
+          rel = "noopener", "Open in new tab")
+      ),
+      # Holder, not a live <iframe>: openFrame() creates the frame once and
+      # then loads each sheet with location.replace(), so a sheet swap never
+      # adds an entry to the session history this iframe shares with the site.
+      tags$div(id = "fs_frame_holder")
+    ),
+
+    tags$div(id = "fs_live", class = "fs-sr-only", role = "status", `aria-live` = "polite")
   ),
+
+  tags$script(HTML(paste0("window.__FS_DATA__ = ", fs_data_json, ";"))),
 
   tags$script(HTML("
     (function () {
-      var cats = Array.prototype.slice.call(document.querySelectorAll('.fs-cat'));
-      var tabs = Array.prototype.slice.call(document.querySelectorAll('.fs-tab'));
-      if (!cats.length || !tabs.length) return;
+      var home    = document.getElementById('fs_home');
+      var area    = document.getElementById('fs_area');
+      var reader  = document.getElementById('fs_reader');
+      var live    = document.getElementById('fs_live');
+      var areaH   = document.getElementById('fs_area_h');
+      var areaSub = document.getElementById('fs_area_sub');
+      var areaBody= document.getElementById('fs_area_body');
+      var backBtn = document.getElementById('fs_back');
+      var frameHolder = document.getElementById('fs_frame_holder');
+      var homeH   = document.getElementById('fs_home_h');
+      if (!home || !area || !reader) return;
 
-      // Exactly one sheet tab per group stays in the tab order: the selected
-      // one where there is one, otherwise the first. Without this a keyboard
-      // user would have to tab through every sheet in the group.
-      function syncRoving() {
-        Array.prototype.slice.call(document.querySelectorAll('.fs-sheets'))
-          .forEach(function (list) {
-            var items = Array.prototype.slice.call(list.querySelectorAll('.fs-tab'));
-            if (!items.length) return;
-            var sel = items.filter(function (i) {
-              return i.getAttribute('aria-selected') === 'true';
-            })[0];
-            items.forEach(function (i) { i.tabIndex = -1; });
-            (sel || items[0]).tabIndex = 0;
+      var DATA = window.__FS_DATA__ || {};
+      var curCat      = null;   // slug of the area currently built / shown
+      var lastAreaBtn = null;   // the .fs-vcard that opened the current area
+      var lastRowBtn  = null;   // the .fs-row that opened the current reader
+
+      function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function att(s) { return esc(s).replace(/'/g, '&#39;'); }
+
+      function showOnly(el) {
+        home.hidden   = (el !== home);
+        area.hidden   = (el !== area);
+        reader.hidden = (el !== reader);
+        var wrap = document.querySelector('.fs-wrap');
+        if (wrap && wrap.scrollIntoView) wrap.scrollIntoView({ block: 'start' });
+        else window.scrollTo(0, 0);
+      }
+
+      function focusEl(el) { if (el && el.focus) el.focus(); }
+
+      function buildArea(slug) {
+        var a = DATA[slug];
+        if (!a) return;
+        curCat = slug;
+        var n = 0;
+        a.clusters.forEach(function (c) { n += c.sheets.length; });
+        areaH.textContent = a.name;
+        areaSub.textContent = n + ' fact sheets' +
+          (a.clusters.length > 1 ? ', in ' + a.clusters.length + ' groups' : '');
+        backBtn.textContent = '← Back to ' + a.name;
+        backBtn.setAttribute('aria-label', 'Back to ' + a.name);
+        if (areaBody.getAttribute('data-cat') === slug) return;  // already built
+
+        var html = '';
+        a.clusters.forEach(function (cl, i) {
+          var clId = 'fs_cl_' + slug + '_' + i;
+          html += `<h2 class='fs-cluster' id='${clId}'>${esc(cl.name)}</h2>`;
+          html += `<ul class='fs-rows' role='list' aria-labelledby='${clId}'>`;
+          cl.sheets.forEach(function (s) {
+            html +=
+              `<li><button type='button' class='fs-row'` +
+              ` data-file='${att(s.file)}' data-title='${att(s.title)}'` +
+              ` data-sub='${att(s.sub)}' data-desc='${att(s.desc)}' data-cat='${slug}'>` +
+              `<span class='fs-row-x'>` +
+              `<span class='fs-row-t'>${esc(s.title)}</span>` +
+              `<span class='fs-row-d'>${esc(s.desc)}</span></span>` +
+              `<span class='fs-row-go' aria-hidden='true'>&rarr;</span></button></li>`;
           });
-      }
-
-      function showCat(cat, moveFocus) {
-        cats.forEach(function (c) {
-          var on  = (c === cat);
-          var grp = document.getElementById(c.getAttribute('aria-controls'));
-          c.setAttribute('aria-selected', on ? 'true' : 'false');
-          c.tabIndex = on ? 0 : -1;
-          if (grp) {
-            if (on) grp.removeAttribute('hidden');
-            else    grp.setAttribute('hidden', '');
-          }
+          html += `</ul>`;
         });
-        // Changing category deliberately does not load a sheet. The document
-        // on screen stays put until a sheet is chosen, so browsing the
-        // categories never throws away what the reader was looking at.
-        if (moveFocus) cat.focus();
-      }
-
-      function fromEl(el) {
-        return {
-          file:  el.getAttribute('data-file'),
-          title: el.getAttribute('data-title'),
-          sub:   el.getAttribute('data-sub'),
-          desc:  el.getAttribute('data-desc')
-        };
-      }
-
-      function apply(t, moveFocus) {
-        var d   = fromEl(t);
-        var url = 'factsheets/' + d.file;
-
-        tabs.forEach(function (x) {
-          x.setAttribute('aria-selected', x === t ? 'true' : 'false');
+        areaBody.innerHTML = html;
+        areaBody.setAttribute('data-cat', slug);
+        Array.prototype.forEach.call(areaBody.querySelectorAll('.fs-row'), function (btn) {
+          btn.addEventListener('click', function () {
+            lastRowBtn = btn;
+            showReader({ file:  btn.getAttribute('data-file'),
+                         title: btn.getAttribute('data-title'),
+                         sub:   btn.getAttribute('data-sub'),
+                         desc:  btn.getAttribute('data-desc') });
+          });
         });
-        syncRoving();
+      }
 
-        // Both of these are visually hidden. They are the panel's accessible
-        // name and description, not on-screen chrome.
-        document.getElementById('fs_title').textContent = d.title + '. ' + d.sub + '.';
-        document.getElementById('fs_desc').textContent  = d.desc;
+      function openFrame(st) {
+        var url = 'factsheets/' + st.file;
+        document.getElementById('fs_title').textContent = st.title;
+        document.getElementById('fs_desc').textContent  = st.sub + '. ' + st.desc;
 
         var dl = document.getElementById('fs_dl');
-        dl.href = url;
-        dl.setAttribute('download', d.file);
-        dl.setAttribute('aria-label', 'Download ' + d.title + ' fact sheet');
+        dl.href = url; dl.setAttribute('download', st.file);
+        dl.setAttribute('aria-label', 'Download the ' + st.title + ' fact sheet');
 
         var op = document.getElementById('fs_open');
         op.href = url;
-        op.setAttribute('aria-label', 'Open ' + d.title + ' fact sheet in a new tab');
+        op.setAttribute('aria-label', 'Open the ' + st.title + ' fact sheet in a new tab');
 
-        var frame = document.getElementById('fs_frame');
-        frame.src = url;
-        frame.title = d.title + ' fact sheet';
-
-        document.getElementById('fs_panel').setAttribute('aria-labelledby', t.id);
-        document.getElementById('fs_live').textContent = d.title + ' fact sheet loaded.';
-
-        // Focus lands on the viewer heading, so a keyboard or screen reader
-        // user is put where the content actually changed. Suppressed on the
-        // initial load, which nobody asked for.
-        if (moveFocus) document.getElementById('fs_title').focus();
+        // Load the sheet with location.replace(), never by pushing a new src:
+        // this sub-app runs in an iframe whose session history is shared with
+        // the surrounding site, so a pushed document navigation would add an
+        // entry there. The first sheet gets a fresh element (its initial load
+        // is a replace); later sheets reuse it via location.replace().
+        var current = frameHolder.firstElementChild;
+        if (!current) {
+          var f = document.createElement('iframe');
+          f.id = 'fs_frame';
+          f.src = url;
+          f.setAttribute('loading', 'lazy');
+          f.title = st.title + ' fact sheet';
+          frameHolder.appendChild(f);
+        } else {
+          current.title = st.title + ' fact sheet';
+          try { current.contentWindow.location.replace(url); }
+          catch (e) { current.src = url; }
+        }
       }
 
-      cats.forEach(function (c, i) {
-        c.addEventListener('click', function () { showCat(c, false); });
-        c.addEventListener('keydown', function (e) {
-          var next = null;
-          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = cats[(i + 1) % cats.length];
-          else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = cats[(i - 1 + cats.length) % cats.length];
-          else if (e.key === 'Home') next = cats[0];
-          else if (e.key === 'End')  next = cats[cats.length - 1];
-          if (!next) return;
-          e.preventDefault();
-          // Automatic activation here: switching category only swaps a row of
-          // buttons, so there is nothing expensive to fetch on an arrow press.
-          showCat(next, true);
+      // Screen navigation is a plain in-memory state machine. It deliberately
+      // does NOT use the History API: this app is an iframe that shares its
+      // session history with the surrounding flexdashboard site, so calling
+      // history.back() here used to skip past the app's own entries and land
+      // on another site tab (e.g. the Scorecard). The browser / device Back
+      // button now leaves the Fact Sheets tab, the same as every other tab.
+      function showHome() {
+        showOnly(home);
+        focusEl(lastAreaBtn || homeH);
+        lastAreaBtn = null; lastRowBtn = null;
+        live.textContent = 'Fact Sheets home.';
+      }
+
+      function showArea(slug, forward) {
+        buildArea(slug);
+        showOnly(area);
+        if (forward) focusEl(areaH);
+        else { focusEl(lastRowBtn && area.contains(lastRowBtn) ? lastRowBtn : areaH); lastRowBtn = null; }
+        live.textContent = areaSub.textContent + '.';
+      }
+
+      function showReader(st) {
+        openFrame(st);
+        showOnly(reader);
+        focusEl(document.getElementById('fs_title'));
+        live.textContent = st.title + ' fact sheet loaded.';
+      }
+
+      Array.prototype.forEach.call(document.querySelectorAll('.fs-vcard'), function (card) {
+        card.addEventListener('click', function () {
+          lastAreaBtn = card;
+          showArea(card.getAttribute('data-cat'), true);
         });
       });
-
-      tabs.forEach(function (t) {
-        t.addEventListener('click', function () { apply(t, false); });
-        t.addEventListener('keydown', function (e) {
-          var group = Array.prototype.slice.call(
-            t.parentNode.querySelectorAll('.fs-tab'));
-          var i = group.indexOf(t);
-          var next = null;
-          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = group[(i + 1) % group.length];
-          else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = group[(i - 1 + group.length) % group.length];
-          else if (e.key === 'Home') next = group[0];
-          else if (e.key === 'End')  next = group[group.length - 1];
-          if (!next) return;
-          e.preventDefault();
-          // Manual activation: arrow keys move focus only, and Enter or Space
-          // loads the sheet (a <button> fires click for both natively). The
-          // automatic-activation variant would fetch a roughly 100KB document
-          // on every arrow press, which APG warns against for panels whose
-          // content is expensive to load.
-          next.focus();
-        });
-      });
-
-      // Open on the first category and its first sheet, so neither the sheet
-      // row nor the viewer is ever an empty box.
-      showCat(cats[0], false);
-      apply(tabs[0], false);
+      document.getElementById('fs_area_back').addEventListener('click', showHome);
+      backBtn.addEventListener('click', function () { showArea(curCat, false); });
     })();
   "))
   , adaparc_footer
@@ -6328,8 +7270,8 @@ push_display_panel <- function(announce = character(0)) {
   note <- map_palette_note(display_state$palette)
   if (high) {
     note <- paste(note,
-                  "High contrast is on, so maps are currently drawn in High",
-                  "Contrast Mono. Turning it off restores this palette.")
+                  "High contrast is on, so maps are currently drawn in",
+                  "Grayscale. Turning it off restores this palette.")
   }
 
   # Empty string, not NULL, for `announce`. A NULL in an R list serialises to a
